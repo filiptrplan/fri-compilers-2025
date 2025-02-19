@@ -95,7 +95,8 @@ public class LexAn extends Phase {
 
 		@Override
 		public String toString() {
-			return String.format("%s: %s", Prev25Lexer.VOCABULARY.getSymbolicName(getType()),
+			return String.format("%s: '%s' / %s", Prev25Lexer.VOCABULARY.getSymbolicName(getType()),
+					getText(),
 					location());
 		}
 
