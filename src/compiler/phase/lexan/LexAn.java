@@ -15,6 +15,8 @@ import compiler.phase.*;
  */
 public class LexAn extends Phase {
 
+	private final boolean DEBUG = true;
+
 	/** The ANTLR lexer that actually performs lexical analysis. */
 	public final Prev25Lexer lexer;
 
@@ -123,7 +125,9 @@ public class LexAn extends Phase {
 				int stop, int line, int charPositionInLine) {
 			LocLogToken token = new LocLogToken(source, type, channel, start, stop);
 			token.log(logger);
-			Report.info(token.toString());
+			if (DEBUG) {
+				Report.info(token.toString());
+			}
 			return token;
 		}
 	}
