@@ -17,9 +17,14 @@ lexer grammar Prev25Lexer;
 
 TYP         : 'typ' ;
 
+// SYMBOLS
+
+PLUS        : '+' ;
+MINUS       : '-' ; 
+
 // CONSTANTS
 
-INTCONST    : [+-]?[0-9]+ ;
+INTCONST    : (PLUS|MINUS)? [0-9]+ ;
 
 // IDENTIFIER
 
