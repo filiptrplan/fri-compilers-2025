@@ -1,7 +1,8 @@
 # FRI Compilers 2025
 
 This is my implementation of the Prev25 language made for the Compilers
-course at FRI, University of Ljubljana.
+course at FRI, University of Ljubljana. The specification for the
+language is located at [spec.pdf](./spec.pdf).
 
 ## Running and building
 
