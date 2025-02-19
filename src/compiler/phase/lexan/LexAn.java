@@ -91,6 +91,12 @@ public class LexAn extends Phase {
 			logger.endElement();
 		}
 
+		@Override
+		public String toString() {
+			return String.format("%s: %s", Prev25Lexer.VOCABULARY.getSymbolicName(getType()),
+					location());
+		}
+
 	}
 
 	/**
@@ -117,6 +123,7 @@ public class LexAn extends Phase {
 				int stop, int line, int charPositionInLine) {
 			LocLogToken token = new LocLogToken(source, type, channel, start, stop);
 			token.log(logger);
+			Report.info(token.toString());
 			return token;
 		}
 	}
