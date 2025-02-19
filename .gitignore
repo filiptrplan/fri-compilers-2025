@@ -1,7 +1,0 @@
-target/
-bin/
-*.zip
-src/compiler/phase/lexan/Prev25Lexer*
-!src/compiler/phase/lexan/Prev25Lexer.g4
-*.html
-*.xml
