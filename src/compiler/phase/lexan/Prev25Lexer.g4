@@ -13,4 +13,18 @@ lexer grammar Prev25Lexer;
 	}
 }
 
-WHITESPACE    : [ \n\r]+ -> skip ;
+// KEYWORDS
+
+TYP         : 'typ' ;
+
+// CONSTANTS
+
+INTCONST    : [+-]?[0-9]+ ;
+
+// IDENTIFIER
+
+IDENT       : [A-Za-z_][A-Za-z_0-9]* ;
+
+WHITESPACE  : [ \n\r]+ -> skip ;
+CHAR        : . ;
+
