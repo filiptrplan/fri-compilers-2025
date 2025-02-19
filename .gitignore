@@ -1,7 +1,5 @@
 target/
 bin/
-.project
-.classpath
 *.zip
 src/compiler/phase/lexan/Prev25Lexer*
 !src/compiler/phase/lexan/Prev25Lexer.g4
