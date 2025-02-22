@@ -112,7 +112,7 @@ public class LexAn extends Phase {
 		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine,
 				String msg, RecognitionException e) {
 			throw new Report.Error(new Location(line, charPositionInLine),
-					"Syntax error");
+					"Syntax error: " + msg);
 		}
 	}
 
