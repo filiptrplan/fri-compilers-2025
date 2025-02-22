@@ -30,6 +30,8 @@ public class LexAn extends Phase {
 		try {
 			lexer = new Prev25Lexer(CharStreams.fromFileName(srcFileName));
 			lexer.setTokenFactory(new LocLogTokenFactory());
+			lexer.removeErrorListeners();
+			lexer.addErrorListener(new ErrorListener());
 		} catch (IOException __) {
 			throw new Report.Error( //
 					"Cannot open file '" + srcFileName + "'.");
@@ -100,6 +102,18 @@ public class LexAn extends Phase {
 					location());
 		}
 
+	}
+
+	/**
+	 * An ANTLR error listener that throws an error upon the first syntax error
+	 */
+	private class ErrorListener extends BaseErrorListener {
+		@Override
+		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine,
+				String msg, RecognitionException e) {
+			throw new Report.Error(new Location(line, charPositionInLine),
+					"Syntax error");
+		}
 	}
 
 	/**
