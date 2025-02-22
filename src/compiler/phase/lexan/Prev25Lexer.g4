@@ -26,8 +26,8 @@ fragment EXCEPT_DQUOTE   : [\u0020-\u0021\u0023-\u005B\u005D-\u007E] ;
 fragment EXCEPT_QUOTE    : [\u0020-\u0026\u0028-\u005B\u005D-\u007E] ;
 fragment HEX_CHAR    : '\\0x' [0-9A-F][0-9A-F] ;
 
-STRCONST    : '"' ( EXCEPT_DQUOTE | ESC_BACK | ESC_DQUOTE )* '"' ; 
-CHARCONST   : '\'' ( EXCEPT_DQUOTE | ESC_BACK | ESC_QUOTE ) '\'' ;
+STRCONST    : '"' ( EXCEPT_DQUOTE | ESC_BACK | ESC_DQUOTE | HEX_CHAR )* '"' ; 
+CHARCONST   : '\'' ( EXCEPT_QUOTE | ESC_BACK | ESC_QUOTE  | HEX_CHAR ) '\'' ;
 
 // SYMBOLS
 
@@ -55,6 +55,7 @@ LPAREN      : '(' ;
 RPAREN      : ')' ;
 LBRACKET    : '[' ;
 RBRACKET    : ']' ;
+COLON       : ':' ;
 
 // KEYWORDS
 
