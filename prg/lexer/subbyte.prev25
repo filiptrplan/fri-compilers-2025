@@ -1,0 +1,17 @@
+0 1 2 3 4 5 6 7 8 9 10 123456789
++21 -50
+
+'a'  ' '  '~'  '!' '"' '#'  '\''  '.'  '2'  'A'  '\\'  '^'
+'\0x20' '\0x3A' '\0x7E'
+
+"a"  " "  "test"  "tT1%"  "#Test"  "'"  "'Danes je lepo vreme'"  "He\\ll\"o"  "H\0x65llo worl\0x64"
+
+& | == != < > <= >= * / % + - ! . ^ = : , { } ( ) [ ]
+
+bool char do else end false fun if in int let null return sizeof then true typ var void while
+
+variable boolchar _maIN09
+
+# Normal comment 1
+#Not normal#2
+#Testing %.\n+'"
