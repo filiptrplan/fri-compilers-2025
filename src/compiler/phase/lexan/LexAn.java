@@ -15,7 +15,7 @@ import compiler.phase.*;
  */
 public class LexAn extends Phase {
 
-	private final boolean DEBUG = false;
+	private final boolean DEBUG = true;
 
 	/** The ANTLR lexer that actually performs lexical analysis. */
 	public final Prev25Lexer lexer;
