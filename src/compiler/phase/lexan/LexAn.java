@@ -15,7 +15,7 @@ import compiler.phase.*;
  */
 public class LexAn extends Phase {
 
-	private final boolean DEBUG = true;
+	private boolean DEBUG = false;
 
 	/** The ANTLR lexer that actually performs lexical analysis. */
 	public final Prev25Lexer lexer;
@@ -25,6 +25,10 @@ public class LexAn extends Phase {
 	 */
 	public LexAn() {
 		super("lexan");
+		String debugStr = System.getenv("DEBUG");
+		if (debugStr != null) {
+			DEBUG = debugStr.equals("true");
+		}
 
 		final String srcFileName = compiler.Compiler.cmdLineOptValue("--src-file-name");
 		try {

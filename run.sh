@@ -1,3 +1,3 @@
 #!/bin/bash
 make
-make -C prg $1
+DEBUG=true make -C prg $1
