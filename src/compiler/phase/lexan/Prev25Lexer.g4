@@ -15,7 +15,7 @@ lexer grammar Prev25Lexer;
 
 // CONSTANTS
 
-INTCONST    : (PLUS|MINUS)? [0-9]+ ;
+INTCONST    : [0-9]+ ;
 
 fragment ESC_BACK    : '\\\\' ;
 fragment ESC_QUOTE   : '\\\'' ;
