@@ -15,7 +15,7 @@ import compiler.phase.*;
  */
 public class LexAn extends Phase {
 
-	private final boolean DEBUG = true;
+	private final boolean DEBUG = false;
 
 	/** The ANTLR lexer that actually performs lexical analysis. */
 	public final Prev25Lexer lexer;
@@ -105,7 +105,7 @@ public class LexAn extends Phase {
 	}
 
 	/**
-	 * An ANTLR error listener that throws an error upon the first syntax error
+	 * An ANTLR error listener that throws a Report.Error
 	 */
 	private class ErrorListener extends BaseErrorListener {
 		@Override
