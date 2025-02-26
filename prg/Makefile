@@ -10,7 +10,7 @@ LOGGEDPHASE	?= $(PHASE)
 .PHONY	: %
 %	: %.prev25
 	$(RM) -fr $@-*.xml $@-*.html
-	if $(JAVA) -cp ../bin:../src:$(ANTLRDIR) compiler.Compiler --xsl=$(CURDIR)/../lib/xsl/ --logged-phase=$(LOGGEDPHASE) --target-phase=$(TARGETPHASE) $(OPTIONS) $< ; then for XML in `'ls' -1 $@-*.xml` ; do $(XSLTPROC) $$XML -o `basename $$XML xml`html; done ; fi
+	if $(JAVA) -cp ../bin:../src:$(ANTLRDIR) compiler.Compiler --xsl=../lib/xsl/ --logged-phase=$(LOGGEDPHASE) --target-phase=$(TARGETPHASE) $(OPTIONS) $< ; then for XML in `'ls' -1 $@-*.xml` ; do $(XSLTPROC) $$XML -o `basename $$XML xml`html; done ; fi
 
 .PHONY  : clean
 clean   :

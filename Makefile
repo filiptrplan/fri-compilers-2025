@@ -9,10 +9,12 @@ all	:
 	if [ -d src/compiler/phase/lexan ] ; then $(MAKE) -C src/compiler/phase/lexan ; fi
 	if [ -d src/compiler/phase/synan ] ; then $(MAKE) -C src/compiler/phase/synan ; fi
 	$(JAVAC) --module-path $(ANTLRDIR) --source-path src -d bin src/compiler/Compiler.java
+	if [ -d doc ] ; then $(MAKE) -C doc ; fi
 	@echo ":-) OK"
 
 .PHONY	: clean
 clean	:
+	if [ -d doc ] ; then $(MAKE) -C doc clean ; fi
 	if [ -d src ] ; then $(MAKE) -C prg clean ; fi
 	if [ -d src/compiler/phase/lexan ] ; then $(MAKE) -C src/compiler/phase/lexan clean ; fi
 	if [ -d src/compiler/phase/synan ] ; then $(MAKE) -C src/compiler/phase/synan clean ; fi
