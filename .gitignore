@@ -4,5 +4,7 @@ bin/
 *.zip
 src/compiler/phase/lexan/Prev25Lexer*
 !src/compiler/phase/lexan/Prev25Lexer.g4
+src/compiler/phase/synan/Prev25Parser*
+!src/compiler/phase/synan/Prev25Parser.g4
 doc/
 prev25/

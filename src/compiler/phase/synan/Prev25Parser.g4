@@ -24,6 +24,100 @@ options{
     tokenVocab=Prev25Lexer;
 }
 
+// MISC
+id_colon_type 
+    : (IDENT COLON type) (COMMA IDENT COLON type)* ;
+
+// PROGRAM
 source
-	: defs EOF
+	: def+ EOF
 	;
+
+// DEFINITIONS
+def : TYP IDENT EQ type 
+    | VAR IDENT COLON type
+    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type
+    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type EQ stmts?
+    ;
+
+// STATEMENTS
+stmts 
+    : stmt COMMA stmts
+    | stmt
+    ;
+
+stmt 
+    : expr
+    | expr EQ expr
+    | RETURN expr
+    | WHILE expr DO stmts? END
+    | IF expr THEN stmts? END
+    | IF expr THEN stmts? ELSE stmts? END
+    | LET def+ IN stmts END 
+    ; 
+
+// TYPES
+type 
+    : IDENT
+    | INT
+    | CHAR
+    | BOOL 
+    | VOID
+    | IDENT
+    | LBRACKET INTCONST RBRACKET type
+    | POWER type
+    | LT id_colon_type GT
+    | LBRACE id_colon_type RBRACE
+    | LPAREN (type (COMMA type)*)? RPAREN COLON type
+    ;
+
+// EXPRESSIONS
+expr : or ;
+or : or OR and | and ;
+and : and AND comp | comp ;
+comp 
+    : comp EQ_EQ add 
+    | comp NEQ add
+    | comp LT add
+    | comp GT add
+    | comp GTE add
+    | comp LTE add
+    | add
+    ;
+add 
+    : add PLUS mul 
+    | add MINUS mul
+    | mul 
+    ;
+mul
+    : mul STAR prefix
+    | mul SLASH prefix
+    | mul PERCENT prefix
+    | prefix
+    ;
+prefix
+    : PLUS prefix
+    | MINUS prefix
+    | BANG prefix
+    | POWER prefix
+    | postfix
+    ;
+postfix
+    : postfix LPAREN (expr (COMMA expr)*)? RPAREN
+    | postfix LBRACKET expr RBRACKET
+    | postfix POWER
+    | postfix DOT IDENT
+    | const
+    ;
+const
+    : INTCONST
+    | CHARCONST
+    | STRCONST
+    | TRUE
+    | FALSE
+    | NULL
+    | SIZEOF type
+    | IDENT
+    | LPAREN expr RPAREN
+    | LBRACE expr COLON type RBRACE
+    ;
