@@ -1,3 +1,3 @@
 #!/bin/bash
 make
-DEBUG=true make -C prg $1
+DEBUG=synan make -C prg $1

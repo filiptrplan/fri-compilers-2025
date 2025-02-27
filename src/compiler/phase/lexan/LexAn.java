@@ -27,7 +27,7 @@ public class LexAn extends Phase {
 		super("lexan");
 		String debugStr = System.getenv("DEBUG");
 		if (debugStr != null) {
-			DEBUG = debugStr.equals("true");
+			DEBUG = debugStr.equals("all") || debugStr.equals("lexan");
 		}
 
 		final String srcFileName = compiler.Compiler.cmdLineOptValue("--src-file-name");
