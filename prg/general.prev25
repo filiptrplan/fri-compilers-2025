@@ -10,7 +10,6 @@ fun partial(testparam1 : int) : char
 fun multiple(testparam1 : char, testparam2 : test_type) : void
 
 # syn5 
-fun no_stmts() : void =
 fun main() : void =
     # == STATEMENTS ==
     20, 

@@ -37,7 +37,7 @@ source
 def : TYP IDENT EQ type 
     | VAR IDENT COLON type
     | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type
-    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type EQ stmts?
+    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type EQ stmts
     ;
 
 // STATEMENTS
