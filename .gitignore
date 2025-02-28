@@ -8,3 +8,4 @@ src/compiler/phase/synan/Prev25Parser*
 !src/compiler/phase/synan/Prev25Parser.g4
 doc/
 prev25/
+.aider*

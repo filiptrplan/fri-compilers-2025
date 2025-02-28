@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# This helper was generate using GenAI. This is the only part of the codebase where
+# AI was used.
 import argparse
 import subprocess
 import os
