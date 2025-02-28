@@ -9,6 +9,7 @@ def main():
     parser = argparse.ArgumentParser(description='Run compiler tests with optional cleaning')
     parser.add_argument('testname', nargs='?', default='', help='Name of the test to run')
     parser.add_argument('--clean', action='store_true', help='Run make clean before building')
+    parser.add_argument('--phase', default='', help='Set the DEBUG environment variable to debug a specific phase')
     
     args = parser.parse_args()
     
@@ -32,7 +33,17 @@ def main():
         if args.testname:
             print(f"Running test: {args.testname}")
             env = os.environ.copy()
-            env['DEBUG'] = 'synan'
+            # Set DEBUG env var to the phase if specified, otherwise keep any existing DEBUG value
+            if args.phase:
+                env['DEBUG'] = args.phase
+                print(f"Debugging phase: {args.phase}")
+            elif 'DEBUG' not in env:
+                # Default to 'synan' if no phase specified and no DEBUG in environment
+                env['DEBUG'] = 'synan'
+                print("Debugging phase: synan (default)")
+            else:
+                print(f"Using existing DEBUG setting: {env.get('DEBUG')}")
+            
             subprocess.run(['make', '-C', 'prg', args.testname], env=env, check=True)
         else:
             print("No test specified. Build completed successfully.")
