@@ -21,11 +21,6 @@ def main():
     parser = argparse.ArgumentParser(
         description='Run compiler tests for the Prev25 compiler with various options',
         epilog='''
-File Structure Information:
-  - prg/*.prev25: Test files written in the Prev25 language
-  - src/compiler/phase/lexan/: Lexical analyzer phase
-  - src/compiler/phase/synan/: Syntax analyzer phase
-  
 How This Program Works:
   1. Builds the compiler using 'make'
   2. Runs specified tests from the prg/ directory
