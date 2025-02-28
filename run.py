@@ -27,7 +27,16 @@ def main():
         
         # Run make in the root directory
         print("Building project...")
-        subprocess.run(['make'], check=True)
+        result = subprocess.run(['make'], capture_output=True, text=True)
+        
+        # Check if make command was successful
+        if result.returncode != 0:
+            print("Build failed. Error output:")
+            print(result.stdout)
+            print(result.stderr)
+            sys.exit(result.returncode)
+        else:
+            print("Build completed successfully.")
         
         # Run the test
         if args.testname:
