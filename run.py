@@ -138,9 +138,10 @@ def run_error_tests(testname, env):
         
         # Lines that didn't cause errors
         no_error_lines = []
+        total_lines = len(non_comment_lines)
         
         # Test each non-comment line as a standalone program
-        for line_num, line in non_comment_lines:
+        for i, (line_num, line) in enumerate(non_comment_lines):
             # Create a file with just this line
             with open(temp_file_path, 'w') as f:
                 f.write(line)
@@ -148,9 +149,12 @@ def run_error_tests(testname, env):
             # Copy the temp file to the prg directory
             shutil.copy(temp_file_path, test_file_path)
             
+            # Update progress on the same line
+            sys.stdout.write(f"\rProcessing: {i+1}/{total_lines} lines completed")
+            sys.stdout.flush()
+            
             try:
                 # Run the test and capture output
-                print(f"\nTesting line {line_num + 1} as standalone program: {line}")
                 result = subprocess.run(['make', '-C', 'prg', testname], 
                                        env=env, 
                                        capture_output=True, 
@@ -159,12 +163,12 @@ def run_error_tests(testname, env):
                 # Check if the output contains an error
                 if not check_for_error(result.stdout + result.stderr):
                     no_error_lines.append((line_num + 1, line))
-                    print(f"  No error detected! (unexpected)")
-                else:
-                    print(f"  Error detected as expected.")
             except subprocess.CalledProcessError:
                 # If the process fails, it's likely due to an error, which is what we want
-                print(f"  Error detected as expected.")
+                pass
+        
+        # Print a newline after the progress indicator
+        print()
             
         # Restore the original file after all tests
         with open(test_file_path, 'w') as f:
