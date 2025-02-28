@@ -31,7 +31,7 @@ Examples:
   ./run.py lexer/test          Run the test in prg/lexer/test.prev25
   ./run.py --clean lexer/test  Clean build before running test
   ./run.py --phase lexan       Debug the lexical analysis phase
-  ./run.py --error lexer/test  Test each commented line for expected errors
+  ./run.py --error lexer/test  Test each non-comment line as a standalone program (expecting errors)
         ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -42,7 +42,7 @@ Examples:
     parser.add_argument('--phase', default='', 
                         help='Set the DEBUG environment variable to debug a specific phase (e.g., lexan, synan)')
     parser.add_argument('--error', action='store_true', 
-                        help='Test each commented line for errors (useful for testing invalid syntax)')
+                        help='Test each non-comment line as a standalone program (expecting errors)')
     
     args = parser.parse_args()
     
@@ -106,7 +106,7 @@ Examples:
         sys.exit(1)
 
 def run_error_tests(testname, env):
-    """Run tests on each commented line in the file to check for errors"""
+    """Run tests on each non-comment line as a standalone program to check for errors"""
     test_file_path = f"prg/{testname}.prev25"
     
     # Check if the test file exists
@@ -120,45 +120,37 @@ def run_error_tests(testname, env):
         
         # Read the original file
         with open(test_file_path, 'r') as f:
-            original_content = f.read()
+            original_lines = f.read().split('\n')
             
-        # Find all commented lines (lines starting with #) that have content after the comment
-        commented_lines = []
-        for i, line in enumerate(original_content.split('\n')):
-            if line.strip().startswith('#'):
-                # Check if there's actual content after removing the comment prefix and whitespace
-                uncommented = re.sub(r'^\s*#\s*', '', line)
-                if uncommented.strip():  # Only include if there's non-whitespace content
-                    commented_lines.append((i, line))
+        # Find all non-comment lines that have content
+        non_comment_lines = []
+        for i, line in enumerate(original_lines):
+            line_stripped = line.strip()
+            # Skip empty lines and comment lines
+            if line_stripped and not line_stripped.startswith('#'):
+                non_comment_lines.append((i, line))
         
-        if not commented_lines:
-            print("No commented lines found in the test file.")
+        if not non_comment_lines:
+            print("No non-comment lines found in the test file.")
             return
             
-        print(f"Found {len(commented_lines)} commented lines to test.")
+        print(f"Found {len(non_comment_lines)} non-comment lines to test.")
         
         # Lines that didn't cause errors
         no_error_lines = []
         
-        # Test each commented line
-        for line_num, line in commented_lines:
-            # Create a copy of the original content
-            modified_content = original_content.split('\n')
-            
-            # Uncomment the line (remove the # prefix)
-            uncommented_line = re.sub(r'^\s*#\s*', '', line)
-            modified_content[line_num] = uncommented_line
-            
-            # Write the modified content to the temporary file
+        # Test each non-comment line as a standalone program
+        for line_num, line in non_comment_lines:
+            # Create a file with just this line
             with open(temp_file_path, 'w') as f:
-                f.write('\n'.join(modified_content))
+                f.write(line)
             
             # Copy the temp file to the prg directory
             shutil.copy(temp_file_path, test_file_path)
             
             try:
                 # Run the test and capture output
-                print(f"\nTesting line {line_num + 1}: {uncommented_line}")
+                print(f"\nTesting line {line_num + 1} as standalone program: {line}")
                 result = subprocess.run(['make', '-C', 'prg', testname], 
                                        env=env, 
                                        capture_output=True, 
@@ -166,17 +158,17 @@ def run_error_tests(testname, env):
                 
                 # Check if the output contains an error
                 if not check_for_error(result.stdout + result.stderr):
-                    no_error_lines.append((line_num + 1, uncommented_line))
-                    print(f"  No error detected!")
+                    no_error_lines.append((line_num + 1, line))
+                    print(f"  No error detected! (unexpected)")
                 else:
                     print(f"  Error detected as expected.")
             except subprocess.CalledProcessError:
                 # If the process fails, it's likely due to an error, which is what we want
                 print(f"  Error detected as expected.")
             
-            # Restore the original file after each test
-            with open(test_file_path, 'w') as f:
-                f.write(original_content)
+        # Restore the original file after all tests
+        with open(test_file_path, 'w') as f:
+            f.write('\n'.join(original_lines))
         
         # Print summary of lines that didn't cause errors
         print("\n=== SUMMARY ===")
