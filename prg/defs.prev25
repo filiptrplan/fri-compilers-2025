@@ -1,14 +1,12 @@
-# uncomment each one to test
+# each line should cause an error
 # syn2
-# typ a = 20
-# typ 20 = a
-# typ a = 
-# typ = 20
+typ a = 20
+typ 20 = a
+typ a = 
+typ = 20
 
 # syn3
-# var 20 : 20
-# var : 20
-# var a : 20
-# var 20 : a
-#
-#
+var 20 : 20
+var : 20
+var a : 20
+var 20 : a
