@@ -97,11 +97,14 @@ def run_error_tests(testname, env):
         with open(test_file_path, 'r') as f:
             original_content = f.read()
             
-        # Find all commented lines (lines starting with #)
+        # Find all commented lines (lines starting with #) that have content after the comment
         commented_lines = []
         for i, line in enumerate(original_content.split('\n')):
             if line.strip().startswith('#'):
-                commented_lines.append((i, line))
+                # Check if there's actual content after removing the comment prefix and whitespace
+                uncommented = re.sub(r'^\s*#\s*', '', line)
+                if uncommented.strip():  # Only include if there's non-whitespace content
+                    commented_lines.append((i, line))
         
         if not commented_lines:
             print("No commented lines found in the test file.")
