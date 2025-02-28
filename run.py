@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+import argparse
+import subprocess
+import os
+import sys
+
+def main():
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Run compiler tests with optional cleaning')
+    parser.add_argument('testname', nargs='?', default='', help='Name of the test to run')
+    parser.add_argument('--clean', action='store_true', help='Run make clean before building')
+    
+    args = parser.parse_args()
+    
+    # Get the root directory of the project
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    try:
+        # Change to the root directory
+        os.chdir(root_dir)
+        
+        # Run make clean if requested
+        if args.clean:
+            print("Running make clean...")
+            subprocess.run(['make', 'clean'], check=True)
+        
+        # Run make in the root directory
+        print("Building project...")
+        subprocess.run(['make'], check=True)
+        
+        # Run the test
+        if args.testname:
+            print(f"Running test: {args.testname}")
+            env = os.environ.copy()
+            env['DEBUG'] = 'synan'
+            subprocess.run(['make', '-C', 'prg', args.testname], env=env, check=True)
+        else:
+            print("No test specified. Build completed successfully.")
+            
+    except subprocess.CalledProcessError as e:
+        print(f"Error: Command failed with return code {e.returncode}")
+        sys.exit(e.returncode)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
