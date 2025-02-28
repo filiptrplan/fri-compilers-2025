@@ -17,14 +17,44 @@ def check_for_error(output):
     return False
 
 def main():
-    # Set up argument parser
-    parser = argparse.ArgumentParser(description='Run compiler tests with optional cleaning')
-    parser.add_argument('testname', nargs='?', default='', help='Name of the test to run')
-    parser.add_argument('--clean', action='store_true', help='Run make clean before building')
-    parser.add_argument('--phase', default='', help='Set the DEBUG environment variable to debug a specific phase')
-    parser.add_argument('--error', action='store_true', help='Test each commented line for errors')
+    # Set up argument parser with a more detailed description
+    parser = argparse.ArgumentParser(
+        description='Run compiler tests for the Prev25 compiler with various options',
+        epilog='''
+File Structure Information:
+  - prg/*.prev25: Test files written in the Prev25 language
+  - src/compiler/phase/lexan/: Lexical analyzer phase
+  - src/compiler/phase/synan/: Syntax analyzer phase
+  
+How This Program Works:
+  1. Builds the compiler using 'make'
+  2. Runs specified tests from the prg/ directory
+  3. Can test for expected errors by uncommenting lines prefixed with #
+  4. Supports debugging specific compiler phases
+  
+Examples:
+  ./run.py lexer/test          Run the test in prg/lexer/test.prev25
+  ./run.py --clean lexer/test  Clean build before running test
+  ./run.py --phase lexan       Debug the lexical analysis phase
+  ./run.py --error lexer/test  Test each commented line for expected errors
+        ''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument('testname', nargs='?', default='', 
+                        help='Name of the test to run (without .prev25 extension)')
+    parser.add_argument('--clean', action='store_true', 
+                        help='Run make clean before building')
+    parser.add_argument('--phase', default='', 
+                        help='Set the DEBUG environment variable to debug a specific phase (e.g., lexan, synan)')
+    parser.add_argument('--error', action='store_true', 
+                        help='Test each commented line for errors (useful for testing invalid syntax)')
     
     args = parser.parse_args()
+    
+    # If no arguments provided, print help and exit
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
     
     # Get the root directory of the project
     root_dir = os.path.dirname(os.path.abspath(__file__))
