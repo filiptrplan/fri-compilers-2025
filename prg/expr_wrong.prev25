@@ -7,6 +7,11 @@ fun a() : void = >10
 # syn30
 fun a() : void = 10 ! 10
 fun a() : void = 10 ^ 10
+fun a() : void = true == true == true
+fun a() : void = true == 1 + 1 == true
+fun a() : void = true == 1 + 1 > true
+fun a() : void = true == sizeof int > true
+fun a() : void = true == !a() / c() > true
 
 # syn31
 fun a() : void = a[int]
