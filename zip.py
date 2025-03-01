@@ -8,8 +8,6 @@ import tempfile
 import fnmatch
 import re
 
-VPISNA = '63220340'
-
 def parse_gitignore(gitignore_path):
     """Parse .gitignore file and return patterns to ignore."""
     if not os.path.exists(gitignore_path):
@@ -62,12 +60,13 @@ def should_ignore(path, ignore_patterns):
     return ignored
 
 def main():
-    if len(sys.argv) < 2:
-        print("Error: First argument must be the phase name.")
+    if len(sys.argv) < 3:
+        print("Error: First argument must be the VPISNA number, second argument must be the phase name.")
         sys.exit(1)
     
-    phase_name = sys.argv[1]
-    zip_filename = f"{VPISNA}-{phase_name}.zip"
+    vpisna = sys.argv[1]
+    phase_name = sys.argv[2]
+    zip_filename = f"{vpisna}-{phase_name}.zip"
     temp_dir = "prev25"
     
     # Remove existing zip file and temp directory if they exist
