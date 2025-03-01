@@ -76,12 +76,12 @@ expr : or ;
 or : or OR and | and ;
 and : and AND comp | comp ;
 comp 
-    : comp EQ_EQ add 
-    | comp NEQ add
-    | comp LT add
-    | comp GT add
-    | comp GTE add
-    | comp LTE add
+    : add EQ_EQ add 
+    | add NEQ add
+    | add LT add
+    | add GT add
+    | add GTE add
+    | add LTE add
     | add
     ;
 add 
