@@ -28,6 +28,9 @@ def should_ignore(path, ignore_patterns):
     # Convert path to relative path from project root
     rel_path = os.path.normpath(path)
     
+    # Track if this path should be ignored
+    ignored = False
+    
     for pattern in ignore_patterns:
         # Handle negation patterns (those starting with !)
         if pattern.startswith('!'):
@@ -48,9 +51,15 @@ def should_ignore(path, ignore_patterns):
         match = re.match(regex_pattern, rel_path)
         
         if match:
-            return not negated
-            
-    return False
+            # If it's a negation pattern, this file should NOT be ignored
+            # regardless of previous patterns
+            if negated:
+                ignored = False
+            # Otherwise, mark it as ignored
+            else:
+                ignored = True
+    
+    return ignored
 
 def main():
     if len(sys.argv) < 2:
