@@ -8,6 +8,8 @@ import java.util.*;
 import compiler.common.report.*;
 import compiler.phase.lexan.*;
 import compiler.phase.synan.*;
+import compiler.phase.abstr.*;
+import compiler.phase.seman.*;
 
 /**
  * The Prev25 compiler.
@@ -30,7 +32,7 @@ public class Compiler {
 
 	/** All valid phases name of the compiler. */
 	private static final Vector<String> phaseNames = new Vector<String>(
-			Arrays.asList("none", "all", "lexan", "synan"));
+			Arrays.asList("none", "all", "lexan", "synan", "abstr", "seman"));
 
 	/**
 	 * Returns the value of a command line option.
@@ -167,6 +169,28 @@ public class Compiler {
 					synan.log(SynAn.tree);
 				}
 				if (cmdLineOptValues.get("--target-phase").equals("synan"))
+					break;
+
+				// Abstract syntax.
+				try (Abstr abstr = new Abstr()) {
+					Abstr.tree = (AST.Nodes<AST.FullDefn>) SynAn.tree.ast;
+					SynAn.tree = null;
+					Abstr.Logger logger = new Abstr.Logger(abstr.logger);
+					Abstr.tree.accept(logger, "Nodes<Defn>");
+				}
+				if (cmdLineOptValues.get("--target-phase").equals("abstr"))
+					break;
+
+				// Semantic analysis.
+				try (SemAn seman = new SemAn()) {
+					Abstr.tree.accept(new NameResolver(), null);
+					Abstr.tree.accept(new TypeResolver(), null);
+					Abstr.tree.accept(new TypeChecker(), null);
+					Abstr.Logger logger = new Abstr.Logger(seman.logger);
+					logger.addSubvisitor(new SemAn.Logger(seman.logger));
+					Abstr.tree.accept(logger, "Nodes<Defn>");
+				}
+				if (cmdLineOptValues.get("--target-phase").equals("seman"))
 					break;
 
 				// Do not loop... ever.
