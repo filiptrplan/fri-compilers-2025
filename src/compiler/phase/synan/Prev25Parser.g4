@@ -7,7 +7,7 @@ parser grammar Prev25Parser;
 	import java.util.*;
 	import compiler.common.report.*;
 	import compiler.phase.lexan.*;
-
+	import compiler.phase.abstr.*;
 }
 
 @members {
@@ -29,15 +29,22 @@ id_colon_type
     : (IDENT COLON type) (COMMA IDENT COLON type)* ;
 
 // PROGRAM
-source
-	: def+ EOF
+source returns [AST.Nodes<AST.FullDefn> ast]
+	: ( defs += def )+ EOF { 
+        ArrayList<AST.FullDefn> list = new ArrayList<AST.FullDefn>();
+        for (DefContext d : $defs) {
+            list.add(d.ast);
+        }
+        $ast = new AST.Nodes<AST.FullDefn>(list);
+    }
 	;
 
 // DEFINITIONS
-def : TYP IDENT EQ type 
-    | VAR IDENT COLON type
-    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type
-    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type EQ stmts
+def returns [AST.FullDefn ast]
+    : TYP IDENT EQ type { $ast = new AST.TypDefn(this.loc($TYP, $type.stop), $IDENT.text, $type.ast); }
+    | VAR IDENT COLON type { $ast = null; }
+    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type { $ast = null; }
+    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type EQ stmts { $ast = null; }
     ;
 
 // STATEMENTS
@@ -57,18 +64,18 @@ stmt
     ; 
 
 // TYPES
-type 
-    : IDENT
-    | INT
-    | CHAR
-    | BOOL 
-    | VOID
-    | IDENT
-    | LBRACKET INTCONST RBRACKET type
-    | POWER type
-    | LT id_colon_type GT
-    | LBRACE id_colon_type RBRACE
-    | LPAREN (type (COMMA type)*)? RPAREN COLON type
+type returns [AST.Type ast]
+    : IDENT { $ast = null; }
+    | INT{ $ast = null; }
+    | CHAR{ $ast = null; }
+    | BOOL { $ast = null; }
+    | VOID{ $ast = null; }
+    | IDENT{ $ast = null; }
+    | LBRACKET INTCONST RBRACKET type{ $ast = null; }
+    | POWER type{ $ast = null; }
+    | LT id_colon_type GT{ $ast = null; }
+    | LBRACE id_colon_type RBRACE{ $ast = null; }
+    | LPAREN (type (COMMA type)*)? RPAREN COLON type{ $ast = null; }
     ;
 
 // EXPRESSIONS
