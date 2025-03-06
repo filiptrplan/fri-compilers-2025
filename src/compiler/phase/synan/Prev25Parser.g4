@@ -35,6 +35,16 @@ id_colon_type returns [List<AST.CompDefn> astList]
             $astList.add(ctx.ast);
         }
     } ;
+par_id_colon_type_partial returns [AST.ParDefn ast]
+    : IDENT COLON type { $ast = new AST.ParDefn(this.loc($IDENT, $type.stop), $IDENT.text, $type.ast); }
+    ;
+par_id_colon_type returns [List<AST.ParDefn> astList]
+    : rest+=par_id_colon_type_partial (COMMA rest+=par_id_colon_type_partial)* {
+        $astList = new ArrayList<AST.ParDefn>();
+        for (Par_id_colon_type_partialContext ctx : $rest) {
+            $astList.add(ctx.ast);
+        }
+    } ;
 
 // PROGRAM
 source returns [AST.Nodes<AST.FullDefn> ast]
@@ -51,24 +61,38 @@ source returns [AST.Nodes<AST.FullDefn> ast]
 def returns [AST.FullDefn ast]
     : TYP IDENT EQ type { $ast = new AST.TypDefn(this.loc($TYP, $type.stop), $IDENT.text, $type.ast); }
     | VAR IDENT COLON type { $ast = new AST.VarDefn(this.loc($VAR, $type.stop), $IDENT.text, $type.ast); }
-    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type { $ast = null; }
-    | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type EQ stmts { $ast = null; }
+    | FUN IDENT LPAREN (par_id_colon_type)? RPAREN COLON type { 
+        List<AST.ParDefn> pars = new ArrayList<AST.ParDefn>();
+        // Check if there are any arguments and add them if applicable
+        if ($par_id_colon_type.start != null) {
+            pars = $par_id_colon_type.astList;
+        }
+        $ast = new AST.ExtFunDefn(this.loc($FUN, $type.stop), $IDENT.text, pars, $type.ast);
+    }
+    | FUN IDENT LPAREN (par_id_colon_type)? RPAREN COLON type EQ stmts {  
+        List<AST.ParDefn> pars = new ArrayList<AST.ParDefn>();
+        // Check if there are any arguments and add them if applicable
+        if ($par_id_colon_type.start != null) {
+            pars = $par_id_colon_type.astList;
+        }
+        $ast = new AST.DefFunDefn(this.loc($FUN, $type.stop), $IDENT.text, pars, $type.ast, $stmts.stmtList);
+     }
     ;
 
 // STATEMENTS
-stmts 
-    : stmt COMMA stmts
-    | stmt
+stmts returns [List<AST.Stmt> stmtList]
+    : stmt COMMA stmts { $stmts.stmtList.add($stmt.ast); $stmtList = $stmts.stmtList; }
+    | stmt { $stmtList = new ArrayList<AST.Stmt>(); $stmtList.add($stmt.ast); }
     ;
 
-stmt 
-    : expr
-    | expr EQ expr
-    | RETURN expr
-    | WHILE expr DO stmts? END
-    | IF expr THEN stmts? END
-    | IF expr THEN stmts? ELSE stmts? END
-    | LET def+ IN stmts END 
+stmt returns [AST.Stmt ast]
+    : expr { $ast = null; }
+    | expr EQ expr { $ast = null; }
+    | RETURN expr { $ast = null; }
+    | WHILE expr DO stmts? END { $ast = null; }
+    | IF expr THEN stmts? END { $ast = null; }
+    | IF expr THEN stmts? ELSE stmts? END { $ast = null; }
+    | LET def+ IN stmts END  { $ast = null; }
     ; 
 
 // TYPES
