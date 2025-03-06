@@ -17,7 +17,9 @@ parser grammar Prev25Parser;
 	private Location loc(Token     tok1, Locatable loc2) { return new Location((LexAn.LocLogToken)tok1, loc2); }
 	private Location loc(Locatable loc1, Token     tok2) { return new Location(loc1, (LexAn.LocLogToken)tok2); }
 	private Location loc(Locatable loc1, Locatable loc2) { return new Location(loc1, loc2); }
-
+    private AST.Expr binExpr(AST.Expr fst, AST.Expr snd, AST.Expr.Oper op) {
+        return new AST.BinExpr(this.loc(fst.location(), snd.location()), op, fst, snd); 
+    }
 }
 
 options{
@@ -86,6 +88,7 @@ stmts returns [List<AST.Stmt> stmtList]
     ;
 
 stmt returns [AST.Stmt ast]
+    //: expr { $ast = new AST.ExprStmt(null, $expr.ast); }
     : expr { $ast = null; }
     | expr EQ expr { $ast = null; }
     | RETURN expr { $ast = null; }
@@ -116,52 +119,70 @@ type returns [AST.Type ast]
     ;
 
 // EXPRESSIONS
-expr : or ;
-or : or OR and | and ;
-and : and AND comp | comp ;
-comp 
-    : add EQ_EQ add 
-    | add NEQ add
-    | add LT add
-    | add GT add
-    | add GTE add
-    | add LTE add
-    | add
+expr returns [AST.Expr ast] : or { $ast = $or.ast; } ;
+or returns [AST.Expr ast] 
+    : r1=or OR r2=and { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.OR); }
+    | and { $ast = $and.ast; }
     ;
-add 
-    : add PLUS mul 
-    | add MINUS mul
-    | mul 
+and returns [AST.Expr ast]
+    : and AND comp { $ast = this.binExpr($and.ast, $comp.ast, AST.BinExpr.Oper.AND); }
+    | comp { $ast = $comp.ast; }
     ;
-mul
-    : mul STAR prefix
-    | mul SLASH prefix
-    | mul PERCENT prefix
-    | prefix
+comp returns [AST.Expr ast] 
+    : add1=add EQ_EQ add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.EQU); }
+    | add1=add NEQ add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.NEQ); }
+    | add1=add LT add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.LTH); }
+    | add1=add GT add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.GTH); }
+    | add1=add GTE add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.GEQ); }
+    | add1=add LTE add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.LEQ); }
+    | add { $ast = $add.ast; }
     ;
-prefix
-    : PLUS prefix
-    | MINUS prefix
-    | BANG prefix
-    | POWER prefix
-    | postfix
+add returns [AST.Expr ast] 
+    : add PLUS mul { $ast = this.binExpr($add.ast, $mul.ast, AST.BinExpr.Oper.ADD); }
+    | add MINUS mul { $ast = this.binExpr($add.ast, $mul.ast, AST.BinExpr.Oper.SUB); } 
+    | mul { $ast = $mul.ast; }
     ;
-postfix
-    : postfix LPAREN (expr (COMMA expr)*)? RPAREN
-    | postfix LBRACKET expr RBRACKET
-    | postfix POWER
-    | postfix DOT IDENT
-    | const
+mul returns [AST.Expr ast]
+    : mul STAR prefix { $ast = this.binExpr($mul.ast, $prefix.ast, AST.BinExpr.Oper.MUL); }
+    | mul SLASH prefix { $ast = this.binExpr($mul.ast, $prefix.ast, AST.BinExpr.Oper.DIV); }
+    | mul PERCENT prefix { $ast = this.binExpr($mul.ast, $prefix.ast, AST.BinExpr.Oper.MOD); }
+    | prefix { $ast = $prefix.ast; }
     ;
-const
-    : INTCONST
-    | CHARCONST
-    | STRCONST
-    | TRUE
-    | FALSE
-    | NULL
-    | SIZEOF type
-    | IDENT
-    | LPAREN expr RPAREN
-    | LBRACE expr COLON type RBRACE
+prefix returns [AST.Expr ast]
+    : PLUS prefix { $ast = new AST.PfxExpr(this.loc($PLUS, $prefix.stop), AST.PfxExpr.Oper.ADD, $prefix.ast); }
+    | MINUS prefix { $ast = new AST.PfxExpr(this.loc($MINUS, $prefix.stop), AST.PfxExpr.Oper.SUB, $prefix.ast); }
+    | BANG prefix { $ast = new AST.PfxExpr(this.loc($BANG, $prefix.stop), AST.PfxExpr.Oper.NOT, $prefix.ast); }
+    | POWER prefix { $ast = new AST.PfxExpr(this.loc($POWER, $prefix.stop), AST.PfxExpr.Oper.PTR, $prefix.ast); }
+    | postfix { $ast = $postfix.ast; }
+    ;
+postfix returns [AST.Expr ast]
+    : postfix LPAREN (exprs += expr (COMMA exprs += expr)*)? RPAREN {
+        List<AST.Expr> args = new ArrayList<AST.Expr>();
+        for (ExprContext ctx : $exprs) {
+            args.add(ctx.ast);
+        }
+        $ast = new AST.CallExpr(this.loc($postfix.start, $RPAREN), $postfix.ast, args);
+    }
+    | postfix LBRACKET expr RBRACKET {
+        $ast = new AST.ArrExpr(this.loc($postfix.start, $RBRACKET), $postfix.ast, $expr.ast);
+    }
+    | postfix POWER {
+        $ast = new AST.SfxExpr(this.loc($postfix.start, $POWER), AST.SfxExpr.Oper.PTR, $postfix.ast);
+    }
+    | postfix DOT IDENT {
+        $ ast = new AST.CompExpr(this.loc($postfix.start, $IDENT), $postfix.ast, $IDENT.text);
+    }
+    | const { $ast = $const.ast; }
+    ;
+const returns [AST.Expr ast]
+    : INTCONST { $ast = new AST.AtomExpr(this.loc($INTCONST), AST.AtomExpr.Type.INT, $INTCONST.text); }
+    | CHARCONST { $ast = new AST.AtomExpr(this.loc($CHARCONST), AST.AtomExpr.Type.CHAR, $CHARCONST.text); }
+    | STRCONST { $ast = new AST.AtomExpr(this.loc($STRCONST), AST.AtomExpr.Type.STR, $STRCONST.text); }
+    | TRUE { $ast = new AST.AtomExpr(this.loc($TRUE), AST.AtomExpr.Type.BOOL, $TRUE.text); }
+    | FALSE { $ast = new AST.AtomExpr(this.loc($FALSE), AST.AtomExpr.Type.BOOL, $FALSE.text); }
+    | NULL { $ast = new AST.AtomExpr(this.loc($NULL), AST.AtomExpr.Type.PTR, $NULL.text); }
+    | SIZEOF type { $ast = new AST.SizeExpr(this.loc($SIZEOF, $type.stop), $type.ast); }
+    | IDENT { $ast = new AST.NameExpr(this.loc($IDENT), $IDENT.text); }
+    | LPAREN expr RPAREN { $ast = $expr.ast; }
+    | LBRACE expr COLON type RBRACE { $ast = new AST.CastExpr(this.loc($LBRACE, $RBRACE), $type.ast, $expr.ast); }
     ;
