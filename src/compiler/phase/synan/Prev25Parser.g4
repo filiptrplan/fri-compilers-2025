@@ -149,7 +149,7 @@ mul returns [AST.Expr ast]
     | prefix { $ast = $prefix.ast; }
     ;
 prefix returns [AST.Expr ast]
-    : PLUS prefix { $ast = new AST.PfxExpr(this.loc($PLUS, $prefix.stop), AST.PfxExpr.Oper.ADD, $prefix.ast); }
+    : PLUS p=prefix { $ast = new AST.PfxExpr(this.loc($PLUS, $p.stop), AST.PfxExpr.Oper.ADD, $p.ast); }
     | MINUS prefix { $ast = new AST.PfxExpr(this.loc($MINUS, $prefix.stop), AST.PfxExpr.Oper.SUB, $prefix.ast); }
     | BANG prefix { $ast = new AST.PfxExpr(this.loc($BANG, $prefix.stop), AST.PfxExpr.Oper.NOT, $prefix.ast); }
     | POWER prefix { $ast = new AST.PfxExpr(this.loc($POWER, $prefix.stop), AST.PfxExpr.Oper.PTR, $prefix.ast); }
