@@ -25,8 +25,16 @@ options{
 }
 
 // MISC
-id_colon_type 
-    : (IDENT COLON type) (COMMA IDENT COLON type)* ;
+id_colon_type_partial returns [AST.CompDefn ast]
+    : IDENT COLON type { $ast = new AST.CompDefn(this.loc($IDENT, $type.stop), $IDENT.text, $type.ast); }
+    ;
+id_colon_type returns [List<AST.CompDefn> astList]
+    : rest+=id_colon_type_partial (COMMA rest+=id_colon_type_partial)* {
+        $astList = new ArrayList<AST.CompDefn>();
+        for (Id_colon_type_partialContext ctx : $rest) {
+            $astList.add(ctx.ast);
+        }
+    } ;
 
 // PROGRAM
 source returns [AST.Nodes<AST.FullDefn> ast]
@@ -42,7 +50,7 @@ source returns [AST.Nodes<AST.FullDefn> ast]
 // DEFINITIONS
 def returns [AST.FullDefn ast]
     : TYP IDENT EQ type { $ast = new AST.TypDefn(this.loc($TYP, $type.stop), $IDENT.text, $type.ast); }
-    | VAR IDENT COLON type { $ast = null; }
+    | VAR IDENT COLON type { $ast = new AST.VarDefn(this.loc($VAR, $type.stop), $IDENT.text, $type.ast); }
     | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type { $ast = null; }
     | FUN IDENT LPAREN (id_colon_type)? RPAREN COLON type EQ stmts { $ast = null; }
     ;
@@ -66,16 +74,21 @@ stmt
 // TYPES
 type returns [AST.Type ast]
     : IDENT { $ast = null; }
-    | INT{ $ast = null; }
-    | CHAR{ $ast = null; }
-    | BOOL { $ast = null; }
-    | VOID{ $ast = null; }
-    | IDENT{ $ast = null; }
-    | LBRACKET INTCONST RBRACKET type{ $ast = null; }
-    | POWER type{ $ast = null; }
-    | LT id_colon_type GT{ $ast = null; }
-    | LBRACE id_colon_type RBRACE{ $ast = null; }
-    | LPAREN (type (COMMA type)*)? RPAREN COLON type{ $ast = null; }
+    | INT { $ast = new AST.AtomType(this.loc($INT), AST.AtomType.Type.INT); }
+    | CHAR { $ast = new AST.AtomType(this.loc($CHAR), AST.AtomType.Type.CHAR); }
+    | BOOL { $ast = new AST.AtomType(this.loc($BOOL), AST.AtomType.Type.BOOL); }
+    | VOID { $ast = new AST.AtomType(this.loc($VOID), AST.AtomType.Type.VOID); }
+    | LBRACKET INTCONST RBRACKET type { $ast = new AST.ArrType(this.loc($LBRACKET, $type.stop), $type.ast, $INTCONST.text); }
+    | POWER type { $ast = new AST.PtrType(this.loc($POWER, $type.stop), $type.ast); }
+    | LT id_colon_type GT { $ast = new AST.StrType(this.loc($LT, $GT), $id_colon_type.astList); }
+    | LBRACE id_colon_type RBRACE { $ast = new AST.UniType(this.loc($LBRACE, $RBRACE), $id_colon_type.astList); }
+    | LPAREN (typeList+=type (COMMA typeList+=type)*)? RPAREN COLON retType=type { 
+        List<AST.Type> parTypes = new ArrayList<AST.Type>();
+        for (TypeContext ctx : $typeList) {
+            parTypes.add(ctx.ast);
+        }
+        $ast = new AST.FunType(this.loc($LPAREN, $retType.stop), parTypes, $retType.ast); 
+    }
     ;
 
 // EXPRESSIONS

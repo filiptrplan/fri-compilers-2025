@@ -1,1 +1,9 @@
 typ id = int
+var this_id : void
+var this_id : bool
+var this_id : char
+var this_id : [20]int
+var ptr : ^int
+var test_str : <a : int, b : void>
+var uni : { a : int, b : int }
+var fn : (int, void, bool) : char
