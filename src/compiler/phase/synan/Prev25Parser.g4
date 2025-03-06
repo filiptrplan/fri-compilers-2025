@@ -149,28 +149,28 @@ mul returns [AST.Expr ast]
     | prefix { $ast = $prefix.ast; }
     ;
 prefix returns [AST.Expr ast]
-    : PLUS p=prefix { $ast = new AST.PfxExpr(this.loc($PLUS, $p.stop), AST.PfxExpr.Oper.ADD, $p.ast); }
-    | MINUS prefix { $ast = new AST.PfxExpr(this.loc($MINUS, $prefix.stop), AST.PfxExpr.Oper.SUB, $prefix.ast); }
-    | BANG prefix { $ast = new AST.PfxExpr(this.loc($BANG, $prefix.stop), AST.PfxExpr.Oper.NOT, $prefix.ast); }
-    | POWER prefix { $ast = new AST.PfxExpr(this.loc($POWER, $prefix.stop), AST.PfxExpr.Oper.PTR, $prefix.ast); }
+    : PLUS r=prefix { $ast = new AST.PfxExpr(this.loc($PLUS, $r.stop), AST.PfxExpr.Oper.ADD, $r.ast); }
+    | MINUS r=prefix { $ast = new AST.PfxExpr(this.loc($MINUS, $r.stop), AST.PfxExpr.Oper.SUB, $r.ast); }
+    | BANG r=prefix { $ast = new AST.PfxExpr(this.loc($BANG, $r.stop), AST.PfxExpr.Oper.NOT, $r.ast); }
+    | POWER r=prefix { $ast = new AST.PfxExpr(this.loc($POWER, $r.stop), AST.PfxExpr.Oper.PTR, $r.ast); }
     | postfix { $ast = $postfix.ast; }
     ;
 postfix returns [AST.Expr ast]
-    : postfix LPAREN (exprs += expr (COMMA exprs += expr)*)? RPAREN {
+    : r=postfix LPAREN (exprs += expr (COMMA exprs += expr)*)? RPAREN {
         List<AST.Expr> args = new ArrayList<AST.Expr>();
         for (ExprContext ctx : $exprs) {
             args.add(ctx.ast);
         }
-        $ast = new AST.CallExpr(this.loc($postfix.start, $RPAREN), $postfix.ast, args);
+        $ast = new AST.CallExpr(this.loc($r.start, $RPAREN), $r.ast, args);
     }
-    | postfix LBRACKET expr RBRACKET {
-        $ast = new AST.ArrExpr(this.loc($postfix.start, $RBRACKET), $postfix.ast, $expr.ast);
+    | r=postfix LBRACKET expr RBRACKET {
+        $ast = new AST.ArrExpr(this.loc($r.start, $RBRACKET), $r.ast, $expr.ast);
     }
-    | postfix POWER {
-        $ast = new AST.SfxExpr(this.loc($postfix.start, $POWER), AST.SfxExpr.Oper.PTR, $postfix.ast);
+    | r=postfix POWER {
+        $ast = new AST.SfxExpr(this.loc($r.start, $POWER), AST.SfxExpr.Oper.PTR, $r.ast);
     }
-    | postfix DOT IDENT {
-        $ ast = new AST.CompExpr(this.loc($postfix.start, $IDENT), $postfix.ast, $IDENT.text);
+    | r=postfix DOT IDENT {
+        $ast = new AST.CompExpr(this.loc($r.start, $IDENT), $r.ast, $IDENT.text);
     }
     | const { $ast = $const.ast; }
     ;
