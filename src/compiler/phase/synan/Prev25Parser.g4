@@ -17,7 +17,7 @@ parser grammar Prev25Parser;
 	private Location loc(Token     tok1, Locatable loc2) { return new Location((LexAn.LocLogToken)tok1, loc2); }
 	private Location loc(Locatable loc1, Token     tok2) { return new Location(loc1, (LexAn.LocLogToken)tok2); }
 	private Location loc(Locatable loc1, Locatable loc2) { return new Location(loc1, loc2); }
-    private AST.Expr binExpr(AST.Expr fst, AST.Expr snd, AST.Expr.Oper op) {
+    private AST.Expr binExpr(AST.Expr fst, AST.Expr snd, AST.BinExpr.Oper op) {
         return new AST.BinExpr(this.loc(fst.location(), snd.location()), op, fst, snd); 
     }
 }
@@ -88,8 +88,7 @@ stmts returns [List<AST.Stmt> stmtList]
     ;
 
 stmt returns [AST.Stmt ast]
-    //: expr { $ast = new AST.ExprStmt(null, $expr.ast); }
-    : expr { $ast = null; }
+    : expr { $ast = new AST.ExprStmt($expr.ast.location(), $expr.ast); }
     | expr EQ expr { $ast = null; }
     | RETURN expr { $ast = null; }
     | WHILE expr DO stmts? END { $ast = null; }
@@ -172,7 +171,7 @@ postfix returns [AST.Expr ast]
     | r=postfix DOT IDENT {
         $ast = new AST.CompExpr(this.loc($r.start, $IDENT), $r.ast, $IDENT.text);
     }
-    | const { $ast = $const.ast; }
+    | c=const { $ast = $c.ast; }
     ;
 const returns [AST.Expr ast]
     : INTCONST { $ast = new AST.AtomExpr(this.loc($INTCONST), AST.AtomExpr.Type.INT, $INTCONST.text); }
