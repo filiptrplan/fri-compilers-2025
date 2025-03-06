@@ -125,27 +125,27 @@ or returns [AST.Expr ast]
     | and { $ast = $and.ast; }
     ;
 and returns [AST.Expr ast]
-    : and AND comp { $ast = this.binExpr($and.ast, $comp.ast, AST.BinExpr.Oper.AND); }
+    : r1=and AND r2=comp { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.AND); }
     | comp { $ast = $comp.ast; }
     ;
 comp returns [AST.Expr ast] 
-    : add1=add EQ_EQ add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.EQU); }
-    | add1=add NEQ add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.NEQ); }
-    | add1=add LT add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.LTH); }
-    | add1=add GT add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.GTH); }
-    | add1=add GTE add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.GEQ); }
-    | add1=add LTE add2=add { $ast = this.binExpr($add1.ast, $add2.ast, AST.BinExpr.Oper.LEQ); }
+    : r1=add EQ_EQ r2=add { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.EQU); }
+    | r1=add NEQ r2=add { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.NEQ); }
+    | r1=add LT r2=add { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.LTH); }
+    | r1=add GT r2=add { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.GTH); }
+    | r1=add GTE r2=add { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.GEQ); }
+    | r1=add LTE r2=add { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.LEQ); }
     | add { $ast = $add.ast; }
     ;
 add returns [AST.Expr ast] 
-    : add PLUS mul { $ast = this.binExpr($add.ast, $mul.ast, AST.BinExpr.Oper.ADD); }
-    | add MINUS mul { $ast = this.binExpr($add.ast, $mul.ast, AST.BinExpr.Oper.SUB); } 
+    : r1=add PLUS r2=mul { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.ADD); }
+    | r1=add MINUS r2=mul { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.SUB); } 
     | mul { $ast = $mul.ast; }
     ;
 mul returns [AST.Expr ast]
-    : mul STAR prefix { $ast = this.binExpr($mul.ast, $prefix.ast, AST.BinExpr.Oper.MUL); }
-    | mul SLASH prefix { $ast = this.binExpr($mul.ast, $prefix.ast, AST.BinExpr.Oper.DIV); }
-    | mul PERCENT prefix { $ast = this.binExpr($mul.ast, $prefix.ast, AST.BinExpr.Oper.MOD); }
+    : r1=mul STAR r2=prefix { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.MUL); }
+    | r1=mul SLASH r2=prefix { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.DIV); }
+    | r1=mul PERCENT r2=prefix { $ast = this.binExpr($r1.ast, $r2.ast, AST.BinExpr.Oper.MOD); }
     | prefix { $ast = $prefix.ast; }
     ;
 prefix returns [AST.Expr ast]
