@@ -7,3 +7,12 @@ var ptr : ^int
 var test_str : <a : int, b : void>
 var uni : { a : int, b : int }
 var fn : (int, void, bool) : char
+
+fun test () : void
+fun test (a : int) : void
+fun test () : void =
+    1,
+    2,
+    3
+
+# TODO be sure to test empty calls!
