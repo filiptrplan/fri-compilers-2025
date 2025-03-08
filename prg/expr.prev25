@@ -1,2 +1,8 @@
-fun a() : void =
-    1 + 2 * 2 == 2 / 2 * 2^
+fun a() : void = 
+    a | b & c,
+    a == b & c,
+    a == b & b + c,
+    a - b + c - d,
+    a + b * c / d - e,
+    a + -b * c + -d(),
+    a + ^a()^ * !c
