@@ -20,6 +20,14 @@ parser grammar Prev25Parser;
     private AST.Expr binExpr(AST.Expr fst, AST.Expr snd, AST.BinExpr.Oper op) {
         return new AST.BinExpr(this.loc(fst.location(), snd.location()), op, fst, snd); 
     }
+    private List<AST.Stmt> getStmts(StmtsContext ctx) {
+        List<AST.Stmt> stmts;
+        if (ctx == null) {
+            return new ArrayList<AST.Stmt>();
+        } else {
+            return ctx.stmtList;
+        }
+    }
 }
 
 options{
@@ -83,18 +91,34 @@ def returns [AST.FullDefn ast]
 
 // STATEMENTS
 stmts returns [List<AST.Stmt> stmtList]
-    : stmt COMMA stmts { $stmts.stmtList.add($stmt.ast); $stmtList = $stmts.stmtList; }
-    | stmt { $stmtList = new ArrayList<AST.Stmt>(); $stmtList.add($stmt.ast); }
+    : s+=stmt (COMMA s+=stmt)* {
+        $stmtList = new ArrayList<AST.Stmt>();
+        for (StmtContext ctx : $s) {
+            $stmtList.add(ctx.ast);
+        }
+    }
     ;
 
 stmt returns [AST.Stmt ast]
     : expr { $ast = new AST.ExprStmt($expr.ast.location(), $expr.ast); }
-    | expr EQ expr { $ast = null; }
-    | RETURN expr { $ast = null; }
-    | WHILE expr DO stmts? END { $ast = null; }
-    | IF expr THEN stmts? END { $ast = null; }
-    | IF expr THEN stmts? ELSE stmts? END { $ast = null; }
-    | LET def+ IN stmts END  { $ast = null; }
+    | e1=expr EQ e2=expr { $ast = new AST.AssignStmt(this.loc($e1.start, $e2.stop), $e1.ast, $e2.ast); }
+    | RETURN expr { $ast = new AST.ReturnStmt(this.loc($RETURN, $expr.stop), $expr.ast); }
+    | WHILE expr DO stmts? END { 
+        $ast = new AST.WhileStmt(this.loc($WHILE, $END), $expr.ast, this.getStmts($stmts.ctx)); 
+    }
+    | IF expr THEN stmts? END {  
+        $ast = new AST.IfThenStmt(this.loc($IF, $END), $expr.ast, this.getStmts($stmts.ctx)); 
+    }
+    | IF expr THEN s1=stmts? ELSE s2=stmts? END { 
+        $ast = new AST.IfThenElseStmt(this.loc($IF, $END), $expr.ast, this.getStmts($s1.ctx), this.getStmts($s2.ctx)); 
+    }
+    | LET (defs+=def)+ IN stmts END  {
+        ArrayList<AST.FullDefn> list = new ArrayList<AST.FullDefn>();
+        for (DefContext d : $defs) {
+            list.add(d.ast);
+        }
+        $ast = new AST.LetStmt(this.loc($LET, $END), list, this.getStmts($stmts.ctx));
+    }
     ; 
 
 // TYPES
@@ -179,7 +203,7 @@ const returns [AST.Expr ast]
     | STRCONST { $ast = new AST.AtomExpr(this.loc($STRCONST), AST.AtomExpr.Type.STR, $STRCONST.text); }
     | TRUE { $ast = new AST.AtomExpr(this.loc($TRUE), AST.AtomExpr.Type.BOOL, $TRUE.text); }
     | FALSE { $ast = new AST.AtomExpr(this.loc($FALSE), AST.AtomExpr.Type.BOOL, $FALSE.text); }
-    | NULL { $ast = new AST.AtomExpr(this.loc($NULL), AST.AtomExpr.Type.PTR, $NULL.text); }
+    | NULL { $ast = new AST.AtomExpr(this.loc($NULL), AST.AtomExpr.Type.PTR, "0"); }
     | SIZEOF type { $ast = new AST.SizeExpr(this.loc($SIZEOF, $type.stop), $type.ast); }
     | IDENT { $ast = new AST.NameExpr(this.loc($IDENT), $IDENT.text); }
     | LPAREN expr RPAREN { $ast = $expr.ast; }
