@@ -123,7 +123,7 @@ stmt returns [AST.Stmt ast]
 
 // TYPES
 type returns [AST.Type ast]
-    : IDENT { $ast = null; }
+    : IDENT { $ast = new AST.NameType(this.loc($IDENT), $IDENT.text); }
     | INT { $ast = new AST.AtomType(this.loc($INT), AST.AtomType.Type.INT); }
     | CHAR { $ast = new AST.AtomType(this.loc($CHAR), AST.AtomType.Type.CHAR); }
     | BOOL { $ast = new AST.AtomType(this.loc($BOOL), AST.AtomType.Type.BOOL); }
