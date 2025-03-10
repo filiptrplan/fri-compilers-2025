@@ -85,7 +85,7 @@ def returns [AST.FullDefn ast]
         if ($par_id_colon_type.start != null) {
             pars = $par_id_colon_type.astList;
         }
-        $ast = new AST.DefFunDefn(this.loc($FUN, $type.stop), $IDENT.text, pars, $type.ast, $stmts.stmtList);
+        $ast = new AST.DefFunDefn(this.loc($FUN, $stmts.stmtList.getLast().location()), $IDENT.text, pars, $type.ast, $stmts.stmtList);
      }
     ;
 
@@ -206,6 +206,6 @@ const returns [AST.Expr ast]
     | NULL { $ast = new AST.AtomExpr(this.loc($NULL), AST.AtomExpr.Type.PTR, "0"); }
     | SIZEOF type { $ast = new AST.SizeExpr(this.loc($SIZEOF, $type.stop), $type.ast); }
     | IDENT { $ast = new AST.NameExpr(this.loc($IDENT), $IDENT.text); }
-    | LPAREN expr RPAREN { $ast = $expr.ast; }
+    | LPAREN expr RPAREN { $ast = $expr.ast; $ast.relocate(this.loc($LPAREN, $RPAREN)); }
     | LBRACE expr COLON type RBRACE { $ast = new AST.CastExpr(this.loc($LBRACE, $RBRACE), $type.ast, $expr.ast); }
     ;
