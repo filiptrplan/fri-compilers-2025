@@ -25,3 +25,10 @@ To test a program, go into the `prg` directory and run:
 ```bash
 make <program name>
 ```
+
+You can also use the `run.py` runner to compile the compiler and test a program.
+For usage instructions run:
+
+```bash
+./run.py --help
+```
