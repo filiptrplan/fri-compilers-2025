@@ -33,8 +33,6 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 	/** The symbol table. */
 	private SymbTable symbTable = new SymbTable();
 
-	// *** TODO ***
-
 	// ===== SYMBOL TABLE =====
 
 	/**
