@@ -1,0 +1,2 @@
+typ a = int
+typ b = a

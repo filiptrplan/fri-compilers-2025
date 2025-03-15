@@ -1,0 +1,21 @@
+typ t1 = int
+typ t2 = t1
+
+var a : int
+var b : int
+
+# Basic test
+fun fun1() : void =
+    a + b,
+    { a : t2 }
+
+# shadowing test
+fun fun2(a : char) : void = 
+    a + b,
+    let
+        # shadowing with let
+        var b : char
+    in a + b end
+
+var c : c
+

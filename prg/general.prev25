@@ -4,10 +4,17 @@
 typ test_type = int # syn2
 var test_var : test_type # syn3
 
+var x : int
+var s : int
+var y : int
+var c : int
+var b : int
+var abc : int
+
 # syn4
 fun empty() : int 
 fun partial(testparam1 : int) : char 
-fun multiple(testparam1 : char, testparam2 : test_type) : void
+fun full(testparam1 : char, testparam2 : test_type) : void
 
 # syn5 
 fun main() : void =
@@ -37,16 +44,18 @@ fun main() : void =
 
 # == TYPES ==
 var a : int # syn13
-var a : char # syn 14
-var a : bool # syn 15
-var a : void # syn16
-var a : b # syn17
-var a : [20]char # syn18
-var a : ^void # syn19
-var a : < b : int, c : char, d : test > # syn20
-var a : { b : int, c : char, d : test } # syn21
-var a : ( int, char, void ) : int # syn21
-var a : () : void # syn21
+var a1 : char # syn 14
+var a2 : bool # syn 15
+var a3 : void # syn16
+var a4 : b # syn17
+var a5 : [20]char # syn18
+var a6 : ^void # syn19
+var a7 : < b : int, c : char, d : test > # syn20
+var a8 : { b : int, c : char, d : test } # syn21
+var a9 : ( int, char, void ) : int # syn21
+var a10 : () : void # syn21
+
+var test : int
 
 # == EXPRESSIONS ==
 fun expr() : void = 
