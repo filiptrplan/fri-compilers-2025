@@ -268,9 +268,6 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 		}
 		for (final Node node : nodes) {
 			// Names are only resolved in the bodies of statements or full definitions
-			if (!(node instanceof FullDefn || node instanceof Stmt)) {
-				break;
-			}
 			if ((node != null) || (!compiler.Compiler.devMode()))
 				node.accept(this, Mode.RESOLVE);
 		}
@@ -322,6 +319,12 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 	public Object visit(ExtFunDefn extFunDefn, NameResolver.Mode arg) {
 		if (arg == Mode.DECLARE) {
 			declareName(extFunDefn);
+		}
+		if (arg == Mode.RESOLVE) {
+			symbTable.newScope();
+			extFunDefn.pars.accept(this, arg);
+			extFunDefn.type.accept(this, arg);
+			symbTable.oldScope();
 		}
 		return null;
 	}
