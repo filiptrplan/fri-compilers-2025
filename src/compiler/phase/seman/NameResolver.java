@@ -1,9 +1,13 @@
 package compiler.phase.seman;
 
 import java.util.*;
+import java.util.function.*;
 
 import compiler.common.report.*;
 import compiler.phase.abstr.*;
+import compiler.phase.abstr.AST.*;
+import compiler.phase.seman.NameResolver.SymbTable.CannotFndNameException;
+import compiler.phase.seman.NameResolver.SymbTable.CannotInsNameException;
 
 /**
  * Name resolver.
@@ -232,6 +236,138 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 
 		}
 
+	}
+
+	private void declareName(Defn defn) {
+		try {
+			symbTable.ins(defn.name, defn);
+		} catch (CannotInsNameException e) {
+			throw new Report.Error(defn.location(),
+					"Cannot re-declare symbol with name '" + defn.name + "' in the same scope.");
+		}
+	}
+
+	private void resolveName(Node node, String name) {
+		try {
+			SemAn.defAt.put(node, symbTable.fnd(name));
+		} catch (CannotFndNameException e) {
+			throw new Report.Error(node.location(), "Cannot find symbol with name '" + name + "'");
+		}
+	}
+
+	@Override
+	public Object visit(Nodes<? extends Node> nodes, Mode arg) {
+		// First we do a pass of declaration, then we resolve
+		for (final Node node : nodes) {
+			// Doesn't make sense to declare statements
+			if (!(node instanceof Defn)) {
+				break;
+			}
+			if ((node != null) || (!compiler.Compiler.devMode()))
+				node.accept(this, Mode.DECLARE);
+		}
+		for (final Node node : nodes) {
+			// Names are only resolved in the bodies of statements or full definitions
+			if (!(node instanceof FullDefn || node instanceof Stmt)) {
+				break;
+			}
+			if ((node != null) || (!compiler.Compiler.devMode()))
+				node.accept(this, Mode.RESOLVE);
+		}
+		return null;
+	}
+
+	// ----- Definitions -----
+
+	@Override
+	public Object visit(TypDefn typDefn, NameResolver.Mode arg) {
+		if (arg == Mode.RESOLVE) {
+			// TODO: Nekako razresi to da ne more biti self-referential
+			typDefn.type.accept(this, arg);
+		}
+
+		if (arg == Mode.DECLARE) {
+			declareName(typDefn);
+		}
+		return null;
+	}
+
+	@Override
+	public Object visit(VarDefn varDefn, NameResolver.Mode arg) {
+		if (arg == Mode.DECLARE) {
+			declareName(varDefn);
+		}
+		if (arg == Mode.RESOLVE) {
+			varDefn.type.accept(this, arg);
+		}
+		return null;
+	}
+
+	@Override
+	public Object visit(DefFunDefn defFunDefn, NameResolver.Mode arg) {
+		if (arg == Mode.RESOLVE) {
+			symbTable.newScope();
+			defFunDefn.pars.accept(this, arg);
+			defFunDefn.type.accept(this, arg);
+			defFunDefn.stmts.accept(this, arg);
+			symbTable.oldScope();
+		}
+		if (arg == Mode.DECLARE) {
+			declareName(defFunDefn);
+		}
+		return null;
+	}
+
+	@Override
+	public Object visit(ExtFunDefn extFunDefn, NameResolver.Mode arg) {
+		if (arg == Mode.DECLARE) {
+			declareName(extFunDefn);
+		}
+		return null;
+	}
+
+	@Override
+	public Object visit(ParDefn parDefn, NameResolver.Mode arg) {
+		if (arg == Mode.DECLARE) {
+			declareName(parDefn);
+		}
+		if (arg == Mode.RESOLVE) {
+			parDefn.type.accept(this, arg);
+		}
+		return null;
+	}
+
+	// ----- Statements -----
+
+	@Override
+	public Object visit(LetStmt letStmt, NameResolver.Mode arg) {
+		if (arg == Mode.RESOLVE) {
+			this.symbTable.newScope();
+			letStmt.defns.accept(this, arg);
+			letStmt.stmts.accept(this, arg);
+			this.symbTable.oldScope();
+		}
+		return null;
+	}
+
+	// ----- Types -----
+
+	@Override
+	public Object visit(NameType nameType, NameResolver.Mode arg) {
+		if (arg == Mode.RESOLVE) {
+			resolveName(nameType, nameType.name);
+		}
+		return null;
+	}
+
+	// ----- Expressions -----
+
+	@Override
+	public Object visit(NameExpr nameExpr, NameResolver.Mode arg) {
+		if (arg == Mode.RESOLVE) {
+			resolveName(nameExpr, nameExpr.name);
+		}
+		return null;
 	}
 
 }
