@@ -10,12 +10,16 @@ import compiler.phase.abstr.*;
  * 
  * @author bostjan.slivnik@fri.uni-lj.si
  */
-public class TypeChecker implements AST.FullVisitor<TYP.Type, /*** TODO ***/> {
+class Argument {
+
+}
+
+public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 
 	/** Constructs a new name checker. */
 	public TypeChecker() {
 	}
 
-        /*** TODO ***/
+	/*** TODO ***/
 
 }

@@ -1,0 +1,3 @@
+typ a = int
+var c : int
+var b : a
