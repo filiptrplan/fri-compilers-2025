@@ -1,0 +1,16 @@
+typ a = { b : int, c : b }
+typ b = < a : char, c : c >
+typ c = char
+typ d1 = int
+typ d2 = void
+typ d3 = bool
+typ d4 = [1]int
+
+fun fun1() : void
+fun fun2(par1: a, par2: char, par3: b) : c =
+    let
+        typ d5 = < a : d3, c : d2 >
+    in
+        1 + 1
+    end,
+    1 + 1

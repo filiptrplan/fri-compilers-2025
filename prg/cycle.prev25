@@ -1,2 +1,2 @@
-typ b = a
-typ a = b
+typ b = int
+typ a = bool
