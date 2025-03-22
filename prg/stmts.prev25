@@ -1,0 +1,5 @@
+var a : int
+var b : bool
+
+fun main() : int =
+    a = 1

@@ -1,0 +1,26 @@
+var a: stevilo
+typ stevilo = int
+typ stevilo_n = char
+var stevilo_k : stevilo
+var b: int
+var c: char
+var d: char
+
+var b1 : bool
+var b2 : bool
+var ste: stevilo
+
+fun main() : int =
+    b = 3,
+    a = 0,
+    a = a + 5,
+    a = 10000 + b,
+    a = a * 2,
+    
+    if !b2 != b1 then
+        c = d
+    end,
+    c = 'a',
+    if -b <= a then
+        a = -b + b + -a + -ste
+    end
