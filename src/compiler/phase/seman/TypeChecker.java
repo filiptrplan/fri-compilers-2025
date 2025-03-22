@@ -265,7 +265,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	@Override
 	public TYP.Type visit(AST.Nodes<? extends AST.Node> nodes, Argument arg) {
 		// If we are in the top level we store all the definitions and search for main
-		if (isTopLevel == true) {
+		// TODO: For now skip the main check
+		if (false && isTopLevel == true) {
 			isTopLevel = false;
 			boolean foundMain = false;
 			for (final AST.Node node : nodes) {
@@ -273,6 +274,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 					throw new Report.InternalError();
 				}
 				// TODO: Shall I throw an error if main is malformed?
+				//
+				// TODO: There is no rule for expression statements?
 				if (node instanceof AST.DefFunDefn && ((AST.DefFunDefn) node).name.equals("main")) {
 					TYP.FunType funType = (TYP.FunType) SemAn.ofType.get(node);
 					if (!(funType.resType instanceof TYP.IntType)) {
@@ -561,7 +564,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	@Override
 	public TYP.Type visit(AST.StrType strType, Argument arg) {
 		for (AST.CompDefn compDefn : strType.comps) {
-			if (equivalent(SemAn.isType.get(compDefn.type), TYP.VoidType.type)) {
+			if (equivalent(SemAn.ofType.get(compDefn), TYP.VoidType.type)) {
 				throw new Report.Error(compDefn, "Cannot declare a component of type void.");
 			}
 		}
@@ -771,7 +774,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	@Override
 	public TYP.Type visit(AST.ExtFunDefn extFunDefn, Argument arg) {
 
-		TYP.FunType funType = (TYP.FunType) SemAn.isType.get(extFunDefn);
+		TYP.FunType funType = (TYP.FunType) SemAn.ofType.get(extFunDefn);
 
 		for (int i = 0; i < funType.parTypes.size(); i++) {
 			TYP.Type parType = funType.parTypes.get(i);

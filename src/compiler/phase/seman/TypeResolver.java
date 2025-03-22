@@ -22,7 +22,8 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 
 	protected enum Mode {
 		DEFINE,
-		RESOLVE
+		RESOLVE,
+		CYCLE
 	}
 	// ----- Trees -----
 
@@ -53,6 +54,12 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 		} else {
 			for (final Node node : nodes)
 				node.accept(this, Mode.RESOLVE);
+		}
+
+		// On the top level pass we also do a cycle check
+		if (arg == null) {
+			CycleChecker checker = new CycleChecker();
+			nodes.accept(checker, null);
 		}
 
 		return null;
@@ -194,7 +201,9 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 			if (type.equals(TYP.VoidType.type)) {
 				throw new Report.Error(ptrType, "Can't construct pointer type ptr(VOID)");
 			}
-			return new TYP.PtrType(ptrType.baseType.accept(this, arg));
+			TYP.Type actType = new TYP.PtrType(type);
+			SemAn.isType.put(ptrType, actType);
+			return actType;
 		}
 		return null;
 	}
