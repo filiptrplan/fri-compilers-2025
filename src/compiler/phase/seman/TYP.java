@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.function.*;
 
 import compiler.common.report.*;
+import compiler.common.report.Report.Error;
 
 /**
  * Internal representation of types.
@@ -15,6 +16,12 @@ public class TYP {
 	/** (Unused but included to keep javadoc happy.) */
 	private TYP() {
 		throw new Report.InternalError();
+	}
+
+	public static class CycleError extends Report.Error {
+		public CycleError(NameType type) {
+			super("A cycle has been detected in the definition of type " + type.name);
+		}
 	}
 
 	// ===== TYPES =====
@@ -527,7 +534,7 @@ public class TYP {
 			if (this.actType == null)
 				throw new Report.InternalError();
 			if (types.contains(this))
-				throw new Report.InternalError();
+				throw new CycleError(this);
 			types.add(this);
 			return this.actType.actualType(types);
 		}

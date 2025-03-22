@@ -71,6 +71,7 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 			for (final Node node : nodes)
 				node.accept(this, Mode.RESOLVE);
 		}
+
 		return null;
 	}
 
