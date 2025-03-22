@@ -47,13 +47,14 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 	public TYP.Type visit(AST.Nodes<? extends Node> nodes, Mode arg) {
 		// We do two passes to resolve names without recursing infinitely
 		// First we assign NameTypes in the isType table. That way, we make sure
+		//
 		// that all the names that can currently be used (and the definitions they point
 		// to)
 		// currently have types.
 		// After that we can recurse into the "bodies" of the types and resolve ACTUAL
 		// types of the NameTypes
 
-		if (nodes.size() != 0) {
+		if (nodes.size() == 0) {
 			return null;
 		}
 
