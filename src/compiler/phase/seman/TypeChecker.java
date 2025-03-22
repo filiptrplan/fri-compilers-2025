@@ -434,7 +434,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	public TYP.Type visit(AST.NameExpr nameExpr, Argument arg) {
 		AST.Node defn = SemAn.defAt.get(nameExpr);
 		if (!(defn instanceof AST.VarDefn || defn instanceof AST.FunDefn || defn instanceof AST.ParDefn)) {
-			throw new Report.Error(nameExpr, "The symbol '" + nameExpr.name + "' is not a valid expression");
+			throw new Report.Error(nameExpr, "The symbol '" + nameExpr.name + "' is not a valid expression.");
 		}
 		TYP.Type type = SemAn.ofType.get(SemAn.defAt.get(nameExpr));
 		SemAn.ofType.put(nameExpr, type);
@@ -462,7 +462,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 				break;
 			case PTR:
 				if (equivalent(subType, TYP.VoidType.type)) {
-					throw new Report.Error(pfxExpr, "Cannot create pointer from an expression of type 'void'");
+					throw new Report.Error(pfxExpr, "Cannot create pointer from an expression of type 'void'.");
 				}
 				type = new TYP.PtrType(subType);
 		}
@@ -501,7 +501,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	public TYP.Type visit(AST.SizeExpr sizeExpr, Argument arg) {
 		TYP.Type subType = SemAn.isType.get(sizeExpr.type);
 		if (equivalent(subType, TYP.VoidType.type)) {
-			throw new Report.Error(sizeExpr, "Cannot determine size of void");
+			throw new Report.Error(sizeExpr, "Cannot determine size of void.");
 		}
 		SemAn.ofType.put(sizeExpr, TYP.IntType.type);
 		return TYP.IntType.type;
