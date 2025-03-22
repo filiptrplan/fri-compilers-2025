@@ -7,6 +7,7 @@ import org.antlr.v4.parse.ANTLRParser.parserRule_return;
 
 import compiler.common.report.*;
 import compiler.phase.abstr.*;
+import compiler.phase.abstr.AST.DefFunDefn;
 import compiler.phase.abstr.AST.FunDefn;
 import compiler.phase.abstr.AST.ParDefn;
 
@@ -21,8 +22,12 @@ class Argument {
 
 public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 
+	/** The type of function we are currently residing in */
+	private TYP.FunType containingFunctionType;
+
 	/** Constructs a new name checker. */
 	public TypeChecker() {
+		containingFunctionType = null;
 	}
 
 	/*
@@ -237,22 +242,30 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	}
 
 	/**
-	 * Throws an error if t1 cannot be coerced into t2
-	 */
-	private void checkCoerce(TYP.Type t1, TYP.Type t2) {
-		if (!coerced(t1, t2)) {
-			throw new Report.Error(
-					String.format("The type %s cannot be coerced into type %s", t1.toString(), t2.toString()));
-		}
-	}
-
-	/**
 	 * Checks whether the type is equal (not equivalent!) to any of the following
 	 * types: int, char, bool, any pointer type, any function type
 	 */
 	private boolean checkCommonTypes(TYP.Type type) {
 		return type instanceof TYP.BoolType || type instanceof TYP.CharType || type instanceof TYP.IntType
 				|| type instanceof TYP.PtrType || type instanceof TYP.FunType;
+	}
+
+	/**
+	 * Checks whether the type is equal (not equivalent!) to any of the following
+	 * types: int, char, bool, any pointer type, any function type, void
+	 */
+	private boolean checkCommonTypesVoid(TYP.Type type) {
+		return type instanceof TYP.VoidType || checkCommonTypes(type);
+	}
+
+	// ----- Trees -----
+
+	@Override
+	public default Result visit(Nodes<? extends Node> nodes, Argument arg) {
+		for (final Node node : nodes)
+			if ((node != null) || (!compiler.Compiler.devMode()))
+				node.accept(this, arg);
+		return null;
 	}
 
 	// ----- Expressions -----
@@ -540,7 +553,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	@Override
 	public TYP.Type visit(AST.FunType funType, Argument arg) {
 		TYP.Type resType = SemAn.isType.get(funType.resType).actualType();
-		if (!(checkCommonTypes(resType) || resType instanceof TYP.VoidType)) {
+		if (!(checkCommonTypesVoid(resType))) {
 			throw new Report.Error(funType.resType,
 					"Invalid result type for a function. Valid types: int, char, bool, void, any pointer, any function.");
 		}
@@ -551,5 +564,202 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			}
 		}
 		return null;
+	}
+
+	// ----- Statements -----
+
+	@Override
+	public TYP.Type visit(AST.LetStmt letStmt, Argument arg) {
+		for (AST.Node node : letStmt.defns) {
+			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
+				// Something went wrong
+				throw new Report.InternalError();
+			}
+		}
+		for (AST.Node node : letStmt.stmts) {
+			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
+				// Something went wrong
+				throw new Report.InternalError();
+			}
+		}
+		return TYP.VoidType.type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.AssignStmt assignStmt, Argument arg) {
+		TYP.Type t1 = assignStmt.dstExpr.accept(this, arg);
+		TYP.Type t2 = assignStmt.srcExpr.accept(this, arg);
+		if (!checkCommonTypes(t1.actualType())) {
+			throw new Report.Error(assignStmt.dstExpr,
+					"Invalid type for a destination expression. Valid types: int, char, bool, any pointer, any function.");
+
+		}
+		if (!checkCommonTypes(t2.actualType())) {
+			throw new Report.Error(assignStmt.dstExpr,
+					"Invalid type for a source expression. Valid types: int, char, bool, any pointer, any function.");
+
+		}
+
+		if (!coerced(t2, t1)) {
+			throw new Report.Error(assignStmt,
+					String.format("Types %s and %s are not compatible", t1.toString(), t2.toString()));
+		}
+
+		return TYP.VoidType.type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.ExprStmt callStmt, Argument arg) {
+		if ((callStmt.expr != null) || (!compiler.Compiler.devMode()))
+			callStmt.expr.accept(this, arg);
+		return null;
+	}
+
+	@Override
+	public TYP.Type visit(AST.IfThenStmt ifThenStmt, Argument arg) {
+		TYP.Type condType = ifThenStmt.condExpr.accept(this, arg);
+		if (!equivalent(condType, TYP.BoolType.type)) {
+			throw new Report.Error(ifThenStmt.condExpr, "The condition expression must be of type bool.");
+		}
+		for (AST.Node node : ifThenStmt.thenStmt) {
+			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
+				// Something went wrong
+				throw new Report.InternalError();
+			}
+		}
+		return TYP.VoidType.type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.IfThenElseStmt ifThenElseStmt, Argument arg) {
+		TYP.Type condType = ifThenElseStmt.condExpr.accept(this, arg);
+		if (!equivalent(condType, TYP.BoolType.type)) {
+			throw new Report.Error(ifThenElseStmt.condExpr, "The condition expression must be of type bool.");
+		}
+		for (AST.Node node : ifThenElseStmt.thenStmt) {
+			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
+				// Something went wrong
+				throw new Report.InternalError();
+			}
+		}
+		for (AST.Node node : ifThenElseStmt.elseStmt) {
+			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
+				// Something went wrong
+				throw new Report.InternalError();
+			}
+		}
+		return TYP.VoidType.type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.ReturnStmt returnStmt, Argument arg) {
+		// This should be unreachable but we check anyway
+		if (this.containingFunctionType == null) {
+			throw new Report.InternalError();
+		}
+
+		TYP.Type t1 = this.containingFunctionType.resType;
+		TYP.Type t2 = returnStmt.retExpr.accept(this, arg);
+
+		if (!coerced(t2, t1)) {
+			throw new Report.Error(returnStmt.retExpr,
+					String.format("Type %s is not compatible with return type %s.", t2.toString(), t1.toString()));
+		}
+
+		// This should in theory already be covered by the coercion and the type check
+		// for the function definition, but we do it anyway
+		if (!checkCommonTypes(t2.actualType())) {
+			throw new Report.Error(returnStmt.retExpr,
+					"Invalid type for a return expression. Valid types: int, char, bool, any pointer, any function.");
+		}
+
+		return TYP.VoidType.type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.WhileStmt whileStmt, Argument arg) {
+		TYP.Type condType = whileStmt.condExpr.accept(this, arg);
+		if (!equivalent(condType, TYP.BoolType.type)) {
+			throw new Report.Error(whileStmt.condExpr, "The condition expression must be of type bool.");
+		}
+		for (AST.Node node : whileStmt.stmts) {
+			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
+				// Something went wrong
+				throw new Report.InternalError();
+			}
+		}
+		return TYP.VoidType.type;
+	}
+
+	// ----- Definitions ------
+
+	@Override
+	public TYP.Type visit(AST.DefFunDefn defFunDefn, Argument arg) {
+		TYP.FunType funType = (TYP.FunType) SemAn.isType.get(defFunDefn);
+
+		for (int i = 0; i < funType.parTypes.size(); i++) {
+			TYP.Type parType = funType.parTypes.get(i);
+			if (!checkCommonTypes(parType)) {
+				throw new Report.Error(defFunDefn.type,
+						"Invalid type for a function parameter. Valid types: int, char, bool, any pointer, any function.");
+			}
+		}
+
+		TYP.Type retType = funType.resType;
+		if (!(checkCommonTypesVoid(retType.actualType()))) {
+			throw new Report.Error(defFunDefn.type,
+					"Invalid type for a result type. Valid types: int, char, bool, void, any pointer, any function.");
+		}
+
+		defFunDefn.pars.accept(this, arg);
+		defFunDefn.type.accept(this, arg);
+		TYP.FunType oldFunType = this.containingFunctionType;
+		this.containingFunctionType = (TYP.FunType) SemAn.ofType.get(defFunDefn);
+		for (AST.Node node : defFunDefn.stmts) {
+			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
+				// Something went wrong
+				throw new Report.InternalError();
+			}
+		}
+		this.containingFunctionType = oldFunType;
+		return TYP.VoidType.type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.TypDefn typDefn, Argument arg) {
+		typDefn.type.accept(this, arg);
+		return TYP.VoidType.type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.VarDefn varDefn, Argument arg) {
+		if (equivalent(varDefn.type.accept(this, arg), TYP.VoidType.type)) {
+			throw new Report.Error(varDefn.type, "Variables cannot have a type of void.");
+		}
+		return TYP.VoidType.type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.ExtFunDefn extFunDefn, Argument arg) {
+
+		TYP.FunType funType = (TYP.FunType) SemAn.isType.get(extFunDefn);
+
+		for (int i = 0; i < funType.parTypes.size(); i++) {
+			TYP.Type parType = funType.parTypes.get(i);
+			if (!checkCommonTypes(parType)) {
+				throw new Report.Error(extFunDefn.type,
+						"Invalid type for a function parameter. Valid types: int, char, bool, any pointer, any function.");
+			}
+		}
+
+		TYP.Type retType = funType.resType;
+		if (!checkCommonTypesVoid(retType.actualType())) {
+			throw new Report.Error(extFunDefn.type,
+					"Invalid type for a result type. Valid types: int, char, bool, void, any pointer, any function.");
+		}
+
+		extFunDefn.pars.accept(this, arg);
+		extFunDefn.type.accept(this, arg);
+		return TYP.VoidType.type;
 	}
 }
