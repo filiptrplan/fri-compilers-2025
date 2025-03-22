@@ -114,9 +114,6 @@ Examples:
             if args.error:
                 run_error_tests(args.testname, env)
             else:
-                subprocess.run(
-                    ["make", "-C", "prg", args.testname], env=env, check=True
-                )
                 if args.error:
                     run_error_tests(args.testname, env)
                 else:
