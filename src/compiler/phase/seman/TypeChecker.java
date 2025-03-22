@@ -1,9 +1,14 @@
 package compiler.phase.seman;
 
 import java.util.*;
+import java.util.concurrent.Semaphore;
+
+import org.antlr.v4.parse.ANTLRParser.parserRule_return;
 
 import compiler.common.report.*;
 import compiler.phase.abstr.*;
+import compiler.phase.abstr.AST.FunDefn;
+import compiler.phase.abstr.AST.ParDefn;
 
 /**
  * Type checker.
@@ -52,6 +57,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			}
 			Iterator<TYP.Type> it2 = ct2.compTypes.iterator();
 			int i = 0;
+			// TODO: Refactor with get method of Types
 			for (TYP.Type comp1 : ct1.compTypes) {
 				TYP.Type comp2 = it2.next();
 				// First compare the identifiers of the components
@@ -113,6 +119,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			// All checks passed, we return true
 			return true;
 		}
+		return false;
 	}
 
 	/**
@@ -120,7 +127,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	 */
 	private boolean coerced(TYP.Type t1, TYP.Type t2) {
 		// COE1 - 4
-		if (t2 instanceof TYP.AtomType) {
+		if (t1 instanceof TYP.AtomType) {
 			if (equivalent(t2, TYP.IntType.type) && t1.equals(TYP.IntType.type))
 				return true;
 			if (equivalent(t2, TYP.CharType.type) && t1.equals(TYP.CharType.type))
@@ -226,6 +233,277 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			TYP.NameType ct2 = (TYP.NameType) t2;
 			return ct1.name.equals(ct2.name) && equivalent(ct1.actualType(), ct2.actualType());
 		}
+		return false;
 	}
 
+	/**
+	 * Throws an error if t1 cannot be coerced into t2
+	 */
+	private void checkCoerce(TYP.Type t1, TYP.Type t2) {
+		if (!coerced(t1, t2)) {
+			throw new Report.Error(
+					String.format("The type %s cannot be coerced into type %s", t1.toString(), t2.toString()));
+		}
+	}
+
+	/**
+	 * Checks whether the type is equal (not equivalent!) to any of the following
+	 * types: int, char, bool, any pointer type, any function type
+	 */
+	private boolean checkCommonTypes(TYP.Type type) {
+		return type instanceof TYP.BoolType || type instanceof TYP.CharType || type instanceof TYP.IntType
+				|| type instanceof TYP.PtrType || type instanceof TYP.FunType;
+	}
+
+	// ----- Expressions -----
+
+	@Override
+	public TYP.Type visit(AST.ArrExpr arrExpr, Argument arg) {
+		TYP.Type arrType = arrExpr.arrExpr.accept(this, arg).actualType();
+		TYP.Type idxType = arrExpr.idx.accept(this, arg);
+		if (!(arrType instanceof TYP.ArrType)) {
+			throw new Report.Error(arrExpr, "Cannot perform an array access on a non-array expression.");
+		}
+		if (!(equivalent(idxType, TYP.IntType.type))) {
+			throw new Report.Error(arrExpr, "Cannot index an array with a non-integer expression.");
+		}
+		TYP.Type type = ((TYP.ArrType) arrType).elemType;
+		SemAn.ofType.put(arrExpr, type);
+		return type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.AtomExpr atomExpr, Argument arg) {
+		TYP.Type type = null;
+		switch (atomExpr.type) {
+			case INT:
+				type = TYP.IntType.type;
+				break;
+			case STR:
+				type = new TYP.PtrType(TYP.CharType.type);
+				break;
+			case CHAR:
+				type = TYP.CharType.type;
+				break;
+			case BOOL:
+				type = TYP.BoolType.type;
+				break;
+			case PTR:
+				// Pointer constants can only be a null pointer
+				// All others should be considered as prefix expressions
+				if (!atomExpr.value.equals("0")) {
+					throw new Report.InternalError();
+				}
+				type = new TYP.PtrType(TYP.VoidType.type);
+				break;
+		}
+		if (type == null) {
+			throw new Report.InternalError();
+		}
+		SemAn.ofType.put(atomExpr, type);
+		return type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.BinExpr binExpr, Argument arg) {
+		TYP.Type t1 = binExpr.fstExpr.accept(this, arg);
+		TYP.Type t2 = binExpr.sndExpr.accept(this, arg);
+		TYP.Type type = null;
+		switch (binExpr.oper) {
+			case AND:
+			case OR:
+				if (!(equivalent(t1, TYP.BoolType.type) && equivalent(t2, TYP.BoolType.type))) {
+					throw new Report.Error(binExpr, "Only boolean types are allowed for the logical operators");
+				}
+				if (coerced(t1, t2)) {
+					type = t2;
+				} else if (coerced(t2, t1)) {
+					type = t1;
+				} else {
+					throw new Report.Error(binExpr,
+							String.format("Types %s and %s are not compatible", t1.toString(), t2.toString()));
+				}
+				break;
+			case MUL:
+			case DIV:
+			case MOD:
+			case ADD:
+			case SUB:
+				if (!(equivalent(t1, TYP.IntType.type) && equivalent(t2, TYP.IntType.type))) {
+					throw new Report.Error(binExpr, "Only integer types are allowed for the arithmetic operators");
+				}
+				if (coerced(t1, t2)) {
+					type = t2;
+				} else if (coerced(t2, t1)) {
+					type = t1;
+				} else {
+					throw new Report.Error(binExpr,
+							String.format("Types %s and %s are not compatible", t1.toString(), t2.toString()));
+				}
+				break;
+			case EQU:
+			case NEQ:
+			case GTH:
+			case GEQ:
+			case LTH:
+			case LEQ:
+				TYP.Type act1 = t1.actualType();
+				TYP.Type act2 = t2.actualType();
+				if (!(checkCommonTypes(act1) && checkCommonTypes(act2))) {
+					throw new Report.Error(binExpr,
+							"Unsupported type for comparison operation. Supported types: int, char, bool, pointers, functions");
+				}
+				if (!(coerced(t1, t2) || coerced(t2, t1))) {
+					throw new Report.Error(binExpr,
+							String.format("Types %s and %s are not compatible", t1.toString(), t2.toString()));
+				}
+				type = TYP.BoolType.type;
+				break;
+
+		}
+
+		if (type == null) {
+			throw new Report.InternalError();
+		}
+		SemAn.ofType.put(binExpr, type);
+		return type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.CallExpr callExpr, Argument arg) {
+		TYP.Type actFunType = callExpr.funExpr.accept(this, arg).actualType();
+		if (!(actFunType instanceof TYP.FunType)) {
+			throw new Report.Error(callExpr, "Cannot a call a non-function.");
+		}
+
+		TYP.FunType funType = (TYP.FunType) actFunType;
+
+		if (funType.parTypes.size() != callExpr.argExprs.size()) {
+			throw new Report.Error(callExpr,
+					String.format("Unexpected number of arguments. Expected: %d, got: %d", funType.parTypes.size(),
+							callExpr.argExprs.size()));
+		}
+
+		for (int i = 0; i < funType.parTypes.size(); i++) {
+			TYP.Type parType = funType.parTypes.get(i);
+			TYP.Type callType = callExpr.argExprs.get(i).accept(this, arg);
+			if (!coerced(callType, parType)) {
+				throw new Report.Error(callExpr.argExprs.get(i), String.format("Types '%s' and '%s' are not compatible",
+						parType.toString(), callType.toString()));
+			}
+		}
+		TYP.Type retType = funType.resType;
+		SemAn.ofType.put(callExpr, retType);
+		return retType;
+	}
+
+	@Override
+	public TYP.Type visit(AST.CastExpr castExpr, Argument arg) {
+		TYP.Type exprType = castExpr.expr.accept(this, arg);
+		TYP.Type castType = SemAn.isType.get(castExpr.type);
+		if (equivalent(exprType, TYP.VoidType.type)) {
+			throw new Report.Error(castExpr, "Cannot cast an expression of type void.");
+		}
+		if (equivalent(castType, TYP.VoidType.type)) {
+			throw new Report.Error(castExpr, "Cannot cast an expression to void.");
+		}
+		SemAn.ofType.put(castExpr, castType);
+		return castType;
+	}
+
+	@Override
+	public TYP.Type visit(AST.CompExpr compExpr, Argument arg) {
+		TYP.Type type = compExpr.recExpr.accept(this, arg).actualType();
+		if (!(type instanceof TYP.RecType)) {
+			throw new Report.Error(compExpr,
+					"Cannot perform component access on an expression that isn't of a union or struct type");
+		}
+		TYP.RecType recType = (TYP.RecType) type;
+		int elIdx = recType.compTypeNames.indexOf(compExpr.name);
+		if (elIdx == -1) {
+			throw new Report.Error(compExpr,
+					String.format("Component with name '%s' does not exist in the type '%s'", compExpr.name,
+							SemAn.ofType.get(compExpr.recExpr)));
+		}
+		TYP.Type exprType = recType.compTypes.get(elIdx);
+		SemAn.ofType.put(compExpr, exprType);
+		return exprType;
+	}
+
+	@Override
+	public TYP.Type visit(AST.NameExpr nameExpr, Argument arg) {
+		AST.Node defn = SemAn.defAt.get(nameExpr);
+		if (!(defn instanceof AST.VarDefn || defn instanceof AST.FunDefn || defn instanceof AST.ParDefn)) {
+			throw new Report.Error(nameExpr, "The symbol '" + nameExpr.name + "' is not a valid expression");
+		}
+		TYP.Type type = SemAn.ofType.get(SemAn.defAt.get(nameExpr));
+		SemAn.ofType.put(nameExpr, type);
+		return type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.PfxExpr pfxExpr, Argument arg) {
+		TYP.Type type = null;
+		TYP.Type subType = pfxExpr.subExpr.accept(this, arg);
+		switch (pfxExpr.oper) {
+			case ADD:
+			case SUB:
+				if (!equivalent(subType, TYP.IntType.type)) {
+					throw new Report.Error(pfxExpr,
+							"Only integer types are allowed for the '+' and '-' prefix operators");
+				}
+				type = subType;
+				break;
+			case NOT:
+				if (!equivalent(subType, TYP.BoolType.type)) {
+					throw new Report.Error(pfxExpr, "Only boolean types are allowed for the '!' operator");
+				}
+				type = subType;
+				break;
+			case PTR:
+				if (equivalent(subType, TYP.VoidType.type)) {
+					throw new Report.Error(pfxExpr, "Cannot create pointer from an expression of type 'void'");
+				}
+				type = new TYP.PtrType(subType);
+		}
+		if (type == null) {
+			throw new Report.InternalError();
+		}
+		SemAn.ofType.put(pfxExpr, type);
+		return type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.SfxExpr sfxExpr, Argument arg) {
+		TYP.Type type = null;
+		TYP.Type subType = sfxExpr.subExpr.accept(this, arg).actualType();
+		switch (sfxExpr.oper) {
+			case PTR:
+				if (!(subType instanceof TYP.PtrType)) {
+					throw new Report.Error(sfxExpr, "Cannot dereference a non-pointer type");
+				}
+				TYP.PtrType ptrType = (TYP.PtrType) subType;
+				if (equivalent(ptrType, TYP.VoidType.type)) {
+					throw new Report.Error(sfxExpr,
+							"Void type not allowed for the dereference operator.");
+				}
+				type = ptrType.baseType;
+				break;
+		}
+		if (type == null) {
+			throw new Report.InternalError();
+		}
+		SemAn.ofType.put(sfxExpr, type);
+		return type;
+	}
+
+	@Override
+	public TYP.Type visit(AST.SizeExpr sizeExpr, Argument arg) {
+		TYP.Type subType = SemAn.isType.get(sizeExpr.type);
+		if (equivalent(subType, TYP.VoidType.type)) {
+			throw new Report.Error(sizeExpr, "Cannot determine size of void");
+		}
+		SemAn.ofType.put(sizeExpr, TYP.IntType.type);
+		return TYP.IntType.type;
+	}
 }
