@@ -260,12 +260,40 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 
 	// ----- Trees -----
 
+	private boolean isTopLevel = true;
+
 	@Override
-	public default Result visit(Nodes<? extends Node> nodes, Argument arg) {
-		for (final Node node : nodes)
-			if ((node != null) || (!compiler.Compiler.devMode()))
-				node.accept(this, arg);
-		return null;
+	public TYP.Type visit(AST.Nodes<? extends AST.Node> nodes, Argument arg) {
+		// If we are in the top level we store all the definitions and search for main
+		if (isTopLevel == true) {
+			isTopLevel = false;
+			boolean foundMain = false;
+			for (final AST.Node node : nodes) {
+				if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
+					throw new Report.InternalError();
+				}
+				// TODO: Shall I throw an error if main is malformed?
+				if (node instanceof AST.DefFunDefn && ((AST.DefFunDefn) node).name.equals("main")) {
+					TYP.FunType funType = (TYP.FunType) SemAn.ofType.get(node);
+					if (!(funType.resType instanceof TYP.IntType)) {
+						throw new Report.Error(node, "Function 'main' must return an int.");
+					}
+					if (funType.parTypes.size() != 0) {
+						throw new Report.Error(node, "Function 'main' does not take any parameters.");
+					}
+					foundMain = true;
+				}
+			}
+			if (!foundMain) {
+				throw new Report.Error("'main' function not found.");
+			}
+			return TYP.VoidType.type;
+		} else {
+			for (final AST.Node node : nodes)
+				if ((node != null) || (!compiler.Compiler.devMode()))
+					node.accept(this, arg);
+			return null;
+		}
 	}
 
 	// ----- Expressions -----
@@ -695,7 +723,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 
 	@Override
 	public TYP.Type visit(AST.DefFunDefn defFunDefn, Argument arg) {
-		TYP.FunType funType = (TYP.FunType) SemAn.isType.get(defFunDefn);
+		TYP.FunType funType = (TYP.FunType) SemAn.ofType.get(defFunDefn);
 
 		for (int i = 0; i < funType.parTypes.size(); i++) {
 			TYP.Type parType = funType.parTypes.get(i);
@@ -733,7 +761,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 
 	@Override
 	public TYP.Type visit(AST.VarDefn varDefn, Argument arg) {
-		if (equivalent(varDefn.type.accept(this, arg), TYP.VoidType.type)) {
+		varDefn.type.accept(this, arg);
+		if (equivalent(SemAn.isType.get(varDefn.type), TYP.VoidType.type)) {
 			throw new Report.Error(varDefn.type, "Variables cannot have a type of void.");
 		}
 		return TYP.VoidType.type;
