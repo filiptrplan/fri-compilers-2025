@@ -177,7 +177,9 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 				if (numElems.compareTo(BigInteger.ZERO) == 0) {
 					throw new Report.Error(arrType, "Array can't have a length of 0");
 				}
-				return new TYP.ArrType(arrType.elemType.accept(this, arg), numElems.longValueExact());
+				TYP.Type type = new TYP.ArrType(arrType.elemType.accept(this, arg), numElems.longValueExact());
+				SemAn.isType.put(arrType, type);
+				return type;
 			} catch (NumberFormatException e) {
 				throw new Report.Error(arrType, "Invalid integer constant: '" + arrType.numElems + "'");
 			}
@@ -208,7 +210,9 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 				typeList.add(type);
 				names.add(node.name);
 			}
-			return new TYP.StrType(typeList, names);
+			TYP.Type type = new TYP.StrType(typeList, names);
+			SemAn.isType.put(strType, type);
+			return type;
 		}
 		return null;
 	}
@@ -224,7 +228,9 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 				typeList.add(type);
 				names.add(node.name);
 			}
-			return new TYP.UniType(typeList, names);
+			TYP.Type type = new TYP.UniType(typeList, names);
+			SemAn.isType.put(uniType, type);
+			return type;
 		}
 		return null;
 	}
