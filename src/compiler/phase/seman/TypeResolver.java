@@ -1,5 +1,6 @@
 package compiler.phase.seman;
 
+import java.math.BigInteger;
 import java.util.*;
 
 import compiler.common.report.*;
@@ -17,24 +18,6 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 
 	/** Constructs a new name resolver. */
 	public TypeResolver() {
-	}
-
-	// ----- Types -----
-
-	@Override
-	public TYP.Type visit(AST.AtomType atomType, TypeResolver.Mode arg) {
-		switch (atomType.type) {
-			case INT:
-				return TYP.IntType.type;
-			case VOID:
-				return TYP.VoidType.type;
-			case CHAR:
-				return TYP.CharType.type;
-			case BOOL:
-				return TYP.BoolType.type;
-		}
-		// Unreachable
-		return null;
 	}
 
 	protected enum Mode {
@@ -109,8 +92,14 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 		// We first should wait for all the types to be defined. That's why we are not
 		// doing anything in the DEFINE mode.
 		if (arg == Mode.RESOLVE) {
-			SemAn.ofType.put(defFunDefn, defFunDefn.type.accept(this, arg));
-			defFunDefn.pars.accept(this, arg);
+			TYP.Type returnType = defFunDefn.type.accept(this, arg);
+			List<TYP.Type> typeList = new ArrayList<>();
+			for (AST.ParDefn parDefn : defFunDefn.pars) {
+				TYP.Type type = parDefn.accept(this, arg);
+				typeList.add(type);
+				SemAn.ofType.put(parDefn, type);
+			}
+			SemAn.ofType.put(defFunDefn, new TYP.FunType(typeList, returnType));
 			defFunDefn.stmts.accept(this, arg);
 		}
 		return null;
@@ -119,8 +108,14 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 	@Override
 	public TYP.Type visit(AST.ExtFunDefn extFunDefn, TypeResolver.Mode arg) {
 		if (arg == Mode.RESOLVE) {
-			SemAn.ofType.put(extFunDefn, extFunDefn.type.accept(this, arg));
-			extFunDefn.pars.accept(this, arg);
+			TYP.Type returnType = extFunDefn.type.accept(this, arg);
+			List<TYP.Type> typeList = new ArrayList<>();
+			for (AST.ParDefn parDefn : extFunDefn.pars) {
+				TYP.Type type = parDefn.accept(this, arg);
+				typeList.add(type);
+				SemAn.ofType.put(parDefn, type);
+			}
+			SemAn.ofType.put(extFunDefn, new TYP.FunType(typeList, returnType));
 		}
 		return null;
 	}
@@ -128,7 +123,9 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 	@Override
 	public TYP.Type visit(AST.ParDefn parDefn, TypeResolver.Mode arg) {
 		if (arg == Mode.RESOLVE) {
-			SemAn.ofType.put(parDefn, parDefn.type.accept(this, arg));
+			TYP.Type type = parDefn.type.accept(this, arg);
+			SemAn.ofType.put(parDefn, type);
+			return type;
 		}
 		return null;
 	}
@@ -136,7 +133,9 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 	@Override
 	public TYP.Type visit(AST.CompDefn compDefn, TypeResolver.Mode arg) {
 		if (arg == Mode.RESOLVE) {
-			SemAn.ofType.put(compDefn, compDefn.type.accept(this, arg));
+			TYP.Type type = compDefn.type.accept(this, arg);
+			SemAn.ofType.put(compDefn, type);
+			return type;
 		}
 		return null;
 	}
@@ -144,13 +143,43 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 	// ------- Types ---------
 
 	@Override
+	public TYP.Type visit(AST.AtomType atomType, TypeResolver.Mode arg) {
+		TYP.Type type = null;
+		switch (atomType.type) {
+			case INT:
+				type = TYP.IntType.type;
+				break;
+			case VOID:
+				type = TYP.VoidType.type;
+				break;
+			case CHAR:
+				type = TYP.CharType.type;
+				break;
+			case BOOL:
+				type = TYP.BoolType.type;
+				break;
+		}
+		if (type == null) {
+			throw new Report.InternalError();
+		}
+		SemAn.isType.put(atomType, type);
+		return type;
+	}
+
+	@Override
 	public TYP.Type visit(AST.ArrType arrType, TypeResolver.Mode arg) {
 		if (arg == Mode.RESOLVE) {
 			try {
-				Long numElems = Long.parseLong(arrType.numElems);
-				return new TYP.ArrType(arrType.elemType.accept(this, arg), numElems);
+				BigInteger numElems = new BigInteger(arrType.numElems);
+				if (numElems.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) > 0) {
+					throw new Report.Error(arrType, "Array length can't be larger than 2^63");
+				}
+				if (numElems.compareTo(BigInteger.ZERO) == 0) {
+					throw new Report.Error(arrType, "Array can't have a length of 0");
+				}
+				return new TYP.ArrType(arrType.elemType.accept(this, arg), numElems.longValueExact());
 			} catch (NumberFormatException e) {
-				throw new Report.Error("Invalid integer constant: '" + arrType.numElems + "'");
+				throw new Report.Error(arrType, "Invalid integer constant: '" + arrType.numElems + "'");
 			}
 		}
 		return null;
@@ -159,6 +188,10 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 	@Override
 	public TYP.Type visit(AST.PtrType ptrType, TypeResolver.Mode arg) {
 		if (arg == Mode.RESOLVE) {
+			TYP.Type type = ptrType.baseType.accept(this, arg);
+			if (type.equals(TYP.VoidType.type)) {
+				throw new Report.Error(ptrType, "Can't construct pointer type ptr(VOID)");
+			}
 			return new TYP.PtrType(ptrType.baseType.accept(this, arg));
 		}
 		return null;
@@ -167,24 +200,45 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 	@Override
 	public TYP.Type visit(AST.StrType strType, TypeResolver.Mode arg) {
 		if (arg == Mode.RESOLVE) {
-			strType.comps.accept(this, arg);
+			List<TYP.Type> typeList = new ArrayList<>();
+			List<String> names = new ArrayList<String>();
+			for (AST.CompDefn node : strType.comps) {
+				TYP.Type type = node.accept(this, arg);
+				SemAn.ofType.put(node, type);
+				typeList.add(type);
+				names.add(node.name);
+			}
+			return new TYP.StrType(typeList, names);
 		}
 		return null;
 	}
 
 	@Override
 	public TYP.Type visit(AST.UniType uniType, TypeResolver.Mode arg) {
-		if ((uniType.comps != null) || (!compiler.Compiler.devMode()))
-			uniType.comps.accept(this, arg);
+		if (arg == Mode.RESOLVE) {
+			List<TYP.Type> typeList = new ArrayList<>();
+			List<String> names = new ArrayList<String>();
+			for (AST.CompDefn node : uniType.comps) {
+				TYP.Type type = node.accept(this, arg);
+				SemAn.ofType.put(node, type);
+				typeList.add(type);
+				names.add(node.name);
+			}
+			return new TYP.UniType(typeList, names);
+		}
 		return null;
 	}
 
 	@Override
 	public TYP.Type visit(AST.FunType funType, TypeResolver.Mode arg) {
-		if ((funType.parTypes != null) || (!compiler.Compiler.devMode()))
-			funType.parTypes.accept(this, arg);
-		if ((funType.resType != null) || (!compiler.Compiler.devMode()))
-			funType.resType.accept(this, arg);
+		if (arg == Mode.RESOLVE) {
+			TYP.Type returnType = funType.resType.accept(this, arg);
+			List<TYP.Type> typeList = new ArrayList<>();
+			for (AST.Node node : funType.parTypes) {
+				typeList.add(node.accept(this, arg));
+			}
+			return new TYP.FunType(typeList, returnType);
+		}
 		return null;
 	}
 
@@ -198,7 +252,9 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 			}
 			// Now that we know it is a type we can get it from the isType table
 			// it should be already defined as we are in the RESOLVE stage.
-			return SemAn.isType.get(defType);
+			TYP.Type type = SemAn.isType.get(defType);
+			SemAn.isType.put(nameType, type);
+			return type;
 		}
 		return null;
 	}
