@@ -506,4 +506,50 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 		SemAn.ofType.put(sizeExpr, TYP.IntType.type);
 		return TYP.IntType.type;
 	}
+
+	// ----- Types ------
+
+	@Override
+	public TYP.Type visit(AST.ArrType arrType, Argument arg) {
+		if (equivalent(SemAn.isType.get(arrType.elemType), TYP.VoidType.type)) {
+			throw new Report.Error(arrType, "Cannot declare an array of type void.");
+		}
+		return null;
+	}
+
+	@Override
+	public TYP.Type visit(AST.StrType strType, Argument arg) {
+		for (AST.CompDefn compDefn : strType.comps) {
+			if (equivalent(SemAn.isType.get(compDefn.type), TYP.VoidType.type)) {
+				throw new Report.Error(compDefn, "Cannot declare a component of type void.");
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public TYP.Type visit(AST.UniType uniType, Argument arg) {
+		for (AST.CompDefn compDefn : uniType.comps) {
+			if (equivalent(SemAn.isType.get(compDefn.type), TYP.VoidType.type)) {
+				throw new Report.Error(compDefn, "Cannot declare a component of type void.");
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public TYP.Type visit(AST.FunType funType, Argument arg) {
+		TYP.Type resType = SemAn.isType.get(funType.resType).actualType();
+		if (!(checkCommonTypes(resType) || resType instanceof TYP.VoidType)) {
+			throw new Report.Error(funType.resType,
+					"Invalid result type for a function. Valid types: int, char, bool, void, any pointer, any function.");
+		}
+		for (AST.Type astType : funType.parTypes) {
+			if (!checkCommonTypes(SemAn.isType.get(astType))) {
+				throw new Report.Error(astType,
+						"Invalid parameter type for a function. Valid types: int, char, bool, any pointer, any function.");
+			}
+		}
+		return null;
+	}
 }
