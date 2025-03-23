@@ -137,6 +137,12 @@ Examples:
                     f"--target-phase={env.get('TARGETPHASE', 'all')}",
                 ]
 
+                if args.attach:
+                    java_cmd.insert(
+                        1,
+                        "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005",
+                    )
+
                 # Add dev mode if enabled
                 if args.dev:
                     java_cmd.append("--dev-mode=on")
