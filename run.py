@@ -114,51 +114,53 @@ Examples:
             if args.error:
                 run_error_tests(args.testname, env)
             else:
-                if args.error:
-                    run_error_tests(args.testname, env)
-                else:
-                    # Build the command based on Makefile logic
-                    test_file = f"prg/{args.testname}.prev25"
-                    output_base = f"prg/{args.testname}"
-                    
-                    # Clean up previous outputs
-                    for ext in ['xml', 'html']:
-                        for f in glob.glob(f"{output_base}-*.{ext}"):
-                            os.remove(f)
-                    
-                    # Build the Java command
-                    java_cmd = [
-                        "java",
-                        "-cp", "../bin:../src:../lib/antlr-4.13.2-complete.jar",
-                        "compiler.Compiler",
-                        "--xsl=../lib/xsl/",
-                        f"--logged-phase={env.get('LOGGEDPHASE', 'all')}",
-                        f"--target-phase={env.get('TARGETPHASE', 'all')}"
-                    ]
-                    
-                    # Add dev mode if enabled
-                    if args.dev:
-                        java_cmd.append("--dev-mode=on")
-                    
-                    # Add the test file
-                    java_cmd.append(test_file)
-                    
-                    # Run the compiler
-                    result = subprocess.run(java_cmd, capture_output=True, text=True)
-                    
-                    # Check result and process XML files if successful
-                    if result.returncode == 0:
-                        for xml_file in glob.glob(f"{output_base}-*.xml"):
-                            html_file = xml_file.replace('.xml', '.html')
-                            subprocess.run(["xsltproc", xml_file, "-o", html_file])
-                    
-                    # Print output
-                    print(result.stdout)
-                    if result.stderr:
-                        print(result.stderr)
-                    
-                    if result.returncode != 0:
-                        sys.exit(result.returncode)
+                # Build the command based on Makefile logic
+                test_file = f"{args.testname}.prev25"
+                output_base = f"prg/{args.testname}"
+
+                # Clean up previous outputs
+                for ext in ["xml", "html"]:
+                    for f in glob.glob(f"{output_base}-*.{ext}"):
+                        os.remove(f)
+
+                # Build the Java command
+                java_cmd = [
+                    "java",
+                    "-cp",
+                    "../bin:../src:../lib/antlr-4.13.2-complete.jar",
+                    "compiler.Compiler",
+                    "--xsl=../lib/xsl/",
+                    f"--logged-phase={env.get('LOGGEDPHASE', 'all')}",
+                    f"--target-phase={env.get('TARGETPHASE', 'all')}",
+                ]
+
+                # Add dev mode if enabled
+                if args.dev:
+                    java_cmd.append("--dev-mode=on")
+
+                # Add the test file
+                java_cmd.append(test_file)
+
+                # Run the compiler
+                result = subprocess.run(
+                    java_cmd, capture_output=True, text=True, cwd="./prg"
+                )
+
+                # Check result and process XML files if successful
+                if result.returncode == 0:
+                    for xml_file in glob.glob(f"{output_base}-*.xml"):
+                        html_file = xml_file.replace(".xml", ".html")
+                        subprocess.run(
+                            ["xsltproc", xml_file, "-o", html_file],
+                        )
+
+                # Print output
+                print(result.stdout)
+                if result.stderr:
+                    print(result.stderr)
+
+                if result.returncode != 0:
+                    sys.exit(result.returncode)
         else:
             print("No test specified. Build completed successfully.")
 
