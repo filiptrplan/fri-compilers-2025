@@ -23,7 +23,6 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 	protected enum Mode {
 		DEFINE,
 		RESOLVE,
-		CYCLE
 	}
 	// ----- Trees -----
 
@@ -252,7 +251,9 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 			for (AST.Node node : funType.parTypes) {
 				typeList.add(node.accept(this, arg));
 			}
-			return new TYP.FunType(typeList, returnType);
+			TYP.Type type = new TYP.FunType(typeList, returnType);
+			SemAn.isType.put(funType, type);
+			return type;
 		}
 		return null;
 	}

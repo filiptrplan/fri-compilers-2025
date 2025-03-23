@@ -156,7 +156,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			// COE5
 			if (t2 instanceof TYP.PtrType) {
 				TYP.PtrType ct2 = (TYP.PtrType) t2;
-				return coerced(t1, t2);
+				return coerced(ct1.baseType, ct2.baseType);
 			}
 
 			return false;
@@ -585,13 +585,15 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	public TYP.Type visit(AST.FunType funType, Argument arg) {
 		TYP.Type resType = SemAn.isType.get(funType.resType).actualType();
 		if (!(checkCommonTypesVoid(resType))) {
-			throw new Report.Error(funType.resType,
-					"Invalid result type for a function. Valid types: int, char, bool, void, any pointer, any function.");
+			throw new Report.Error(funType.resType, String.format(
+					"Invalid result type '%s' for a function. Valid types: int, char, bool, void, any pointer, any function.",
+					resType.toString()));
 		}
 		for (AST.Type astType : funType.parTypes) {
-			if (!checkCommonTypes(SemAn.isType.get(astType))) {
-				throw new Report.Error(astType,
-						"Invalid parameter type for a function. Valid types: int, char, bool, any pointer, any function.");
+			if (!checkCommonTypes(SemAn.isType.get(astType).actualType())) {
+				throw new Report.Error(astType, String.format(
+						"Invalid parameter type '%s' for a function. Valid types: int, char, bool, any pointer, any function.",
+						SemAn.isType.get(astType).toString()));
 			}
 		}
 		return null;
@@ -730,16 +732,18 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 
 		for (int i = 0; i < funType.parTypes.size(); i++) {
 			TYP.Type parType = funType.parTypes.get(i);
-			if (!checkCommonTypes(parType)) {
-				throw new Report.Error(defFunDefn.type,
-						"Invalid type for a function parameter. Valid types: int, char, bool, any pointer, any function.");
+			if (!checkCommonTypes(parType.actualType())) {
+				throw new Report.Error(defFunDefn.type, String.format(
+						"Invalid type '%s' for a function parameter. Valid types: int, char, bool, any pointer, any function.",
+						parType.toString()));
 			}
 		}
 
 		TYP.Type retType = funType.resType;
 		if (!(checkCommonTypesVoid(retType.actualType()))) {
-			throw new Report.Error(defFunDefn.type,
-					"Invalid type for a result type. Valid types: int, char, bool, void, any pointer, any function.");
+			throw new Report.Error(defFunDefn.type, String.format(
+					"Invalid type '%s' for a result type. Valid types: int, char, bool, void, any pointer, any function.",
+					retType.toString()));
 		}
 
 		defFunDefn.pars.accept(this, arg);
@@ -778,16 +782,18 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 
 		for (int i = 0; i < funType.parTypes.size(); i++) {
 			TYP.Type parType = funType.parTypes.get(i);
-			if (!checkCommonTypes(parType)) {
-				throw new Report.Error(extFunDefn.type,
-						"Invalid type for a function parameter. Valid types: int, char, bool, any pointer, any function.");
+			if (!checkCommonTypes(parType.actualType())) {
+				throw new Report.Error(extFunDefn.type, String.format(
+						"Invalid type '%s' for a function parameter. Valid types: int, char, bool, any pointer, any function.",
+						parType.toString()));
 			}
 		}
 
 		TYP.Type retType = funType.resType;
-		if (!checkCommonTypesVoid(retType.actualType())) {
-			throw new Report.Error(extFunDefn.type,
-					"Invalid type for a result type. Valid types: int, char, bool, void, any pointer, any function.");
+		if (!(checkCommonTypesVoid(retType.actualType()))) {
+			throw new Report.Error(extFunDefn.type, String.format(
+					"Invalid type '%s' for a result type. Valid types: int, char, bool, void, any pointer, any function.",
+					retType.toString()));
 		}
 
 		extFunDefn.pars.accept(this, arg);
