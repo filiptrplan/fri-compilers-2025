@@ -60,6 +60,9 @@ Examples:
     parser.add_argument(
         "--dev", action="store_true", help="Enable dev mode with OPTIONS=--dev-mode=on"
     )
+    parser.add_argument(
+        "--attach", action="store_true", help="Run with remote debugging enabled"
+    )
 
     args = parser.parse_args()
 
