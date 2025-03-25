@@ -40,3 +40,4 @@ fun fun1(va3 : int) : void =
     fun3(va1, va1) + - 3, # typ 38
     sizeof char, sizeof int, sizeof st, # typ 39
     { 1234 : a1 } # typ 40
+    ,1 | 1

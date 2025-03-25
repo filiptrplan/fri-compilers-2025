@@ -1,0 +1,11 @@
+var a : int
+var b : int
+fun main() : int = 
+    if a >= b then
+        while a >= b do
+            b = b - 1
+        end
+    else
+        b = a,
+        a + 1
+    end 
