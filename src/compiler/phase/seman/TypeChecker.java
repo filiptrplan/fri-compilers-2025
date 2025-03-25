@@ -357,7 +357,9 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			case AND:
 			case OR:
 				if (!(equivalent(t1, TYP.BoolType.type) && equivalent(t2, TYP.BoolType.type))) {
-					throw new Report.Error(binExpr, "Only boolean types are allowed for the logical operators");
+					throw new Report.Error(binExpr,
+							"Logical operators '&' and '|' require boolean operands. Found: " +
+									t1 + " and " + t2);
 				}
 				if (coerced(t1, t2)) {
 					type = t2;
@@ -374,7 +376,9 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			case ADD:
 			case SUB:
 				if (!(equivalent(t1, TYP.IntType.type) && equivalent(t2, TYP.IntType.type))) {
-					throw new Report.Error(binExpr, "Only integer types are allowed for the arithmetic operators");
+					throw new Report.Error(binExpr,
+							"Arithmetic operators require integer operands. Found: " +
+									t1 + " and " + t2);
 				}
 				if (coerced(t1, t2)) {
 					type = t2;
@@ -432,8 +436,9 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			TYP.Type parType = funType.parTypes.get(i);
 			TYP.Type callType = callExpr.argExprs.get(i).accept(this, arg);
 			if (!coerced(callType, parType)) {
-				throw new Report.Error(callExpr.argExprs.get(i), String.format("Types '%s' and '%s' are not compatible",
-						parType.toString(), callType.toString()));
+				throw new Report.Error(callExpr.argExprs.get(i), String.format(
+						"Type mismatch for argument %d in call to function '%s'. Expected type '%s', but got '%s'",
+						i + 1, callExpr.funExpr.toString(), parType.toString(), callType.toString()));
 			}
 		}
 		TYP.Type retType = funType.resType;
@@ -494,13 +499,15 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			case SUB:
 				if (!equivalent(subType, TYP.IntType.type)) {
 					throw new Report.Error(pfxExpr,
-							"Only integer types are allowed for the '+' and '-' prefix operators");
+							String.format("Prefix operators '+' and '-' require an integer operand. Found: %s",
+									subType));
 				}
 				type = subType;
 				break;
 			case NOT:
 				if (!equivalent(subType, TYP.BoolType.type)) {
-					throw new Report.Error(pfxExpr, "Only boolean types are allowed for the '!' operator");
+					throw new Report.Error(pfxExpr,
+							String.format("Prefix operator '!' requires a boolean operand. Found: %s", subType));
 				}
 				type = subType;
 				break;
@@ -652,7 +659,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	public TYP.Type visit(AST.IfThenStmt ifThenStmt, Argument arg) {
 		TYP.Type condType = ifThenStmt.condExpr.accept(this, arg);
 		if (!equivalent(condType, TYP.BoolType.type)) {
-			throw new Report.Error(ifThenStmt.condExpr, "The condition expression must be of type bool.");
+			throw new Report.Error(ifThenStmt.condExpr,
+					"The condition expression must be of type bool. Found: " + condType.toString());
 		}
 		for (AST.Node node : ifThenStmt.thenStmt) {
 			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
@@ -713,7 +721,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	public TYP.Type visit(AST.WhileStmt whileStmt, Argument arg) {
 		TYP.Type condType = whileStmt.condExpr.accept(this, arg);
 		if (!equivalent(condType, TYP.BoolType.type)) {
-			throw new Report.Error(whileStmt.condExpr, "The condition expression must be of type bool.");
+			throw new Report.Error(whileStmt.condExpr,
+					"The condition expression must be of type bool. Found: " + condType.toString());
 		}
 		for (AST.Node node : whileStmt.stmts) {
 			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
