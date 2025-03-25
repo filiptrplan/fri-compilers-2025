@@ -269,9 +269,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			isTopLevel = false;
 			boolean foundMain = false;
 			for (final AST.Node node : nodes) {
-				if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
-					throw new Report.InternalError();
-				}
+				node.accept(this, arg);
 				if (node instanceof AST.DefFunDefn && ((AST.DefFunDefn) node).name.equals("main")) {
 					TYP.FunType funType = (TYP.FunType) SemAn.ofType.get(node);
 					if (!(funType.resType instanceof TYP.IntType)) {
@@ -288,9 +286,9 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			}
 			return TYP.VoidType.type;
 		} else {
-			for (final AST.Node node : nodes)
-				if ((node != null) || (!compiler.Compiler.devMode()))
-					node.accept(this, arg);
+			for (final AST.Node node : nodes) {
+				node.accept(this, arg);
+			}
 			return null;
 		}
 	}
@@ -606,18 +604,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 
 	@Override
 	public TYP.Type visit(AST.LetStmt letStmt, Argument arg) {
-		for (AST.Node node : letStmt.defns) {
-			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
-				// Something went wrong
-				throw new Report.InternalError();
-			}
-		}
-		for (AST.Node node : letStmt.stmts) {
-			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
-				// Something went wrong
-				throw new Report.InternalError();
-			}
-		}
+		letStmt.defns.accept(this, arg);
+		letStmt.stmts.accept(this, arg);
 		return TYP.VoidType.type;
 	}
 
@@ -673,18 +661,9 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 		if (!equivalent(condType, TYP.BoolType.type)) {
 			throw new Report.Error(ifThenElseStmt.condExpr, "The condition expression must be of type bool.");
 		}
-		for (AST.Node node : ifThenElseStmt.thenStmt) {
-			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
-				// Something went wrong
-				throw new Report.InternalError();
-			}
-		}
-		for (AST.Node node : ifThenElseStmt.elseStmt) {
-			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
-				// Something went wrong
-				throw new Report.InternalError();
-			}
-		}
+
+		ifThenElseStmt.thenStmt.accept(this, arg);
+		ifThenElseStmt.elseStmt.accept(this, arg);
 		return TYP.VoidType.type;
 	}
 
@@ -720,12 +699,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			throw new Report.Error(whileStmt.condExpr,
 					"The condition expression must be of type bool. Found: " + condType.toString());
 		}
-		for (AST.Node node : whileStmt.stmts) {
-			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
-				// Something went wrong
-				throw new Report.InternalError();
-			}
-		}
+		whileStmt.stmts.accept(this, arg);
 		return TYP.VoidType.type;
 	}
 
@@ -754,14 +728,11 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 		defFunDefn.pars.accept(this, arg);
 		defFunDefn.type.accept(this, arg);
 		TYP.FunType oldFunType = this.containingFunctionType;
+
 		this.containingFunctionType = (TYP.FunType) SemAn.ofType.get(defFunDefn);
-		for (AST.Node node : defFunDefn.stmts) {
-			if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
-				// Something went wrong
-				throw new Report.InternalError();
-			}
-		}
+		defFunDefn.stmts.accept(this, arg);
 		this.containingFunctionType = oldFunType;
+
 		return TYP.VoidType.type;
 	}
 
