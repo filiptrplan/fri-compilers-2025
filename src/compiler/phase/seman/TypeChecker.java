@@ -265,17 +265,13 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	@Override
 	public TYP.Type visit(AST.Nodes<? extends AST.Node> nodes, Argument arg) {
 		// If we are in the top level we store all the definitions and search for main
-		// TODO: For now skip the main check
-		if (false && isTopLevel == true) {
+		if (isTopLevel == true) {
 			isTopLevel = false;
 			boolean foundMain = false;
 			for (final AST.Node node : nodes) {
 				if (!equivalent(node.accept(this, arg), TYP.VoidType.type)) {
 					throw new Report.InternalError();
 				}
-				// TODO: Shall I throw an error if main is malformed?
-				//
-				// TODO: There is no rule for expression statements?
 				if (node instanceof AST.DefFunDefn && ((AST.DefFunDefn) node).name.equals("main")) {
 					TYP.FunType funType = (TYP.FunType) SemAn.ofType.get(node);
 					if (!(funType.resType instanceof TYP.IntType)) {
@@ -652,7 +648,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	public TYP.Type visit(AST.ExprStmt callStmt, Argument arg) {
 		if ((callStmt.expr != null) || (!compiler.Compiler.devMode()))
 			callStmt.expr.accept(this, arg);
-		return null;
+		return TYP.VoidType.type;
 	}
 
 	@Override
