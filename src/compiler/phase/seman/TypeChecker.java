@@ -499,6 +499,8 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 		}
 		TYP.Type type = SemAn.ofType.get(SemAn.defAt.get(nameExpr));
 		SemAn.ofType.put(nameExpr, type);
+		SemAn.isConst.put(nameExpr, false);
+		SemAn.isAddr.put(nameExpr, true);
 		return type;
 	}
 
