@@ -89,6 +89,8 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 		// We are not defining any types here
 		if (arg == Mode.RESOLVE) {
 			SemAn.ofType.put(varDefn, varDefn.type.accept(this, arg));
+			SemAn.isConst.put(varDefn, false);
+			SemAn.isAddr.put(varDefn, true);
 		}
 		return null;
 	}
@@ -104,8 +106,12 @@ public class TypeResolver implements AST.FullVisitor<TYP.Type, TypeResolver.Mode
 				TYP.Type type = parDefn.accept(this, arg);
 				typeList.add(type);
 				SemAn.ofType.put(parDefn, type);
+				SemAn.isConst.put(parDefn, false);
+				SemAn.isAddr.put(parDefn, true);
 			}
 			SemAn.ofType.put(defFunDefn, new TYP.FunType(typeList, returnType));
+			SemAn.isAddr.put(defFunDefn, false);
+			SemAn.isConst.put(defFunDefn, false);
 			defFunDefn.stmts.accept(this, arg);
 		}
 		return null;
