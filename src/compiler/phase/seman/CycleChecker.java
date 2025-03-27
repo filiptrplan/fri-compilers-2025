@@ -17,7 +17,7 @@ public class CycleChecker implements AST.FullVisitor<Object, Object> {
 	 * e.g. `typ a = a`
 	 *
 	 * @param typDefn The type definition to check for cycles
-	 * @returns True if a cycle is detected
+	 * @return True if a cycle is detected
 	 */
 	private boolean typeHasCycle(AST.TypDefn typDefn) {
 		// We just basically do DFS and check whether we detect a cycle
