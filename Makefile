@@ -8,7 +8,7 @@ FIND		= 'find'
 all	:
 	if [ -d src/compiler/phase/lexan ] ; then $(MAKE) -C src/compiler/phase/lexan ; fi
 	if [ -d src/compiler/phase/synan ] ; then $(MAKE) -C src/compiler/phase/synan ; fi
-	$(JAVAC) --module-path $(ANTLRDIR) --source-path src -d bin src/compiler/Compiler.java -g:vars
+	$(JAVAC) --module-path $(ANTLRDIR) --source-path src -d bin src/compiler/Compiler.java
 	if [ -d doc ] ; then $(MAKE) -C doc ; fi
 	@echo ":-) OK"
 
