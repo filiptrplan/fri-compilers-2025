@@ -4,7 +4,6 @@ import java.util.*;
 
 import compiler.common.report.*;
 import compiler.phase.abstr.*;
-import compiler.phase.abstr.AST.*;
 
 /**
  * Checks for any cycles in the union or struct types
