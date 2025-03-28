@@ -1,7 +1,6 @@
 package compiler.phase.memory;
 
 import java.util.*;
-import java.util.concurrent.Semaphore;
 
 import compiler.phase.abstr.*;
 import compiler.phase.seman.*;
@@ -180,7 +179,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 
 		// We also save two pointers: the old FP pointer and the return address
 		long totalSize = funInfo.argsSize + funInfo.locsSize + 2 * ptrSize;
-		MEM.Frame frame = new MEM.Frame(label, depth, funInfo.locsSize, funInfo.argsSize, totalSize);
+		MEM.Frame frame = new MEM.Frame(label, depth - 1, funInfo.locsSize, funInfo.argsSize, totalSize);
 		Memory.frames.put(funDefn, frame);
 
 		depth -= 1;
