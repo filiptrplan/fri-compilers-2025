@@ -1,3 +1,11 @@
+#!/usr/bin/env -S uv run
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "lxml",
+# ]
+# ///
+
 import sys
 import argparse
 from lxml import etree
