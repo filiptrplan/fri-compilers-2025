@@ -572,7 +572,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 		}
 		SemAn.ofType.put(sfxExpr, type);
 		SemAn.isConst.put(sfxExpr, false);
-		SemAn.isAddr.put(sfxExpr, false);
+		SemAn.isAddr.put(sfxExpr, true);
 		return type;
 	}
 
