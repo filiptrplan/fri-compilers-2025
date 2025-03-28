@@ -32,9 +32,26 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	private long depth = 0;
 	private FunctionInfo funInfo = new FunctionInfo();
 
-	// Gives us the current size for the components up until now in the
-	// current record definition
-	private long recDefOffset;
+	private static class RecInfo {
+		public enum RecType {
+			Union,
+			Struct
+		}
+
+		public RecType type;
+		// Gives us the current size for the components up until now in the
+		// current record definition
+		public long recDefOffset = 0;
+
+		public RecInfo clone() {
+			RecInfo clone = new RecInfo();
+			clone.recDefOffset = recDefOffset;
+			clone.type = type;
+			return clone;
+		}
+	}
+
+	private RecInfo recInfo = new RecInfo();
 
 	private SizeEvaluator sizeEvaluator = new SizeEvaluator();
 
@@ -116,19 +133,19 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 
 	@Override
 	public Object visit(AST.StrType strType, Object arg) {
-		long oldOffset = recDefOffset;
-		recDefOffset = 0;
+		RecInfo oldInfo = recInfo.clone();
+		recInfo.type = RecInfo.RecType.Struct;
 		strType.comps.accept(this, arg);
-		recDefOffset = oldOffset;
+		recInfo = oldInfo;
 		return null;
 	}
 
 	@Override
 	public Object visit(AST.UniType uniType, Object arg) {
-		long oldOffset = recDefOffset;
-		recDefOffset = 0;
+		RecInfo oldInfo = recInfo.clone();
+		recInfo.type = RecInfo.RecType.Union;
 		uniType.comps.accept(this, arg);
-		recDefOffset = oldOffset;
+		recInfo = oldInfo;
 		return null;
 	}
 
@@ -138,11 +155,23 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 
 		TYP.Type type = SemAn.ofType.get(compDefn);
 		long size = getSize(type);
-		// TODO: Ali so offset za record definitions negativni ali pozitivni?
-		MEM.Access access = new MEM.RelAccess(size, recDefOffset, -1);
-		Memory.accesses.put(compDefn, access);
+		MEM.Access access = null;
 
-		recDefOffset += align(size);
+		switch (recInfo.type) {
+			case Struct:
+				access = new MEM.RelAccess(size, recInfo.recDefOffset, -1);
+				recInfo.recDefOffset += align(size);
+				break;
+			case Union:
+				// Union components overlap so they are always at offset 0 and we only need the
+				// biggest size
+				access = new MEM.RelAccess(size, 0, -1);
+				recInfo.recDefOffset = Math.max(recInfo.recDefOffset, align(size));
+				break;
+		}
+
+		// TODO: Ali so offset za record definitions negativni ali pozitivni?
+		Memory.accesses.put(compDefn, access);
 
 		return null;
 	}
