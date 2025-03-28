@@ -138,11 +138,11 @@ public class Memory extends Phase {
 		@Override
 		public Object visit(AST.AtomExpr atomExpr, Object arg) {
 			switch (atomExpr.type) {
-			case STR:
-				log(Memory.strings.get(atomExpr));
-				break;
-			default:
-				break;
+				case STR:
+					log(Memory.strings.get(atomExpr));
+					break;
+				default:
+					break;
 			}
 			return null;
 		}
