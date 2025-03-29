@@ -18,15 +18,9 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	private class FunctionInfo {
 		public long argsSize = 0;
 		public long locsSize = 0;
-		public long parsSize = 0;
-
-		public FunctionInfo clone() {
-			FunctionInfo clone = new FunctionInfo();
-			clone.argsSize = argsSize;
-			clone.locsSize = locsSize;
-			clone.parsSize = parsSize;
-			return clone;
-		}
+		// We start with 8 because we are storing the static link exactly
+		// on FP
+		public long parsSize = 8;
 	}
 
 	private long depth = 0;
@@ -43,15 +37,12 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		// current record definition
 		public long recDefOffset = 0;
 
-		public RecInfo clone() {
-			RecInfo clone = new RecInfo();
-			clone.recDefOffset = recDefOffset;
-			clone.type = type;
-			return clone;
+		public RecInfo(RecType recType) {
+			this.type = recType;
 		}
 	}
 
-	private RecInfo recInfo = new RecInfo();
+	private RecInfo recInfo = new RecInfo(null);
 
 	private SizeEvaluator sizeEvaluator = new SizeEvaluator();
 
@@ -90,6 +81,8 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		for (TYP.Type parType : funType.parTypes) {
 			size += alignedSize(parType);
 		}
+		// We also need the static link
+		size += 8;
 		size += alignedSize(funType.resType);
 		return size;
 	}
@@ -133,9 +126,8 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 
 	@Override
 	public Object visit(AST.StrType strType, Object arg) {
-		RecInfo oldInfo = recInfo.clone();
-		recInfo.type = RecInfo.RecType.Struct;
-		recInfo.recDefOffset = 0;
+		RecInfo oldInfo = recInfo;
+		recInfo = new RecInfo(RecInfo.RecType.Struct);
 		strType.comps.accept(this, arg);
 		recInfo = oldInfo;
 		return null;
@@ -143,9 +135,8 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 
 	@Override
 	public Object visit(AST.UniType uniType, Object arg) {
-		RecInfo oldInfo = recInfo.clone();
-		recInfo.type = RecInfo.RecType.Union;
-		recInfo.recDefOffset = 0;
+		RecInfo oldInfo = recInfo;
+		recInfo = new RecInfo(RecInfo.RecType.Union);
 		uniType.comps.accept(this, arg);
 		recInfo = oldInfo;
 		return null;
@@ -202,7 +193,9 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		}
 
 		depth += 1;
-		FunctionInfo oldInfo = funInfo.clone();
+
+		FunctionInfo oldInfo = funInfo;
+		funInfo = new FunctionInfo();
 
 		funDefn.pars.accept(this, arg);
 		funDefn.type.accept(this, arg);
@@ -215,6 +208,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 
 		depth -= 1;
 		funInfo = oldInfo;
+
 		return null;
 	}
 }
