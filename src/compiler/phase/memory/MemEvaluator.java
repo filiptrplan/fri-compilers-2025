@@ -2,6 +2,7 @@ package compiler.phase.memory;
 
 import java.util.*;
 
+import compiler.common.report.Report;
 import compiler.phase.abstr.*;
 import compiler.phase.seman.*;
 
@@ -209,6 +210,53 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		depth -= 1;
 		funInfo = oldInfo;
 
+		return null;
+	}
+
+	/**
+	 * Takes a correctly formed string in our language (still wrapped in quotes)
+	 * and outputs a string where all the escaped characters where properly
+	 * replaces.
+	 * The function doesn't check for malformed strings.
+	 */
+	private String parseEncodedString(String str) {
+		StringBuilder result = new StringBuilder();
+		int i = 1;
+		while (i < str.length() - 1) {
+			char c = str.charAt(i);
+			if (c == '\\') {
+				i++;
+				char next = str.charAt(i);
+				switch (next) {
+					case '\\':
+						result.append('\\');
+						break;
+					case '"':
+						result.append('"');
+						break;
+					case '0':
+						if (i + 2 < str.length() && str.charAt(i + 1) == 'x') {
+							String hex = str.substring(i + 2, i + 4);
+							int code = Integer.parseInt(hex, 16);
+							result.append((char) code);
+							i += 3;
+						}
+						break;
+				}
+			} else {
+				result.append(c);
+			}
+			i++;
+		}
+		return result.toString();
+	}
+
+	@Override
+	public Object visit(AST.AtomExpr atomExpr, Object arg) {
+		if (atomExpr.type == AST.AtomExpr.Type.STR) {
+			String parsed = parseEncodedString(atomExpr.value);
+			Memory.strings.put(atomExpr, new MEM.AbsAccess(parsed.length(), new MEM.Label(), parsed));
+		}
 		return null;
 	}
 }
