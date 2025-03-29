@@ -135,6 +135,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	public Object visit(AST.StrType strType, Object arg) {
 		RecInfo oldInfo = recInfo.clone();
 		recInfo.type = RecInfo.RecType.Struct;
+		recInfo.recDefOffset = 0;
 		strType.comps.accept(this, arg);
 		recInfo = oldInfo;
 		return null;
@@ -144,6 +145,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	public Object visit(AST.UniType uniType, Object arg) {
 		RecInfo oldInfo = recInfo.clone();
 		recInfo.type = RecInfo.RecType.Union;
+		recInfo.recDefOffset = 0;
 		uniType.comps.accept(this, arg);
 		recInfo = oldInfo;
 		return null;
