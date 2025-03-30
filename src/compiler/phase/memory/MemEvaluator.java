@@ -213,6 +213,20 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		return null;
 	}
 
+	@Override
+	Object visit(AST.ExtFunDefn funDefn, Object arg) {
+		FunctionInfo oldInfo = funInfo;
+		funInfo = new FunctionInfo();
+
+		funDefn.pars.accept(this, arg);
+		funDefn.type.accept(this, arg);
+
+		depth -= 1;
+		funInfo = oldInfo;
+
+		return null;
+	}
+
 	/**
 	 * Takes a correctly formed string in our language (still wrapped in quotes)
 	 * and outputs a string where all the escaped characters where properly
