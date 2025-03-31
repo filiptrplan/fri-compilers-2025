@@ -17,15 +17,37 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	 * Contains the information about the function we are currently in
 	 */
 	private class FunctionInfo {
+
+		public FunctionInfo(AST.FunDefn funDefn) {
+			this.setParSize(funDefn);
+		}
+
 		public long argsSize = 0;
 		public long locsSize = 0;
-		// We start with 8 because we are storing the static link exactly
-		// on FP
-		public long parsSize = 8;
+		public long parsSize = 0;
+		public long parsOffset = 0;
+
+		/**
+		 * Sets the total size of parameters for the function
+		 */
+		private void setParSize(AST.FunDefn funDefn) {
+			this.parsSize = getParametersSize((TYP.FunType) SemAn.ofType.get(funDefn).actualType());
+			// We start with parsSize
+			this.parsOffset = this.parsSize;
+		}
+
+		/**
+		 * Decrements the offset and return the correct offset of the parameter
+		 * just added.
+		 */
+		public long addParameter(long size) {
+			this.parsOffset -= align(size);
+			return this.parsOffset;
+		}
 	}
 
 	private long depth = 0;
-	private FunctionInfo funInfo = new FunctionInfo();
+	private FunctionInfo funInfo = null;
 
 	private static class RecInfo {
 		public enum RecType {
@@ -75,16 +97,21 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	}
 
 	/**
-	 * Calculates the size of the call
+	 * Calculates the size of all the parameters + static link in a function
 	 */
-	private long getCallSize(TYP.FunType funType) {
+	private long getParametersSize(TYP.FunType funType) {
 		long size = 0;
 		for (TYP.Type parType : funType.parTypes) {
 			size += alignedSize(parType);
 		}
-		// We also need the static link
-		size += 8;
+		return size + 8;
+	}
 
+	/**
+	 * Calculates the size of the call
+	 */
+	private long getCallSize(TYP.FunType funType) {
+		long size = getParametersSize(funType);
 		// The return value overwrites the parameters and static link
 		size = Math.max(alignedSize(funType.resType), size);
 		return size;
@@ -123,10 +150,9 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 
 		TYP.Type type = SemAn.ofType.get(parDefn);
 		long size = getSize(type);
-		MEM.Access access = new MEM.RelAccess(size, funInfo.parsSize, depth);
+		long offset = funInfo.addParameter(size);
+		MEM.Access access = new MEM.RelAccess(size, offset, depth);
 		Memory.accesses.put(parDefn, access);
-
-		funInfo.parsSize += align(size);
 
 		return null;
 	}
@@ -201,7 +227,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		depth += 1;
 
 		FunctionInfo oldInfo = funInfo;
-		funInfo = new FunctionInfo();
+		funInfo = new FunctionInfo(funDefn);
 
 		funDefn.pars.accept(this, arg);
 		funDefn.type.accept(this, arg);
@@ -221,7 +247,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	@Override
 	public Object visit(AST.ExtFunDefn funDefn, Object arg) {
 		FunctionInfo oldInfo = funInfo;
-		funInfo = new FunctionInfo();
+		funInfo = new FunctionInfo(funDefn);
 
 		depth += 1;
 
