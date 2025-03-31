@@ -84,7 +84,9 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		}
 		// We also need the static link
 		size += 8;
-		size += alignedSize(funType.resType);
+		// TODO: For now we will leave out the result because we can
+		// maybe return it in the RV register?
+		// size += alignedSize(funType.resType);
 		return size;
 	}
 
@@ -99,7 +101,11 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		if (depth == 0) {
 			// TODO: What to put for an initial value?
 			// for string you should put "", for others leave at null!
-			Memory.accesses.put(varDefn, new MEM.AbsAccess(size, new MEM.Label(varDefn.name)));
+			if (TypeChecker.equivalent(type, new TYP.PtrType(TYP.CharType.type))) {
+				Memory.accesses.put(varDefn, new MEM.AbsAccess(size, new MEM.Label(varDefn.name), ""));
+			} else {
+				Memory.accesses.put(varDefn, new MEM.AbsAccess(size, new MEM.Label(varDefn.name)));
+			}
 		} else {
 			// We are in a let statement in some function, so this will be a local variable
 			// for the function
@@ -164,7 +170,6 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 				break;
 		}
 
-		// TODO: Ali so offset za record definitions negativni ali pozitivni?
 		Memory.accesses.put(compDefn, access);
 
 		return null;
@@ -214,9 +219,11 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	}
 
 	@Override
-	Object visit(AST.ExtFunDefn funDefn, Object arg) {
+	public Object visit(AST.ExtFunDefn funDefn, Object arg) {
 		FunctionInfo oldInfo = funInfo;
 		funInfo = new FunctionInfo();
+
+		depth += 1;
 
 		funDefn.pars.accept(this, arg);
 		funDefn.type.accept(this, arg);
@@ -262,6 +269,8 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 			}
 			i++;
 		}
+		// Add a null byte at the end
+		// result.append((char) 0);
 		return result.toString();
 	}
 
@@ -269,7 +278,8 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	public Object visit(AST.AtomExpr atomExpr, Object arg) {
 		if (atomExpr.type == AST.AtomExpr.Type.STR) {
 			String parsed = parseEncodedString(atomExpr.value);
-			Memory.strings.put(atomExpr, new MEM.AbsAccess(parsed.length(), new MEM.Label(), parsed));
+			// We add one byte for the null terminator
+			Memory.strings.put(atomExpr, new MEM.AbsAccess(parsed.length() + 1, new MEM.Label(), parsed));
 		}
 		return null;
 	}

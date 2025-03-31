@@ -33,7 +33,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 	/*
 	 * Returns true if the two types are equivalent
 	 */
-	private boolean equivalent(TYP.Type t1, TYP.Type t2) {
+	public static boolean equivalent(TYP.Type t1, TYP.Type t2) {
 		// EQU1
 		if (t1.equals(t2))
 			return true;
