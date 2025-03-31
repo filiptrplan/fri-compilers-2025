@@ -84,9 +84,9 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		}
 		// We also need the static link
 		size += 8;
-		// TODO: For now we will leave out the result because we can
-		// maybe return it in the RV register?
-		// size += alignedSize(funType.resType);
+
+		// The return value overwrites the parameters and static link
+		size = Math.max(alignedSize(funType.resType), size);
 		return size;
 	}
 
