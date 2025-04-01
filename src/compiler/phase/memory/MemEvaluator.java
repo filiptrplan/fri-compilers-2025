@@ -18,31 +18,19 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	 */
 	private class FunctionInfo {
 
-		public FunctionInfo(AST.FunDefn funDefn) {
-			this.setParSize(funDefn);
-		}
-
 		public long argsSize = 0;
 		public long locsSize = 0;
-		public long parsSize = 0;
-		public long parsOffset = 0;
-
-		/**
-		 * Sets the total size of parameters for the function
-		 */
-		private void setParSize(AST.FunDefn funDefn) {
-			this.parsSize = getParametersSize((TYP.FunType) SemAn.ofType.get(funDefn).actualType());
-			// We start with parsSize
-			this.parsOffset = this.parsSize;
-		}
+		// We start with 8 because of the static link
+		public long parsSize = 8;
 
 		/**
 		 * Decrements the offset and return the correct offset of the parameter
 		 * just added.
 		 */
 		public long addParameter(long size) {
-			this.parsOffset -= align(size);
-			return this.parsOffset;
+			long alignedSize2 = align(size);
+			this.parsSize += alignedSize2;
+			return this.parsSize - alignedSize2;
 		}
 	}
 
@@ -227,7 +215,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		depth += 1;
 
 		FunctionInfo oldInfo = funInfo;
-		funInfo = new FunctionInfo(funDefn);
+		funInfo = new FunctionInfo();
 
 		funDefn.pars.accept(this, arg);
 		funDefn.type.accept(this, arg);
@@ -247,7 +235,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	@Override
 	public Object visit(AST.ExtFunDefn funDefn, Object arg) {
 		FunctionInfo oldInfo = funInfo;
-		funInfo = new FunctionInfo(funDefn);
+		funInfo = new FunctionInfo();
 
 		depth += 1;
 
