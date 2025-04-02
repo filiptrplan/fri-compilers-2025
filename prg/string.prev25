@@ -1,0 +1,4 @@
+var a : ^char
+
+fun main() : int = 
+    a = "abc\0x1Fdef"
