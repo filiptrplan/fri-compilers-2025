@@ -69,7 +69,7 @@ public class IMC {
 
 		@Override
 		public void log(Logger logger) {
-			logger.begElement("");
+			logger.begElement("imc");
 			logger.addAttribute("instruction", "BINOP(" + oper + ")");
 			fstExpr.log(logger);
 			sndExpr.log(logger);
@@ -121,7 +121,7 @@ public class IMC {
 
 		@Override
 		public void log(Logger logger) {
-			logger.begElement("");
+			logger.begElement("imc");
 			logger.addAttribute("instruction", "CALL");
 			addr.log(logger);
 			for (int a = 0; a < args.size(); a++)
@@ -172,7 +172,7 @@ public class IMC {
 
 		@Override
 		public void log(Logger logger) {
-			logger.begElement("");
+			logger.begElement("imc");
 			logger.addAttribute("instruction", toString());
 			logger.endElement();
 		}
@@ -211,7 +211,7 @@ public class IMC {
 
 		@Override
 		public void log(Logger logger) {
-			logger.begElement("");
+			logger.begElement("imc");
 			logger.addAttribute("instruction", "MEM1");
 			addr.log(logger);
 			logger.endElement();
@@ -251,7 +251,7 @@ public class IMC {
 
 		@Override
 		public void log(Logger logger) {
-			logger.begElement("");
+			logger.begElement("imc");
 			logger.addAttribute("instruction", "MEM8");
 			addr.log(logger);
 			logger.endElement();
@@ -437,7 +437,7 @@ public class IMC {
 	/**
 	 * Intermediate code instruction denoting a statement.
 	 */
-	public abstract class Stmt extends Instr {
+	public static abstract class Stmt extends Instr {
 	}
 
 	/**
@@ -446,7 +446,7 @@ public class IMC {
 	 * Evaluates the condition, jumps to one address if the condition is nonzero or
 	 * to other if the condition is zero.
 	 */
-	public class CJUMP extends Stmt {
+	public static class CJUMP extends Stmt {
 
 		/** The condition. */
 		public Expr cond;
@@ -497,7 +497,7 @@ public class IMC {
 	 * 
 	 * Evaluates expression and throws the result away.
 	 */
-	public class ESTMT extends Stmt {
+	public static class ESTMT extends Stmt {
 
 		/** The expression. */
 		public final Expr expr;
@@ -536,7 +536,7 @@ public class IMC {
 	 * 
 	 * Jumps to the address.
 	 */
-	public class JUMP extends Stmt {
+	public static class JUMP extends Stmt {
 
 		/** The address. */
 		public Expr addr;
@@ -575,7 +575,7 @@ public class IMC {
 	 * 
 	 * Does nothing.
 	 */
-	public class LABEL extends Stmt {
+	public static class LABEL extends Stmt {
 
 		/** The label. */
 		public MEM.Label label;
@@ -617,7 +617,7 @@ public class IMC {
 	 * {@link MEM} node. If the root node of the destination is {@link TEMP}, the
 	 * source is stored in the temporary variable.
 	 */
-	public class MOVE extends Stmt {
+	public static class MOVE extends Stmt {
 
 		/** The destination. */
 		public final Expr dst;
@@ -657,7 +657,7 @@ public class IMC {
 	 * 
 	 * Executes one statement after another.
 	 */
-	public class STMTS extends Stmt {
+	public static class STMTS extends Stmt {
 
 		/** The sequence of statements. */
 		public final Vector<Stmt> stmts;
