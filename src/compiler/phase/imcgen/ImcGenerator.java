@@ -56,12 +56,12 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	@Override
 	public IMC.Instr visit(AST.DefFunDefn defFunDefn, Object arg) {
-		if ((defFunDefn.pars != null) || (!compiler.Compiler.devMode()))
-			defFunDefn.pars.accept(this, arg);
-		if ((defFunDefn.type != null) || (!compiler.Compiler.devMode()))
-			defFunDefn.type.accept(this, arg);
-		if ((defFunDefn.stmts != null) || (!compiler.Compiler.devMode()))
-			defFunDefn.stmts.accept(this, arg);
+		defFunDefn.pars.accept(this, arg);
+		defFunDefn.type.accept(this, arg);
+		MEM.Frame oldFrame = currentCallFrame;
+		currentCallFrame = Memory.frames.get(defFunDefn);
+		defFunDefn.stmts.accept(this, arg);
+		currentCallFrame = oldFrame;
 		return null;
 	}
 
@@ -190,14 +190,103 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	@Override
 	public IMC.Instr visit(AST.ArrExpr arrExpr, Object arg) {
-		arrExpr.arrExpr.accept(this, arg);
-		arrExpr.idx.accept(this, arg);
-		return null;
+		IMC.Expr arrExprInstr = (IMC.Expr) arrExpr.arrExpr.accept(this, arg);
+		IMC.Expr idxInstr = (IMC.Expr) arrExpr.idx.accept(this, arg);
+
+		// The array access expression should be of the same type as the element type
+		TYP.Type elementType = SemAn.ofType.get(arrExpr);
+		long elSize = elementType.accept(sizeEvaluator, null);
+
+		// The idx is always an INT according to the type rules
+		// The arrExpr must be an address. That could be a dereferenced pointer or
+		// something
+		// like that or a NameExpr. So we must watch out for MEM instructions.
+		// The MEM instruction should always be 8 bytes because we can't have an
+		// array pointer that is dereferenced to a 1 byte data structure like char or
+		// bool
+
+		// TODO: If they are MEM calls, does it hold that they are always some
+		// variables / places to assign to?
+
+		IMC.Expr addrInstr = null;
+
+		if (arrExprInstr instanceof IMC.MEM8) {
+			IMC.Expr arrExprAddr = ((IMC.MEM8) arrExprInstr).addr;
+			addrInstr = new IMC.BINOP(IMC.BINOP.Oper.ADD, arrExprAddr,
+					new IMC.BINOP(IMC.BINOP.Oper.MUL, idxInstr, new IMC.CONST(elSize)));
+		} else if (arrExprInstr instanceof IMC.MEM1) {
+			// According to the type rules, we shouldn't reach this
+			throw new Report.InternalError();
+		} else {
+			addrInstr = new IMC.BINOP(IMC.BINOP.Oper.ADD, arrExprInstr,
+					new IMC.BINOP(IMC.BINOP.Oper.MUL, idxInstr, new IMC.CONST(elSize)));
+		}
+		IMC.Expr instr = null;
+		if (isMem1(arrExpr)) {
+			instr = new IMC.MEM1(addrInstr);
+		} else {
+			instr = new IMC.MEM8(addrInstr);
+		}
+		ImcGen.expr.put(arrExpr, instr);
+		return instr;
+	}
+
+	/** Get the long value of a character constant (still surrounded by quotes) */
+	private long getCharValue(String str) {
+		char c = str.charAt(1);
+		char result = '\00';
+		if (c == '\\') {
+			char next = str.charAt(2);
+			switch (next) {
+				case '\\':
+					result = '\\';
+					break;
+				case '"':
+					result = '"';
+					break;
+				case '0':
+					String hex = str.substring(4, 6);
+					int code = Integer.parseInt(hex, 16);
+					result = (char) code;
+					break;
+			}
+		} else {
+			result = c;
+		}
+		return (long) result;
 	}
 
 	@Override
 	public IMC.Instr visit(AST.AtomExpr atomExpr, Object arg) {
-		return null;
+		IMC.Expr instr = null;
+		switch (atomExpr.type) {
+			case INT:
+				instr = new IMC.CONST(Long.valueOf(atomExpr.value));
+				break;
+			case STR:
+				// TODO: String const expression
+				break;
+			case CHAR:
+				instr = new IMC.CONST(getCharValue(atomExpr.value));
+				break;
+			case BOOL:
+				if (atomExpr.value.equals("true")) {
+					instr = new IMC.CONST(1);
+				} else {
+					instr = new IMC.CONST(0);
+				}
+				break;
+			case PTR:
+				// Pointer constants can only be a null pointer
+				// All others should be considered as prefix expressions
+				if (!atomExpr.value.equals("0")) {
+					throw new Report.InternalError();
+				}
+				instr = new IMC.CONST(0);
+				break;
+		}
+		ImcGen.expr.put(atomExpr, instr);
+		return instr;
 	}
 
 	@Override
@@ -229,20 +318,30 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	@Override
 	public IMC.Instr visit(AST.NameExpr nameExpr, Object arg) {
-		MEM.Access access = Memory.accesses.get(nameExpr);
+		AST.Node defn = SemAn.defAt.get(nameExpr);
 		IMC.Expr addressInstr = null;
-		if (access instanceof MEM.AbsAccess) {
-			addressInstr = new IMC.NAME(((MEM.AbsAccess) access).label);
-		} else { // Else it is a RelAccess
-			MEM.RelAccess relAccess = (MEM.RelAccess) access;
-			IMC.Expr fp = new IMC.TEMP(currentCallFrame.FP);
-			// We calculate how many times we must go up a static link
-			long diffDepth = currentCallFrame.depth - relAccess.depth;
-			for (int i = 0; i < diffDepth; i++) {
-				fp = new IMC.MEM8(fp);
+
+		// We handle variables and functions differently
+		if (defn instanceof AST.FunDefn) {
+			MEM.Frame callFrame = Memory.frames.get(defn);
+			MEM.Label label = callFrame.label;
+			addressInstr = new IMC.NAME(label);
+		} else {
+			MEM.Access access = Memory.accesses.get(defn);
+			if (access instanceof MEM.AbsAccess) {
+				addressInstr = new IMC.NAME(((MEM.AbsAccess) access).label);
+			} else { // Else it is a RelAccess
+				MEM.RelAccess relAccess = (MEM.RelAccess) access;
+				IMC.Expr fp = new IMC.TEMP(currentCallFrame.FP);
+				// We calculate how many times we must go up a static link
+				long diffDepth = currentCallFrame.depth - relAccess.depth;
+				for (int i = 0; i < diffDepth; i++) {
+					fp = new IMC.MEM8(fp);
+				}
+				addressInstr = new IMC.BINOP(IMC.BINOP.Oper.ADD, fp, new IMC.CONST(relAccess.offset));
 			}
-			addressInstr = new IMC.BINOP(IMC.BINOP.Oper.ADD, fp, new IMC.CONST(relAccess.offset));
 		}
+
 		IMC.Expr memAccessInstr;
 		if (isMem1(nameExpr)) {
 			memAccessInstr = new IMC.MEM1(addressInstr);
@@ -275,7 +374,6 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 				// AST Nodes that can be addresses: CompExpr, NameExpr, CastExpr
 				if (subExpr instanceof IMC.MEM8) {
 					// We unwrap the address
-					// TODO: What should I do with the AST node of the subexpr?
 					instr = ((IMC.MEM8) subExpr).addr;
 				} else if (subExpr instanceof IMC.MEM1) {
 					instr = ((IMC.MEM1) subExpr).addr;
