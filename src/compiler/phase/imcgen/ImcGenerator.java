@@ -363,8 +363,19 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 	@Override
 	public IMC.Instr visit(AST.CastExpr castExpr, Object arg) {
 		castExpr.type.accept(this, arg);
-		castExpr.expr.accept(this, arg);
-		return null;
+		IMC.Expr subExpr = (IMC.Expr) castExpr.expr.accept(this, arg);
+		TYP.Type castType = SemAn.isType.get(castExpr.type).actualType();
+
+		IMC.Expr instr;
+		if (castType instanceof TYP.BoolType) {
+			instr = new IMC.BINOP(IMC.BINOP.Oper.MOD, subExpr, new IMC.CONST(2));
+		} else if (castType instanceof TYP.CharType) {
+			instr = new IMC.BINOP(IMC.BINOP.Oper.MOD, subExpr, new IMC.CONST(256));
+		} else {
+			instr = subExpr;
+		}
+		ImcGen.expr.put(castExpr, instr);
+		return instr;
 	}
 
 	@Override
