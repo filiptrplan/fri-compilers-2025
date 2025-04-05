@@ -519,7 +519,8 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 				MEM.RelAccess relAccess = (MEM.RelAccess) access;
 				IMC.Expr fp = new IMC.TEMP(currentCallFrame.FP);
 				// We calculate how many times we must go up a static link
-				long diffDepth = currentCallFrame.depth - relAccess.depth;
+				long diffDepth = currentCallFrame.depth - relAccess.depth + 1;
+				Report.info(nameExpr.name + ' ' + Long.toString(diffDepth));
 				for (int i = 0; i < diffDepth; i++) {
 					fp = new IMC.MEM8(fp);
 				}
