@@ -1,7 +1,10 @@
 package compiler.phase.imcgen;
 
+import java.util.Vector;
+
 import compiler.common.report.Report;
 import compiler.phase.abstr.*;
+import compiler.phase.abstr.AST.Stmt;
 import compiler.phase.imcgen.IMC.UNOP.Oper;
 import compiler.phase.memory.MEM;
 import compiler.phase.memory.MemEvaluator;
@@ -22,6 +25,9 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	/** The call frame of the current function we are in */
 	private MEM.Frame currentCallFrame = null;
+
+	/** The nodes of the current function we are in */
+	private AST.Node currentFunctionNode = null;
 
 	/** Checks if the node is of size 1 or not */
 	private boolean isMem1(AST.Node node) {
@@ -55,10 +61,25 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	@Override
 	public IMC.Instr visit(AST.Nodes<? extends AST.Node> nodes, Object arg) {
-		for (final AST.Node node : nodes)
-			if ((node != null) || (!compiler.Compiler.devMode()))
+		if (nodes.size() == 0) {
+			return null;
+		}
+
+		IMC.Instr instr = null;
+		if (nodes.get(0) instanceof AST.Stmt) {
+			Vector<IMC.Stmt> stmts = new Vector<>();
+			MEM.Label startLabel = new MEM.Label();
+			MEM.Label endLabel = new MEM.Label();
+			stmts.add(new IMC.LABEL(startLabel));
+			for (final AST.Node node : nodes)
+				stmts.add((IMC.Stmt) node.accept(this, arg));
+			stmts.add(new IMC.LABEL(endLabel));
+			instr = new IMC.STMTS(stmts, startLabel, endLabel);
+		} else {
+			for (final AST.Node node : nodes)
 				node.accept(this, arg);
-		return null;
+		}
+		return instr;
 	}
 
 	// ----- Definitions -----
@@ -82,9 +103,19 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		defFunDefn.pars.accept(this, arg);
 		defFunDefn.type.accept(this, arg);
 		MEM.Frame oldFrame = currentCallFrame;
+		AST.Node oldNode = currentFunctionNode;
+
 		currentCallFrame = Memory.frames.get(defFunDefn);
+		currentFunctionNode = defFunDefn;
+
+		MEM.Label entryLabel = new MEM.Label();
+		MEM.Label exitLabel = new MEM.Label();
+		ImcGen.entryLabel.put(defFunDefn, entryLabel);
+		ImcGen.exitLabel.put(defFunDefn, exitLabel);
 		defFunDefn.stmts.accept(this, arg);
+
 		currentCallFrame = oldFrame;
+		currentFunctionNode = oldNode;
 		return null;
 	}
 
@@ -124,89 +155,81 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	@Override
 	public IMC.Instr visit(AST.AssignStmt assignStmt, Object arg) {
-		if ((assignStmt.dstExpr != null) || (!compiler.Compiler.devMode()))
-			assignStmt.dstExpr.accept(this, arg);
-		if ((assignStmt.srcExpr != null) || (!compiler.Compiler.devMode()))
-			assignStmt.srcExpr.accept(this, arg);
-		return null;
+		IMC.Expr dstExpr = (IMC.Expr) assignStmt.dstExpr.accept(this, arg);
+		IMC.Expr dstAddr = getAddress(dstExpr);
+		IMC.Expr srcExpr = (IMC.Expr) assignStmt.srcExpr.accept(this, arg);
+		IMC.Stmt stmt = new IMC.MOVE(dstAddr, srcExpr);
+		ImcGen.stmt.put(assignStmt, stmt);
+		return stmt;
 	}
 
 	@Override
 	public IMC.Instr visit(AST.ExprStmt callStmt, Object arg) {
-		if ((callStmt.expr != null) || (!compiler.Compiler.devMode()))
-			callStmt.expr.accept(this, arg);
-		return null;
+		IMC.Expr expr = (IMC.Expr) callStmt.expr.accept(this, arg);
+		IMC.Stmt stmt = new IMC.ESTMT(expr);
+		ImcGen.stmt.put(callStmt, stmt);
+		return stmt;
 	}
 
 	@Override
 	public IMC.Instr visit(AST.IfThenStmt ifThenStmt, Object arg) {
-		ifThenStmt.condExpr.accept(this, arg);
-		ifThenStmt.thenStmt.accept(this, arg);
-		return null;
+		IMC.Expr condExpr = (IMC.Expr) ifThenStmt.condExpr.accept(this, arg);
+		IMC.STMTS thenStmt = (IMC.STMTS) ifThenStmt.thenStmt.accept(this, arg);
+		MEM.Label entryLabel = thenStmt.startLabel;
+		MEM.Label exitLabel = thenStmt.endLabel;
+		IMC.Stmt stmt = new IMC.CJUMP(condExpr, new IMC.NAME(entryLabel),
+				new IMC.NAME(exitLabel));
+		ImcGen.stmt.put(ifThenStmt, stmt);
+		return stmt;
 	}
 
 	@Override
 	public IMC.Instr visit(AST.IfThenElseStmt ifThenElseStmt, Object arg) {
-		ifThenElseStmt.condExpr.accept(this, arg);
-		ifThenElseStmt.thenStmt.accept(this, arg);
-		ifThenElseStmt.elseStmt.accept(this, arg);
-		return null;
+		IMC.Expr condExpr = (IMC.Expr) ifThenElseStmt.condExpr.accept(this, arg);
+		IMC.STMTS thenStmt = (IMC.STMTS) ifThenElseStmt.thenStmt.accept(this, arg);
+		IMC.STMTS elseStmt = (IMC.STMTS) ifThenElseStmt.elseStmt.accept(this, arg);
+		MEM.Label label1 = thenStmt.startLabel;
+		MEM.Label label2 = elseStmt.startLabel;
+		IMC.Stmt stmt = new IMC.CJUMP(condExpr, new IMC.NAME(label1), new IMC.NAME(label2));
+		ImcGen.stmt.put(ifThenElseStmt, stmt);
+		return stmt;
 	}
 
 	@Override
 	public IMC.Instr visit(AST.ReturnStmt returnStmt, Object arg) {
-		returnStmt.retExpr.accept(this, arg);
-		return null;
+		IMC.Expr expr = (IMC.Expr) returnStmt.retExpr.accept(this, arg);
+		Vector<IMC.Stmt> stmts = new Vector<>();
+		// Move the result to the RV register
+		stmts.add(new IMC.MOVE(new IMC.TEMP(currentCallFrame.RV), expr));
+		// Jump to the function epilogue
+		stmts.add(new IMC.JUMP(new IMC.NAME(ImcGen.exitLabel.get(currentFunctionNode))));
+		IMC.Stmt instr = new IMC.STMTS(stmts, new MEM.Label(), new MEM.Label());
+		ImcGen.stmt.put(returnStmt, instr);
+		return instr;
 	}
 
 	@Override
 	public IMC.Instr visit(AST.WhileStmt whileStmt, Object arg) {
-		whileStmt.condExpr.accept(this, arg);
+		IMC.Expr expr = (IMC.Expr) whileStmt.condExpr.accept(this, arg);
 		whileStmt.stmts.accept(this, arg);
-		return null;
-	}
+		// This label denotes the top of the while loop
+		MEM.Label whileLabel = new MEM.Label();
+		MEM.Label whileBodyLabel = ImcGen.entryLabel.get(whileStmt.stmts);
+		MEM.Label whileExitLabel = new MEM.Label();
 
-	// ----- Types -----
+		Vector<IMC.Stmt> stmts = new Vector<>();
+		// We first label our while loop
+		stmts.add(new IMC.LABEL(whileLabel));
+		// Then we check the condition
+		stmts.add(new IMC.CJUMP(expr, new IMC.NAME(whileBodyLabel), new IMC.NAME(whileExitLabel)));
+		// At the end we jump to the condition again
+		stmts.add(new IMC.JUMP(new IMC.NAME(whileLabel)));
+		// Then we also add the label for exiting the function
+		stmts.add(new IMC.LABEL(whileExitLabel));
 
-	@Override
-	public IMC.Instr visit(AST.AtomType atomType, Object arg) {
-		return null;
-	}
-
-	@Override
-	public IMC.Instr visit(AST.ArrType arrType, Object arg) {
-		arrType.elemType.accept(this, arg);
-		return null;
-	}
-
-	@Override
-	public IMC.Instr visit(AST.PtrType ptrType, Object arg) {
-		ptrType.baseType.accept(this, arg);
-		return null;
-	}
-
-	@Override
-	public IMC.Instr visit(AST.StrType strType, Object arg) {
-		strType.comps.accept(this, arg);
-		return null;
-	}
-
-	@Override
-	public IMC.Instr visit(AST.UniType uniType, Object arg) {
-		uniType.comps.accept(this, arg);
-		return null;
-	}
-
-	@Override
-	public IMC.Instr visit(AST.FunType funType, Object arg) {
-		funType.parTypes.accept(this, arg);
-		funType.resType.accept(this, arg);
-		return null;
-	}
-
-	@Override
-	public IMC.Instr visit(AST.NameType nameType, Object arg) {
-		return null;
+		IMC.Stmt instr = new IMC.STMTS(stmts, whileLabel, whileExitLabel);
+		ImcGen.stmt.put(whileStmt, instr);
+		return instr;
 	}
 
 	// ----- Expressions -----
@@ -274,7 +297,9 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 				instr = new IMC.CONST(Long.valueOf(atomExpr.value));
 				break;
 			case STR:
-				// TODO: String const expression
+				// We just create an anonymous label for the string
+				MEM.AbsAccess access = Memory.strings.get(atomExpr);
+				instr = new IMC.NAME(access.label);
 				break;
 			case CHAR:
 				instr = new IMC.CONST(getCharValue(atomExpr.value));
@@ -355,9 +380,29 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	@Override
 	public IMC.Instr visit(AST.CallExpr callExpr, Object arg) {
-		callExpr.funExpr.accept(this, arg);
-		callExpr.argExprs.accept(this, arg);
-		return null;
+		// We know that the funExpr will return the address of the function
+		IMC.Expr funExprAddr = (IMC.Expr) callExpr.funExpr.accept(this, arg);
+		Vector<IMC.Expr> args = new Vector<>();
+		Vector<Long> offs = new Vector<>();
+
+		// I will consider the offset to be from the preallocated SP up
+		long offset = 0;
+		// First we add the static link
+		MEM.Temp containingFP = currentCallFrame.FP;
+		args.add(new IMC.TEMP(containingFP));
+		offs.add(offset);
+		offset += 8;
+		for (int i = 0; i < callExpr.argExprs.size(); i++) {
+			AST.Node argExpr = callExpr.argExprs.get(i);
+			IMC.Expr argExprInstr = (IMC.Expr) argExpr.accept(this, arg);
+			args.add(argExprInstr);
+			// TODO: are these offsets correct?
+			offset += MemEvaluator.alignedSize(SemAn.ofType.get(argExpr).actualType());
+			offs.add(offset);
+		}
+		IMC.Expr instr = new IMC.CALL(funExprAddr, offs, args);
+		ImcGen.expr.put(callExpr, instr);
+		return instr;
 	}
 
 	@Override
@@ -421,7 +466,12 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		// We handle variables and functions differently
 		if (defn instanceof AST.FunDefn) {
 			MEM.Frame callFrame = Memory.frames.get(defn);
-			MEM.Label label = callFrame.label;
+			MEM.Label label = null;
+			if (defn instanceof AST.ExtFunDefn) {
+				label = callFrame.label;
+			} else {
+				label = ImcGen.entryLabel.get(defn);
+			}
 			addressInstr = new IMC.NAME(label);
 		} else {
 			MEM.Access access = Memory.accesses.get(defn);

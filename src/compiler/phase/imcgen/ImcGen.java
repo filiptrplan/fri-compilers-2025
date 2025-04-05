@@ -55,22 +55,7 @@ public class ImcGen extends Phase {
 		 * @param node The node.
 		 */
 		private void logAttributes(final AST.Node node) {
-			switch (node) {
-			case AST.Expr expr -> {
-				IMC.Expr exprImc = ImcGen.expr.get(expr);
-				if (expr != null)
-					exprImc.log(logger);
-				break;
-			}
-			case AST.Stmt stmt -> {
-				IMC.Stmt stmtImc = ImcGen.stmt.get(stmt);
-				if (stmt != null)
-					stmtImc.log(logger);
-				break;
-			}
-			default -> {
-			}
-			}
+			switch(node){case AST.Expr expr->{IMC.Expr exprImc=ImcGen.expr.get(expr);if(expr!=null)exprImc.log(logger);break;}case AST.Stmt stmt->{IMC.Stmt stmtImc=ImcGen.stmt.get(stmt);if(stmt!=null)stmtImc.log(logger);break;}default->{}}
 		}
 
 		/** The logger the log should be written to. */

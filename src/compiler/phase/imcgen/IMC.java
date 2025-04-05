@@ -662,13 +662,23 @@ public class IMC {
 		/** The sequence of statements. */
 		public final Vector<Stmt> stmts;
 
+		/** Label that points to the first statement */
+		public final MEM.Label startLabel;
+
+		/** Label that points to AFTER the last statement */
+		public final MEM.Label endLabel;
+
 		/**
 		 * Constructs a sequence of statements.
 		 * 
-		 * @param stmts The sequence of statements.
+		 * @param stmts      The sequence of statements.
+		 * @param startLabel The label that points to the first Statement
+		 * @param endLabel   The label that points to after the last statement
 		 */
-		public STMTS(Vector<Stmt> stmts) {
+		public STMTS(Vector<Stmt> stmts, MEM.Label startLabel, MEM.Label endLabel) {
 			this.stmts = new Vector<Stmt>(stmts);
+			this.startLabel = startLabel;
+			this.endLabel = endLabel;
 		}
 
 		@Override

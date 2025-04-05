@@ -87,7 +87,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	/**
 	 * Calculates the size of all the parameters + static link in a function
 	 */
-	private long getParametersSize(TYP.FunType funType) {
+	public static long getParametersSize(TYP.FunType funType) {
 		long size = 0;
 		for (TYP.Type parType : funType.parTypes) {
 			size += alignedSize(parType);
