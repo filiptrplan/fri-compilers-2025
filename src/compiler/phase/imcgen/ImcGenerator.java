@@ -291,9 +291,56 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	@Override
 	public IMC.Instr visit(AST.BinExpr binExpr, Object arg) {
-		binExpr.fstExpr.accept(this, arg);
-		binExpr.sndExpr.accept(this, arg);
-		return null;
+		IMC.Expr fstExpr = (IMC.Expr) binExpr.fstExpr.accept(this, arg);
+		IMC.Expr sndExpr = (IMC.Expr) binExpr.sndExpr.accept(this, arg);
+
+		IMC.BINOP.Oper oper = null;
+
+		switch (binExpr.oper) {
+			case OR:
+				oper = IMC.BINOP.Oper.OR;
+				break;
+			case AND:
+				oper = IMC.BINOP.Oper.AND;
+				break;
+			case EQU:
+				oper = IMC.BINOP.Oper.EQU;
+				break;
+			case NEQ:
+				oper = IMC.BINOP.Oper.NEQ;
+				break;
+			case LTH:
+				oper = IMC.BINOP.Oper.LTH;
+				break;
+			case GTH:
+				oper = IMC.BINOP.Oper.GTH;
+				break;
+			case LEQ:
+				oper = IMC.BINOP.Oper.LEQ;
+				break;
+			case GEQ:
+				oper = IMC.BINOP.Oper.GEQ;
+				break;
+			case MUL:
+				oper = IMC.BINOP.Oper.MUL;
+				break;
+			case DIV:
+				oper = IMC.BINOP.Oper.DIV;
+				break;
+			case MOD:
+				oper = IMC.BINOP.Oper.MOD;
+				break;
+			case ADD:
+				oper = IMC.BINOP.Oper.ADD;
+				break;
+			case SUB:
+				oper = IMC.BINOP.Oper.SUB;
+				break;
+		}
+
+		IMC.Expr instr = new IMC.BINOP(oper, fstExpr, sndExpr);
+		ImcGen.expr.put(binExpr, instr);
+		return instr;
 	}
 
 	@Override
