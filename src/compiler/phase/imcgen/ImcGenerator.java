@@ -305,6 +305,9 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		if (c == '\\') {
 			char next = str.charAt(2);
 			switch (next) {
+				case '\'':
+					result = '\'';
+					break;
 				case '\\':
 					result = '\\';
 					break;
