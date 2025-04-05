@@ -4,6 +4,7 @@ import compiler.common.report.Report;
 import compiler.phase.abstr.*;
 import compiler.phase.imcgen.IMC.UNOP.Oper;
 import compiler.phase.memory.MEM;
+import compiler.phase.memory.MemEvaluator;
 import compiler.phase.memory.Memory;
 import compiler.phase.memory.SizeEvaluator;
 import compiler.phase.seman.SemAn;
@@ -26,6 +27,28 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 	private boolean isMem1(AST.Node node) {
 		TYP.Type type = SemAn.ofType.get(node);
 		return TypeChecker.equivalent(type, TYP.BoolType.type) || TypeChecker.equivalent(type, TYP.CharType.type);
+	}
+
+	/** Wraps the address expression in MEM1 / MEM8 depending on the node type */
+	private IMC.Expr wrapMem(IMC.Expr addr, AST.Node node) {
+		if (isMem1(node)) {
+			return new IMC.MEM1(addr);
+		} else {
+			return new IMC.MEM8(addr);
+		}
+	}
+
+	/** Get the address this expression represents */
+	private IMC.Expr getAddress(IMC.Expr expr) {
+		if (expr instanceof IMC.MEM8) {
+			IMC.Expr exprAddr = ((IMC.MEM8) expr).addr;
+			return exprAddr;
+		} else if (expr instanceof IMC.MEM1) {
+			// According to the type rules, we shouldn't reach this
+			throw new Report.InternalError();
+		} else {
+			return expr;
+		}
 	}
 
 	// ----- Trees -----
@@ -208,25 +231,12 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		// TODO: If they are MEM calls, does it hold that they are always some
 		// variables / places to assign to?
 
-		IMC.Expr addrInstr = null;
+		IMC.Expr arrExprAddr = getAddress(arrExprInstr);
 
-		if (arrExprInstr instanceof IMC.MEM8) {
-			IMC.Expr arrExprAddr = ((IMC.MEM8) arrExprInstr).addr;
-			addrInstr = new IMC.BINOP(IMC.BINOP.Oper.ADD, arrExprAddr,
-					new IMC.BINOP(IMC.BINOP.Oper.MUL, idxInstr, new IMC.CONST(elSize)));
-		} else if (arrExprInstr instanceof IMC.MEM1) {
-			// According to the type rules, we shouldn't reach this
-			throw new Report.InternalError();
-		} else {
-			addrInstr = new IMC.BINOP(IMC.BINOP.Oper.ADD, arrExprInstr,
-					new IMC.BINOP(IMC.BINOP.Oper.MUL, idxInstr, new IMC.CONST(elSize)));
-		}
-		IMC.Expr instr = null;
-		if (isMem1(arrExpr)) {
-			instr = new IMC.MEM1(addrInstr);
-		} else {
-			instr = new IMC.MEM8(addrInstr);
-		}
+		IMC.Expr addrInstr = new IMC.BINOP(IMC.BINOP.Oper.ADD, arrExprAddr,
+				new IMC.BINOP(IMC.BINOP.Oper.MUL, idxInstr, new IMC.CONST(elSize)));
+
+		IMC.Expr instr = wrapMem(addrInstr, arrExpr);
 		ImcGen.expr.put(arrExpr, instr);
 		return instr;
 	}
@@ -359,8 +369,37 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	@Override
 	public IMC.Instr visit(AST.CompExpr compExpr, Object arg) {
-		compExpr.recExpr.accept(this, arg);
-		return null;
+		IMC.Expr recExprInstr = (IMC.Expr) compExpr.recExpr.accept(this, arg);
+		IMC.Expr recExprAddr = getAddress(recExprInstr);
+
+		TYP.RecType recordType = (TYP.RecType) SemAn.ofType.get(compExpr.recExpr).actualType();
+		// Otherwise it is a struct
+		boolean isUnion = recordType instanceof TYP.UniType;
+
+		IMC.Expr compExprAddr = null;
+
+		if (isUnion) {
+			// Unions always have an offset of 0
+			compExprAddr = recExprAddr;
+		} else {
+			// We must find the offset of the component in the struct
+			String compName = compExpr.name;
+			long offset = 0;
+			for (int i = 0; i < recordType.compTypeNames.size(); i++) {
+				String curName = recordType.compTypeNames.get(i);
+				if (curName.equals(compName)) {
+					break;
+				}
+				TYP.Type curType = recordType.compTypes.get(i);
+				offset += MemEvaluator.alignedSize(curType);
+			}
+			compExprAddr = new IMC.BINOP(IMC.BINOP.Oper.ADD, recExprAddr, new IMC.CONST(offset));
+		}
+
+		IMC.Expr instr = wrapMem(compExprAddr, compExpr);
+		ImcGen.expr.put(compExpr, instr);
+
+		return instr;
 	}
 
 	@Override
@@ -389,12 +428,7 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 			}
 		}
 
-		IMC.Expr memAccessInstr;
-		if (isMem1(nameExpr)) {
-			memAccessInstr = new IMC.MEM1(addressInstr);
-		} else {
-			memAccessInstr = new IMC.MEM8(addressInstr);
-		}
+		IMC.Expr memAccessInstr = wrapMem(addressInstr, nameExpr);
 		ImcGen.expr.put(nameExpr, memAccessInstr);
 		return memAccessInstr;
 	}
@@ -442,11 +476,7 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 			case PTR:
 				// We already make statically sure that this is an address so we just MEM it
 				// The only difference is if we are working with an 8byte or 1byte value
-				if (isMem1(sfxExpr)) {
-					instr = new IMC.MEM1(subExpr);
-				} else {
-					instr = new IMC.MEM8(subExpr);
-				}
+				instr = wrapMem(subExpr, sfxExpr);
 				break;
 		}
 		ImcGen.expr.put(sfxExpr, instr);

@@ -55,7 +55,7 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 
 	private RecInfo recInfo = new RecInfo(null);
 
-	private SizeEvaluator sizeEvaluator = new SizeEvaluator();
+	private static SizeEvaluator sizeEvaluator = new SizeEvaluator();
 
 	private final long ptrSize;
 
@@ -66,14 +66,14 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 	/**
 	 * Rounds up to nearest multiple of 8
 	 */
-	private long align(long size) {
+	public static long align(long size) {
 		return (size + 7) & ~7;
 	}
 
 	/**
 	 * Returns the size of the type aligned to 8 bytes
 	 */
-	private long alignedSize(TYP.Type type) {
+	public static long alignedSize(TYP.Type type) {
 		return align(type.accept(sizeEvaluator, null));
 	}
 
