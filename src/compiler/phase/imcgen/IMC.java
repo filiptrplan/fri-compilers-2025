@@ -280,6 +280,9 @@ public class IMC {
 		 * @param label The label.
 		 */
 		public NAME(MEM.Label label) {
+			if (label == null) {
+				throw new Report.InternalError();
+			}
 			this.label = label;
 		}
 

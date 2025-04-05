@@ -38,6 +38,6 @@ fun fun1(va3 : int) : void =
     ^ptr, # typ 35
     st1.a1 + 1, # typ 36
     un1.a2.a1 + 1, # typ 37
-    #fun3(va1, va1) + - 3, # typ 38
+    fun3(va1, va1) + - 3, # typ 38
     sizeof char, sizeof int, sizeof st, # typ 39
     { 1234 : a1 } # typ 40
