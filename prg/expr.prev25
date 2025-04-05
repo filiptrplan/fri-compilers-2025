@@ -16,8 +16,6 @@ var vb1 : b1
 var vb2 : b2
 var vb3 : bool
 
-var vv : void
-
 var fun2 : (int) : void
 
 var ptr : ^b1
@@ -26,18 +24,20 @@ var arr : [20]int
 fun fun3(a : a1, b: a1) : a1 = 
     return a + b
 
+fun main() : int = 
+    1 + 1
+
 fun fun1(va3 : int) : void = 
-    "abc", 'a', ^123, false, 123, null, # rules typ20 - 25
+    "abc", 'a', ^ptr, false, 123, null, # rules typ20 - 25
     -2, +1, !false, # typ 26, 27
     vb1 | vb3, vb3 & vb1, vb1 | false, false | vb2, # typ 28, 29
     1 + 1 - 2 % va1, 1 / va2 * va3, # typ 30, 31
     vb1 == vb3, fun1 > fun2, # typ 32
     arr[1], (arr)[1], 
     ptr^, # typ 34
-    ^123, # typ 35
+    ^ptr, # typ 35
     st1.a1 + 1, # typ 36
     un1.a2.a1 + 1, # typ 37
     fun3(va1, va1) + - 3, # typ 38
     sizeof char, sizeof int, sizeof st, # typ 39
     { 1234 : a1 } # typ 40
-    ,1 | 1
