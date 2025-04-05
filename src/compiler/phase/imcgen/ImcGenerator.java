@@ -426,6 +426,7 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		long offset = 0;
 		// First we add the static link
 		MEM.Temp containingFP = currentCallFrame.FP;
+		// TODO: should we pass the FP as a hidden argument?
 		args.add(new IMC.TEMP(containingFP));
 		offs.add(offset);
 		offset += 8;
@@ -502,15 +503,14 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 		// We handle variables and functions differently
 		if (defn instanceof AST.FunDefn) {
-			MEM.Frame callFrame = Memory.frames.get(defn);
 			MEM.Label label = null;
-			if (defn instanceof AST.ExtFunDefn) {
-				label = callFrame.label;
-				throw new Report.InternalError();
+			if (defn instanceof AST.DefFunDefn) {
+				MEM.Frame callFrame = Memory.frames.get(defn);
+				addressInstr = new IMC.NAME(callFrame.label);
 			} else {
-				label = ImcGen.entryLabel.get(defn);
+				// TODO: What to do with these ExtFunDefn?
+				throw new Report.InternalError();
 			}
-			addressInstr = new IMC.NAME(label);
 		} else {
 			MEM.Access access = Memory.accesses.get(defn);
 			if (access instanceof MEM.AbsAccess) {
