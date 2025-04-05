@@ -668,9 +668,6 @@ public class IMC {
 		/** Label that points to the first statement */
 		public final MEM.Label startLabel;
 
-		/** Label that points to AFTER the last statement */
-		public final MEM.Label endLabel;
-
 		/**
 		 * Constructs a sequence of statements.
 		 * 
@@ -678,10 +675,9 @@ public class IMC {
 		 * @param startLabel The label that points to the first Statement
 		 * @param endLabel   The label that points to after the last statement
 		 */
-		public STMTS(Vector<Stmt> stmts, MEM.Label startLabel, MEM.Label endLabel) {
+		public STMTS(Vector<Stmt> stmts, MEM.Label startLabel) {
 			this.stmts = new Vector<Stmt>(stmts);
 			this.startLabel = startLabel;
-			this.endLabel = endLabel;
 		}
 
 		@Override

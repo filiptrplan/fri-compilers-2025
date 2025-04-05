@@ -74,12 +74,10 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		if (nodes.get(0) instanceof AST.Stmt) {
 			Vector<IMC.Stmt> stmts = new Vector<>();
 			MEM.Label startLabel = new MEM.Label();
-			MEM.Label endLabel = new MEM.Label();
 			stmts.add(new IMC.LABEL(startLabel));
 			for (final AST.Node node : nodes)
 				stmts.add((IMC.Stmt) node.accept(this, arg));
-			stmts.add(new IMC.LABEL(endLabel));
-			instr = new IMC.STMTS(stmts, startLabel, endLabel);
+			instr = new IMC.STMTS(stmts, startLabel);
 		} else if (nodes.get(0) instanceof AST.Defn) {
 			for (final AST.Node node : nodes)
 				node.accept(this, Mode.LABELS);
@@ -168,9 +166,8 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 	@Override
 	public IMC.Instr visit(AST.AssignStmt assignStmt, Object arg) {
 		IMC.Expr dstExpr = (IMC.Expr) assignStmt.dstExpr.accept(this, arg);
-		IMC.Expr dstAddr = getAddress(dstExpr);
 		IMC.Expr srcExpr = (IMC.Expr) assignStmt.srcExpr.accept(this, arg);
-		IMC.Stmt stmt = new IMC.MOVE(dstAddr, srcExpr);
+		IMC.Stmt stmt = new IMC.MOVE(dstExpr, srcExpr);
 		ImcGen.stmt.put(assignStmt, stmt);
 		return stmt;
 	}
@@ -186,13 +183,23 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 	@Override
 	public IMC.Instr visit(AST.IfThenStmt ifThenStmt, Object arg) {
 		IMC.Expr condExpr = (IMC.Expr) ifThenStmt.condExpr.accept(this, arg);
+		MEM.Label exitLabel = new MEM.Label();
+		MEM.Label entryLabel = new MEM.Label();
+
 		IMC.STMTS thenStmt = (IMC.STMTS) ifThenStmt.thenStmt.accept(this, arg);
-		MEM.Label entryLabel = thenStmt.startLabel;
-		MEM.Label exitLabel = thenStmt.endLabel;
-		IMC.Stmt stmt = new IMC.CJUMP(condExpr, new IMC.NAME(entryLabel),
-				new IMC.NAME(exitLabel));
-		ImcGen.stmt.put(ifThenStmt, stmt);
-		return stmt;
+		thenStmt.stmts.add(new IMC.JUMP(new IMC.NAME(exitLabel)));
+
+		Vector<IMC.Stmt> stmts = new Vector<>();
+		stmts.add(new IMC.LABEL(entryLabel));
+		stmts.add(new IMC.CJUMP(condExpr, new IMC.NAME(thenStmt.startLabel),
+				new IMC.NAME(exitLabel)));
+		stmts.add(thenStmt);
+		stmts.add(new IMC.LABEL(exitLabel));
+
+		IMC.Stmt instr = new IMC.STMTS(stmts, entryLabel);
+
+		ImcGen.stmt.put(ifThenStmt, instr);
+		return instr;
 	}
 
 	@Override
@@ -200,11 +207,24 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		IMC.Expr condExpr = (IMC.Expr) ifThenElseStmt.condExpr.accept(this, arg);
 		IMC.STMTS thenStmt = (IMC.STMTS) ifThenElseStmt.thenStmt.accept(this, arg);
 		IMC.STMTS elseStmt = (IMC.STMTS) ifThenElseStmt.elseStmt.accept(this, arg);
-		MEM.Label label1 = thenStmt.startLabel;
-		MEM.Label label2 = elseStmt.startLabel;
-		IMC.Stmt stmt = new IMC.CJUMP(condExpr, new IMC.NAME(label1), new IMC.NAME(label2));
-		ImcGen.stmt.put(ifThenElseStmt, stmt);
-		return stmt;
+		MEM.Label exitLabel = new MEM.Label();
+		MEM.Label entryLabel = new MEM.Label();
+
+		thenStmt.stmts.add(new IMC.JUMP(new IMC.NAME(exitLabel)));
+		elseStmt.stmts.add(new IMC.JUMP(new IMC.NAME(exitLabel)));
+		MEM.Label thenLabel = thenStmt.startLabel;
+		MEM.Label elseLabel = elseStmt.startLabel;
+
+		Vector<IMC.Stmt> stmts = new Vector<>();
+		stmts.add(new IMC.LABEL(entryLabel));
+		stmts.add(new IMC.CJUMP(condExpr, new IMC.NAME(thenLabel), new IMC.NAME(elseLabel)));
+		stmts.add(thenStmt);
+		stmts.add(elseStmt);
+		stmts.add(new IMC.LABEL(exitLabel));
+
+		IMC.Stmt instr = new IMC.STMTS(stmts, entryLabel);
+		ImcGen.stmt.put(ifThenElseStmt, instr);
+		return instr;
 	}
 
 	@Override
@@ -215,7 +235,7 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		stmts.add(new IMC.MOVE(new IMC.TEMP(currentCallFrame.RV), expr));
 		// Jump to the function epilogue
 		stmts.add(new IMC.JUMP(new IMC.NAME(ImcGen.exitLabel.get(currentFunctionNode))));
-		IMC.Stmt instr = new IMC.STMTS(stmts, new MEM.Label(), new MEM.Label());
+		IMC.Stmt instr = new IMC.STMTS(stmts, new MEM.Label());
 		ImcGen.stmt.put(returnStmt, instr);
 		return instr;
 	}
@@ -234,12 +254,14 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		stmts.add(new IMC.LABEL(whileLabel));
 		// Then we check the condition
 		stmts.add(new IMC.CJUMP(expr, new IMC.NAME(whileBodyLabel), new IMC.NAME(whileExitLabel)));
+		stmts.add(whileBodyStmts);
 		// At the end we jump to the condition again
-		stmts.add(new IMC.JUMP(new IMC.NAME(whileLabel)));
+		whileBodyStmts.stmts.add(new IMC.JUMP(new IMC.NAME(whileLabel)));
+		stmts.add(whileBodyStmts);
 		// Then we also add the label for exiting the function
 		stmts.add(new IMC.LABEL(whileExitLabel));
 
-		IMC.Stmt instr = new IMC.STMTS(stmts, whileLabel, whileExitLabel);
+		IMC.Stmt instr = new IMC.STMTS(stmts, whileLabel);
 		ImcGen.stmt.put(whileStmt, instr);
 		return instr;
 	}
