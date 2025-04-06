@@ -1,0 +1,9 @@
+var arr1 : [20][3]int
+var arr2 : [10]bool
+
+fun f1() : int =
+    return 1
+
+fun main() : int = 
+    arr1[1][0] = 20,
+    arr2[f1()] = false

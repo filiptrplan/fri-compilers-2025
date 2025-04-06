@@ -1,0 +1,10 @@
+fun ext1(a : int) : int
+fun inner(a : int) : int = 
+    return a + 1
+
+fun main() : int = 
+    let 
+        fun ext1(b : char) : int
+    in
+        return ext1('2') + inner(3)
+    end

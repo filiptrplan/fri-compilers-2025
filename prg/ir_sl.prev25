@@ -1,0 +1,15 @@
+fun main() : int =
+    let 
+        var c : int
+        fun f1(a :int) : int =
+            c = 12,
+            let
+                fun f2(b:int) : int = 
+                    return a + b + c
+            in
+                return f2(a + 1)
+            end
+        in
+    f1(20)
+    end
+

@@ -132,24 +132,20 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 
 	@Override
 	public IMC.Instr visit(AST.ExtFunDefn extFunDefn, Object arg) {
-		if ((extFunDefn.pars != null) || (!compiler.Compiler.devMode()))
-			extFunDefn.pars.accept(this, arg);
-		if ((extFunDefn.type != null) || (!compiler.Compiler.devMode()))
-			extFunDefn.type.accept(this, arg);
+		extFunDefn.pars.accept(this, arg);
+		extFunDefn.type.accept(this, arg);
 		return null;
 	}
 
 	@Override
 	public IMC.Instr visit(AST.ParDefn parDefn, Object arg) {
-		if ((parDefn.type != null) || (!compiler.Compiler.devMode()))
-			parDefn.type.accept(this, arg);
+		parDefn.type.accept(this, arg);
 		return null;
 	}
 
 	@Override
 	public IMC.Instr visit(AST.CompDefn compDefn, Object arg) {
-		if ((compDefn.type != null) || (!compiler.Compiler.devMode()))
-			compDefn.type.accept(this, arg);
+		compDefn.type.accept(this, arg);
 		return null;
 	}
 
@@ -507,11 +503,12 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 			MEM.Label label = null;
 			if (defn instanceof AST.DefFunDefn) {
 				MEM.Frame callFrame = Memory.frames.get(defn);
-				addressInstr = new IMC.NAME(callFrame.label);
+				label = callFrame.label;
 			} else {
-				// TODO: What to do with these ExtFunDefn?
-				throw new Report.InternalError();
+				// TODO: Check if this global label is correct
+				label = new MEM.Label(((AST.FunDefn) defn).name);
 			}
+			addressInstr = new IMC.NAME(label);
 		} else {
 			MEM.Access access = Memory.accesses.get(defn);
 			if (access instanceof MEM.AbsAccess) {
