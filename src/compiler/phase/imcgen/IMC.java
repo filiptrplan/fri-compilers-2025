@@ -547,7 +547,7 @@ public class IMC {
 		/**
 		 * Constructs an uncoditional jump.
 		 * 
-		 * @param label The label.
+		 * @param addr The address.
 		 */
 		public JUMP(Expr addr) {
 			this.addr = addr;
@@ -673,7 +673,6 @@ public class IMC {
 		 * 
 		 * @param stmts      The sequence of statements.
 		 * @param startLabel The label that points to the first Statement
-		 * @param endLabel   The label that points to after the last statement
 		 */
 		public STMTS(Vector<Stmt> stmts, MEM.Label startLabel) {
 			this.stmts = new Vector<Stmt>(stmts);
