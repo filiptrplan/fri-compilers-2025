@@ -419,8 +419,6 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		long offset = 0;
 		// First we add the static link
 		MEM.Temp containingFP = currentCallFrame.FP;
-		// TODO: should we pass the FP as a hidden argument?
-		// or just push it onto the stack?
 		args.add(new IMC.TEMP(containingFP));
 		offs.add(offset);
 		offset += 8;
@@ -428,7 +426,6 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 			AST.Node argExpr = callExpr.argExprs.get(i);
 			IMC.Expr argExprInstr = (IMC.Expr) argExpr.accept(this, arg);
 			args.add(argExprInstr);
-			// TODO: are these offsets correct?
 			offset += MemEvaluator.alignedSize(SemAn.ofType.get(argExpr).actualType());
 			offs.add(offset);
 		}
