@@ -281,9 +281,6 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		// array pointer that is dereferenced to a 1 byte data structure like char or
 		// bool
 
-		// TODO: If they are MEM calls, does it hold that they are always some
-		// variables / places to assign to?
-
 		IMC.Expr arrExprAddr = getAddress(arrExprInstr);
 
 		IMC.Expr addrInstr = new IMC.BINOP(IMC.BINOP.Oper.ADD, arrExprAddr,
@@ -547,19 +544,7 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 				instr = new IMC.UNOP(IMC.UNOP.Oper.NOT, subExpr);
 				break;
 			case PTR:
-				// TODO: Get address of expression
-				// What it could be: IMC.NAME, IMC.TEMP
-				// Maybe it could be IMC.MEM because of the CompExpr?
-				// AST Nodes that can be addresses: CompExpr, NameExpr, CastExpr
-				if (subExpr instanceof IMC.MEM8) {
-					// We unwrap the address
-					instr = ((IMC.MEM8) subExpr).addr;
-				} else if (subExpr instanceof IMC.MEM1) {
-					instr = ((IMC.MEM1) subExpr).addr;
-				} else {
-					// This should not happen
-					throw new Report.InternalError();
-				}
+				instr = getAddress(subExpr);
 				break;
 		}
 		ImcGen.expr.put(pfxExpr, instr);

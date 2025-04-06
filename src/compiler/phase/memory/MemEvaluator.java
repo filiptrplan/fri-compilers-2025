@@ -114,8 +114,6 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 
 		// We are in the global namespace
 		if (depth == 0) {
-			// TODO: What to put for an initial value?
-			// for string you should put "", for others leave at null!
 			if (TypeChecker.equivalent(type, new TYP.PtrType(TYP.CharType.type))) {
 				Memory.accesses.put(varDefn, new MEM.AbsAccess(size, new MEM.Label(varDefn.name), ""));
 			} else {

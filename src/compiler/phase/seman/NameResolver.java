@@ -279,7 +279,6 @@ public class NameResolver implements AST.FullVisitor<Object, NameResolver.Mode> 
 	@Override
 	public Object visit(TypDefn typDefn, NameResolver.Mode arg) {
 		if (arg == Mode.RESOLVE) {
-			// TODO: Nekako razresi to da ne more biti self-referential
 			typDefn.type.accept(this, arg);
 		}
 

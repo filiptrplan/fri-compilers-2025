@@ -38,7 +38,6 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 		if (t1.equals(t2))
 			return true;
 		// EQU2
-		// TODO: See if I need a duplicate rule for T2 == T1
 		if (t1 instanceof TYP.NameType && equivalent(t1.actualType(), t2))
 			return true;
 		// EQU3
@@ -60,11 +59,9 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			if (ct1.compTypes.size() != ct2.compTypes.size()) {
 				return false;
 			}
-			Iterator<TYP.Type> it2 = ct2.compTypes.iterator();
-			int i = 0;
-			// TODO: Refactor with get method of Types
-			for (TYP.Type comp1 : ct1.compTypes) {
-				TYP.Type comp2 = it2.next();
+			for (int i = 0; i < ct1.compTypes.size(); i++) {
+				TYP.Type comp1 = ct1.compTypes.get(i);
+				TYP.Type comp2 = ct2.compTypes.get(i);
 				// First compare the identifiers of the components
 				if (!ct1.compTypeNames.get(i).equals(ct2.compTypeNames.get(i))) {
 					return false;
@@ -150,7 +147,6 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			// I assume that PtrTypes can only be nametypes or raw ptr types so using
 			// actualType is enough
 			if (ct1.baseType.equals(TYP.VoidType.type) && t2.actualType() instanceof TYP.PtrType) {
-				// TODO: Check if this is correct
 				return true;
 			}
 			// COE5
@@ -162,8 +158,6 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 			return false;
 		}
 		// COE7
-		// TODO: Ask if it is intended behaviour we can't coerce an array into a named
-		// type?
 		if (t1 instanceof TYP.ArrType && t2 instanceof TYP.ArrType) {
 			TYP.ArrType ct1 = (TYP.ArrType) t1;
 			TYP.ArrType ct2 = (TYP.ArrType) t2;
