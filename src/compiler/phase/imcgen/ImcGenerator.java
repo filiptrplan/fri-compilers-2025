@@ -427,6 +427,7 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		// First we add the static link
 		MEM.Temp containingFP = currentCallFrame.FP;
 		// TODO: should we pass the FP as a hidden argument?
+		// or just push it onto the stack?
 		args.add(new IMC.TEMP(containingFP));
 		offs.add(offset);
 		offset += 8;
