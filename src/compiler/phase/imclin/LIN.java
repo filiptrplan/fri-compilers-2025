@@ -32,6 +32,32 @@ public class LIN {
 	}
 
 	/**
+	 * A basic block. This is a piece of code that doesn't contain any jumps
+	 * in it. That way we make sure that it always executes in full.
+	 */
+	public class BasicBlock {
+		/** Label that points to the start of the block */
+		public final MEM.Label label;
+
+		/**
+		 * The jump at the end of the block.
+		 * If unconditional it doesn't have any constraints.
+		 * If conditional, the false branch should always jump to the block directly
+		 * after it.
+		 */
+		public final IMC.Instr jump;
+
+		/** The other statements in the block */
+		public final Vector<IMC.Stmt> stmts;
+
+		public BasicBlock(MEM.Label label, IMC.Instr jump, Vector<IMC.Stmt> stmts) {
+			this.label = label;
+			this.jump = jump;
+			this.stmts = stmts;
+		}
+	}
+
+	/**
 	 * A chuck of code.
 	 */
 	public static class CodeChunk extends Chunk {
