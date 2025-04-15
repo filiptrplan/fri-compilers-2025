@@ -91,9 +91,11 @@ fun functions2(par0: int) : int =
                 fun4('"')
             end
     in
-        while fun1() != 1 do fun2(fun1()) end
+        while fun1() != 1 do fun2(fun1()) end,
+        externalFunction(par0)
     end
-        
+
+fun externalFunction(par1: int) : int
 
 
 fun main() : int = return 0

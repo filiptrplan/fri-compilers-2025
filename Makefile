@@ -1,5 +1,5 @@
 JAVA		= java
-JAVAC		= javac --release 22 -encoding UTF8 -g
+JAVAC		= javac --release 22 -encoding UTF8
 ANTLR           = org.antlr.v4.Tool
 ANTLRDIR	= lib/antlr-4.13.2-complete.jar
 RM		= 'rm' -fr
