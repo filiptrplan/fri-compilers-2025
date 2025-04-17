@@ -1,0 +1,13 @@
+fun main() : int =
+    if (1 > 2) then 
+        1 + 2
+    else 
+        #if (2 <= 3) then
+        #    return 6
+        #else
+        #    return 7
+        #end,
+        3 + 4
+    end,
+    7 + 8
+    

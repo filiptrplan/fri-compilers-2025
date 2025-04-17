@@ -9,5 +9,10 @@ fun main() : int =
         var d : int
     in
         d = 10,
-        d = f(g(51), d + 1)
+        d = f(g(51), d + 1),
+        let 
+            var abc : int
+        in 
+            abc = 10
+        end
     end
