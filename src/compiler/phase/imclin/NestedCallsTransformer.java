@@ -17,7 +17,15 @@ import compiler.phase.memory.MEM;
  */
 public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> {
 	/** The current statements that need to be added */
-	Vector<IMC.Stmt> currentStmts = new Vector<>();
+	Vector<IMC.Stmt> currentStmts = null;
+
+	/**
+	 * @param _currentStmts This is the vector to which all the statements generated
+	 *                      will be added
+	 */
+	public NestedCallsTransformer(Vector<IMC.Stmt> _currentStmts) {
+		this.currentStmts = _currentStmts;
+	}
 
 	/** Linearizes any IMC.STMTS one level deep */
 	private Vector<IMC.Stmt> linearizeStmts(Vector<IMC.Stmt> origStmts) {
@@ -33,7 +41,7 @@ public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> 
 	}
 
 	@Override
-	public IMC.Instr visit(IMC.IMC.CALL call, IMC.Stmt arg) {
+	public IMC.Instr visit(IMC.CALL call, IMC.Stmt arg) {
 		IMC.CALL origCallInstr = call;
 
 		Vector<IMC.Expr> newargsVector = new Vector<>();
@@ -53,61 +61,94 @@ public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> 
 		return newCallInstr;
 	}
 
-	public IMC.Expr visit(IMC.BINOP binOp, IMC.Stmt visArg) {
+	@Override
+	public IMC.Instr visit(IMC.BINOP binOp, IMC.Stmt visArg) {
 		IMC.Expr ex1 = (IMC.Expr) binOp.fstExpr.accept(this, visArg);
 		IMC.Expr ex2 = (IMC.Expr) binOp.sndExpr.accept(this, visArg);
 		return new IMC.BINOP(binOp.oper, ex1, ex2);
 	}
 
-	public IMC.Expr visit(IMC.CJUMP cjump, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.CJUMP cjump, IMC.Stmt visArg) {
+		IMC.Expr newCond = (IMC.Expr) cjump.cond.accept(this, visArg);
+		IMC.Expr newPosAddr = (IMC.Expr) cjump.posAddr.accept(this, visArg);
+		IMC.Expr newNegAddr = (IMC.Expr) cjump.negAddr.accept(this, visArg);
+		return new IMC.CJUMP(newCond, newPosAddr, newNegAddr);
 	}
 
-	public IMC.Expr visit(IMC.CONST constant, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.CONST constant, IMC.Stmt visArg) {
+		return constant;
 	}
 
-	public IMC.Expr visit(IMC.ESTMT eStmt, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.ESTMT eStmt, IMC.Stmt visArg) {
+		IMC.Expr newExpr = (IMC.Expr) eStmt.expr.accept(this, visArg);
+		return new IMC.ESTMT(newExpr);
 	}
 
-	public IMC.Expr visit(IMC.JUMP jump, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.JUMP jump, IMC.Stmt visArg) {
+		IMC.Expr newAddr = (IMC.Expr) jump.addr.accept(this, visArg);
+		return new IMC.JUMP(newAddr);
 	}
 
-	public IMC.Expr visit(IMC.LABEL label, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.LABEL label, IMC.Stmt visArg) {
+		return label;
 	}
 
-	public IMC.Expr visit(IMC.MEM1 mem, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.MEM1 mem, IMC.Stmt visArg) {
+		IMC.Expr newAddr = (IMC.Expr) mem.addr.accept(this, visArg);
+		return new IMC.MEM1(newAddr);
 	}
 
-	public IMC.Expr visit(IMC.MEM8 mem, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.MEM8 mem, IMC.Stmt visArg) {
+		IMC.Expr newAddr = (IMC.Expr) mem.addr.accept(this, visArg);
+		return new IMC.MEM8(newAddr);
 	}
 
-	public IMC.Expr visit(IMC.MOVE move, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.MOVE move, IMC.Stmt visArg) {
+		IMC.Expr newSrc = (IMC.Expr) move.src.accept(this, visArg);
+		IMC.Expr newDst = (IMC.Expr) move.dst.accept(this, visArg);
+		return new IMC.MOVE(newDst, newSrc);
 	}
 
-	public IMC.Expr visit(IMC.NAME name, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.NAME name, IMC.Stmt visArg) {
+		return name;
 	}
 
-	public IMC.Expr visit(IMC.SEXPR sExpr, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.SEXPR sExpr, IMC.Stmt visArg) {
+		IMC.Stmt newStmt = (IMC.Stmt) sExpr.stmt.accept(this, visArg);
+		IMC.Expr newExpr = (IMC.Expr) sExpr.expr.accept(this, visArg);
+		return new IMC.SEXPR(newStmt, newExpr);
 	}
 
-	public IMC.Expr visit(IMC.STMTS stmts, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.STMTS stmts, IMC.Stmt visArg) {
+		Vector<IMC.Stmt> newStmts = new Vector<>();
+		for (IMC.Stmt stmt : stmts.stmts) {
+			IMC.Stmt transformedStmt = (IMC.Stmt) stmt.accept(this, visArg);
+			newStmts.addAll(currentStmts);
+			currentStmts.clear();
+			newStmts.add(transformedStmt);
+		}
+		return new IMC.STMTS(newStmts, stmts.startLabel);
 	}
 
-	public IMC.Expr visit(IMC.TEMP temp, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.TEMP temp, IMC.Stmt visArg) {
+		return temp;
 	}
 
-	public IMC.Expr visit(IMC.UNOP unOp, IMC.Stmt visArg) {
-		throw new Report.InternalError();
+	@Override
+	public IMC.Instr visit(IMC.UNOP unOp, IMC.Stmt visArg) {
+		IMC.Expr newSubExpr = (IMC.Expr) unOp.subExpr.accept(this, visArg);
+		return new IMC.UNOP(unOp.oper, newSubExpr);
 	}
 }
