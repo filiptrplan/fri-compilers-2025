@@ -1,10 +1,13 @@
 package compiler.phase.imclin;
 
 import java.util.*;
+import java.util.function.Predicate;
 import compiler.phase.*;
 import compiler.phase.abstr.*;
+import compiler.phase.seman.*;
 import compiler.phase.memory.*;
 import compiler.phase.imcgen.*;
+import compiler.phase.imclin.LIN.BasicBlock;
 
 /**
  * Linearization of intermediate code.
@@ -16,6 +19,14 @@ public class ImcLin extends Phase {
 
 	/** All code chinks of the program. */
 	private final static Vector<LIN.CodeChunk> codeChunks = new Vector<LIN.CodeChunk>();
+
+	/** Tester for nodes describing function definitions. */
+	private static final Predicate<AST.Node> validForBB = //
+			(AST.Node node) -> (node instanceof AST.DefFunDefn);
+
+	/** Maps function declarations to basic block lists. */
+	public static final SemAn.Attribute<List<BasicBlock>> blocks = new SemAn.Attribute<List<BasicBlock>>(
+			validForBB);
 
 	/**
 	 * Constructs a new phase for the linearization of intermediate code.

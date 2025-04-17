@@ -35,13 +35,13 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 	private AST.Node currentFunctionNode = null;
 
 	/** Checks if the node is of size 1 or not */
-	private boolean isMem1(AST.Node node) {
+	public static boolean isMem1(AST.Node node) {
 		TYP.Type type = SemAn.ofType.get(node);
 		return TypeChecker.equivalent(type, TYP.BoolType.type) || TypeChecker.equivalent(type, TYP.CharType.type);
 	}
 
 	/** Wraps the address expression in MEM1 / MEM8 depending on the node type */
-	private IMC.Expr wrapMem(IMC.Expr addr, AST.Node node) {
+	public static IMC.Expr wrapMem(IMC.Expr addr, AST.Node node) {
 		if (isMem1(node)) {
 			return new IMC.MEM1(addr);
 		} else {
