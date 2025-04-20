@@ -1,0 +1,177 @@
+fun new(size: int): ^Node
+fun del(ptr: ^Node): void
+
+fun putchar(c: char): void
+fun puts(s: ^char): void
+fun printf(s: ^char, n: int): void
+
+typ Node = <
+    key: int,
+    left: ^Node,
+    right: ^Node
+>
+
+fun new_node(item: int): ^Node =
+    let
+        var tmp: ^Node
+    in
+        tmp = new(sizeof Node),
+        tmp^.key = item,
+        tmp^.left = null,
+        tmp^.right = null,
+        return tmp
+    end
+
+fun insert(node: ^Node, key: int): ^Node =
+    if node == null then
+        return new_node(key)
+    end,
+
+    if node^.key == key then
+        return node
+    end,
+
+    if node^.key < key then
+        node^.right = insert(node^.right, key)
+    else
+        node^.left = insert(node^.left, key)
+    end,
+
+    return node
+
+fun inorder(root: ^Node): void =
+    if (root != null) then
+        inorder(root^.left),
+        printf("%d ", root^.key),
+        inorder(root^.right)
+    end
+
+fun preorder(root: ^Node): void =
+    if (root != null) then
+        printf("%d ", root^.key),
+        preorder(root^.left),
+        preorder(root^.right)
+    end
+
+fun postorder(root: ^Node): void =
+    if (root != null) then
+        postorder(root^.left),
+        postorder(root^.right),
+        printf("%d ", root^.key)
+    end
+
+fun search(root: ^Node, key: int): ^Node =
+    if root == null then
+        return root
+    end,
+    if root^.key == key then
+        return root
+    end,
+
+    if root^.key < key then
+        return search(root^.right, key)
+    end,
+
+    return search(root^.left, key)
+
+fun get_successor(curr: ^Node): ^Node =
+    curr = curr^.right,
+    while (curr != null) & (curr^.left != null) do
+        curr = curr^.left
+    end,
+    return curr
+
+fun del_node(root: ^Node, key: int): ^Node =
+    if root == null then
+        return root
+    end,
+
+    if root^.key > key then
+        root^.left = del_node(root^.left, key),
+        return root
+    end,
+
+    if root^.key < key then
+        root^.right = del_node(root^.right, key),
+        return root
+    end,
+
+    if root^.left == null then
+        let var tmp: ^Node in
+            tmp = root^.right,
+            del(root),
+            return tmp
+        end
+    end,
+
+    if root^.right == null then
+        let var tmp: ^Node in
+            tmp = root^.left,
+            del(root),
+            return tmp
+        end
+    end,
+
+    let var succ: ^Node in
+        succ = get_successor(root),
+        root^.key = succ^.key,
+        root^.right = del_node(root^.right, succ^.key)
+    end,
+
+    return root
+
+fun main(): int =
+    let
+        typ Node = <
+            key: int,
+            left: ^Node,
+            right: ^Node
+        >
+        var root: ^Node
+        var found_node: ^Node
+    in
+        root = new_node(50),
+        root = insert(root, 30),
+        root = insert(root, 20),
+        root = insert(root, 40),
+        root = insert(root, 70),
+        root = insert(root, 60),
+        root = insert(root, 80),
+
+        puts("InOrder: "),
+        inorder(root),
+        putchar('\0x0A'),
+        puts("PreOrder: "),
+        preorder(root),
+        putchar('\0x0A'),
+        puts("PostOrder: "),
+        postorder(root),
+        putchar('\0x0A'),
+
+        found_node = search(root, 19),
+        if found_node != null then
+            puts("Found 19\0x0A")
+        else
+            puts("Not Found 19\0x0A")
+        end,
+
+        found_node = search(root, 80),
+        if found_node != null then
+            puts("Found 80\0x0A")
+        else
+            puts("Not Found 80\0x0A")
+        end,
+
+        puts("Deleting node 50\0x0A"),
+        root = del_node(root, 50),
+        puts("InOrder: "),
+        inorder(root),
+        putchar('\0x0A'),
+        puts("PreOrder: "),
+        preorder(root),
+        putchar('\0x0A'),
+        puts("PostOrder: "),
+        postorder(root),
+        putchar('\0x0A')
+    end,
+    return 0

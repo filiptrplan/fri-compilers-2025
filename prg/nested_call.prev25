@@ -1,0 +1,26 @@
+fun printf(s: ^char, n: int): void
+
+var x: int
+
+fun main(): int =
+    x = f4(1 + 1, 1, f3(f1(), 1)),
+    printf("%d\0x0A",x),
+    x = f4(f1(), f2(f3(1,1)), 1),
+    printf("%d\0x0A",x),
+    x = f3(1, 2) + 5,
+    {printf: (^char, int): void}("%d\0x0A",x),
+    x = 1 + 2 + 3,
+    printf("%d\0x0A",x),
+    return 1
+
+fun f1(): int =
+    return 1
+
+fun f2(a: int): int =
+    return a + 1
+
+fun f3(a: int, b:int): int =
+    return a + b
+
+fun f4(a: int, b:int, c: int): int =
+    return a + b + c

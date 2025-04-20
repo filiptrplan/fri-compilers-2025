@@ -1,0 +1,34 @@
+fun new(size: int): ^char
+fun del(ptr: ^char): void
+fun printf(s: ^char, n1: int, n2: int): void
+fun at(arr: ^int, idx: int, size: int): ^int
+
+var size: int
+
+fun main(): int =
+    size = 10,
+    let var seznam: ^int in
+        seznam = {new(size * (sizeof int)) : ^int},
+        set_seznam(seznam, size),
+        print_seznam(seznam, size),
+        del({seznam : ^char})
+    end,
+    return 0
+
+fun set_seznam(seznam: ^int, size: int): void =
+    let var i: int in
+        i = 0,
+        while i < size do
+            at(seznam, i, sizeof int)^ = i,
+            i = i + 1
+        end
+    end
+
+fun print_seznam(seznam: ^int, size: int): void =
+    let var i: int in
+        i = 0,
+        while i < size do
+            printf("arr[%d] = %d\0x0A", i, at(seznam, i, sizeof int)^),
+            i = i + 1
+        end
+    end

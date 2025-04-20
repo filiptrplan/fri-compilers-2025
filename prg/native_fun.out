@@ -1,0 +1,30 @@
+:-) This is Prev25 compiler:
+========== Testing ========== 'new', 'del', 'at'
+Hello World
+Hello World
+[ 1 2 3 4 5 6 7 8 9 10 ]
+[ 10 9 8 7 6 5 4 3 2 1 ]
+========== Testing ========== 'random'
+Array 1: [ -33 97 72 -41 -74 -43 86 -26 26 41 ]
+Array 2: [ 40 17 80 11 90 13 12 34 16 55 ]
+Array 3: [ 197 122 146 157 198 159 149 107 172 111 ]
+========== Testing ========== 'putint', 'putchar', 'puts', 'printf'
+5 10 15
+aBc
+Hello, World!
+Normal printf
+Procent %
+int: 42
+int hex: 2a
+int hex upper: 2A
+char: a
+s: Hello World
+ptr lower: @200000000000004f
+ptr upper: @200000000000004F
+bool as int: 1 0
+bool as bool: true false
+int int: 42 + 27
+int char s: 42, A, Hola
+s s: Hello, World
+EXIT CODE: 0
+:-) Done.

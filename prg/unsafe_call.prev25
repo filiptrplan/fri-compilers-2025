@@ -1,0 +1,48 @@
+fun putint(n: int): void
+fun putchar(c: char): void
+
+var x: int
+var w: int
+
+fun unsafe(y: ^^int): int =
+    x = 5,
+    y^ = ^w,
+    return x * y^^
+
+fun safe(a: int, b: int, c: int, d: int): int =
+    return a + b + c + d
+
+fun main(): int =
+    let
+        var y: ^int
+        var z: int
+    in
+        w = 10,
+        x = 3,
+        z = 2,
+        y = ^z,
+        y^ = safe(x, y^, unsafe(^y), y^),
+        print("x : ", x),
+        print("y^: ", y^),
+        print("z : ", z),
+        print("w : ", w),
+        printb("y == ^z: ", y == ^z),
+        printb("y == ^w: ", y == ^w)
+    end,
+    return 0
+
+fun puts(s: ^char): void =
+    while s^ != {0: char} do
+        putchar(s^),
+        s = {{s: int} + 1: ^char}
+    end
+
+fun print(msg: ^char, x: int): void =
+    puts(msg),
+    putint(x),
+    putchar('\0x0A')
+
+fun printb(msg: ^char, b: bool): void =
+    puts(msg),
+    if b then puts("true") else puts("false") end,
+    putchar('\0x0A')

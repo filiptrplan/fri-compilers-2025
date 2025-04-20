@@ -1,0 +1,12 @@
+:-) This is Prev25 compiler:
+InOrder: 20 30 40 50 60 70 80 
+PreOrder: 50 30 20 40 70 60 80 
+PostOrder: 20 40 30 60 80 70 50 
+Not Found 19
+Found 80
+Deleting node 50
+InOrder: 20 30 40 60 70 80 
+PreOrder: 60 30 20 40 70 80 
+PostOrder: 20 40 30 80 70 60 
+EXIT CODE: 0
+:-) Done.

@@ -1,0 +1,14 @@
+:-) This is Prev25 compiler:
+Normal printf
+int: 42
+int hex: 2a
+int hex upper: 2A
+char: a
+str: Hello World
+ptr lower: @7ffffffffffffff0
+ptr upper: @7FFFFFFFFFFFFFF0
+int int: 42 + 27
+int char str: 42, A, Hola
+str str: Hello, World
+EXIT CODE: 0
+:-) Done.

@@ -1,0 +1,206 @@
+var NL: char
+
+fun main(): int =
+    NL = '\0x0A',
+    test_alloc_and_at(),
+    test_random(),
+    test_printing(),
+    # exit(0),
+    return 0
+
+# ======================== EXIT ========================
+# fun exit(): void        # Exit the program with 0
+fun exit(code: int): void # Exit the program with 'code'
+
+# ======================== STDIN ========================
+fun getint(): int   # Get integer from stdin
+fun getchar(): char # Get character from stdin
+
+# NO TEST
+
+# ======================== ALLOCATION & INDEX ========================
+
+fun new(size: int): ^char                           # Allocate size bytes of memory on the heap
+fun del(ptr: ^char): void                           # Deallocate memory (interpreter does nothing)
+fun at(ptr: ^char, idx: int, type_size: int): ^char # Get element of array at idx
+
+var hello: ^char
+fun test_alloc_and_at(): void =
+    puts("========== Testing ========== 'new', 'del', 'at'\0x0A"),
+    let 
+        var str: ^char
+        var i: int
+        var p: ^char
+    in
+        hello = "Hello World",
+        str = new(11 + 1),
+        at(str, 11, 1)^ = '\0x00',
+        p = hello,
+        i = 0,
+        while p^ != {0: char} do
+            at(str, i, 1)^ = p^,
+            i = i + 1,
+            p = {{p: int} + 1: ^char}
+        end,
+        puts(hello),
+        putchar(NL),
+        puts(str),
+        putchar(NL),
+        del(str)
+    end,
+    let 
+        var arr: ^int
+        var i: int
+        fun new(size: int): ^int
+        fun at(a: ^int, i: int, s: int): ^int
+        fun del(ptr: ^int): void
+    in
+        arr = new(10 * sizeof int),
+        i = 0,
+        while i < 10 do
+            at(arr, i, sizeof int)^ = i + 1,
+            i = i + 1
+        end,
+        print_array(arr, 10),
+        del(arr)
+    end,
+    let 
+        var arr: ^int
+        var i: int
+        fun del(ptr: ^int): void
+        fun at(a: ^int, i: int, s: int): ^int
+    in
+        arr = {new(10 * sizeof int): ^int},
+        i = 0,
+        while i < 10 do
+            at(arr, i, sizeof int)^ = 10 - i,
+            i = i + 1
+        end,
+        print_array(arr, 10),
+        del(arr)
+    end
+
+# ======================== PRINTING ========================
+
+fun putint(n: int): void          # Print integer to stdout
+fun putchar(c: char): void        # Print character to stdout
+fun puts(s: ^char): void          # Print string to stdout
+
+# fun printf(s: ^char, ...): void # Print formated string 's'
+# ============= PRINTF FORMATS =============
+# | %% - %                                 |
+# | %d - integer                           |
+# | %x - integer as hexadecimal            |
+# | %X - integer as hexadecimal upper case |
+# | %b - boolean as integer                |
+# | %B - boolean as true/false             |
+# | %c - character                         |
+# | %s - string                            |
+# | %p - pointer                           |
+# | %P - pointer as upper case             |
+# ==========================================
+
+var p: ^char
+var a: char
+fun test_printing(): void =
+    puts("========== Testing ========== 'putint', 'putchar', 'puts', 'printf'\0x0A"),
+
+    a = 'A',
+    p = ^a,
+
+    putint(5),
+    putchar(' '),
+    putint(10),
+    putchar(' '),
+    putint(15),
+    putchar(NL),
+    putchar('a'),
+    putchar('\0x42'),
+    putchar('c'),
+    putchar(NL),
+    puts("Hello"),
+    puts(", "),
+    puts("World!\0x0A"),
+
+    # ---------------- PRINTF ----------------
+    let fun printf(s: ^char): void in
+        printf("Normal printf\0x0A"),
+        printf("Procent %%\0x0A")
+    end,
+    let fun printf(s: ^char, x: int): void in
+        printf("int: %d\0x0A", 42),
+        printf("int hex: %x\0x0A", 42),
+        printf("int hex upper: %X\0x0A", 42),
+
+        # casting works too
+        {printf: (^char, char):void}("char: %c\0x0A", 'a')
+    end,
+    let fun printf(s: ^char, p: ^char): void in
+        printf("s: %s\0x0A", "Hello World"),
+        printf("ptr lower: %p\0x0A", p),
+        printf("ptr upper: %P\0x0A", p)
+    end,
+    let fun printf(s: ^char, b1: bool, b2: bool): void in
+        printf("bool as int: %b %b\0x0A", true, false),
+        printf("bool as bool: %B %B\0x0A", true, false)
+    end,
+    let fun printf(s: ^char, x1: int, x2: int): void in
+        printf("int int: %d + %d\0x0A", 42, 27)
+    end,
+    let fun printf(s: ^char, x: int, c: char, ss: ^char): void in
+        printf("int char s: %d, %c, %s\0x0A", 42, 'A', "Hola")
+    end,
+    let fun printf(s: ^char, s1: ^char, s2: ^char): void in
+        printf("s s: %s, %s\0x0A", "Hello", "World")
+    end
+
+# ======================== RANDOM ========================
+
+fun  random(): int                                   # Get random integer
+#fun random(upper_bound: int): int                   # Get random integer between 0 and upper_bound (exclusive)
+#fun random(lower_bound: int, upper_bound: int): int # Get random integer between lower_bound (inclusive) and upper_bound (exclusive)
+fun  seed(seed: int): void                           # Set seed of random generator
+
+fun test_random(): void =
+    puts("========== Testing ========== 'random'\0x0A"),
+
+    seed(42),
+    let
+        var a1: [10]int
+        var a2: [10]int
+        var a3: [10]int
+        var i: int
+    in
+        i = 0,
+        while i < 10 do
+            a1[i] = random() % 100,
+            a2[i] = {random: (int):int}(100),
+            a3[i] = {random: (int, int):int}(100, 200),
+            i = i + 1
+        end,
+        puts("Array 1: "),
+        print_array({^a1: ^int}, 10),
+        puts("Array 2: "),
+        print_array({^a2: ^int}, 10),
+        puts("Array 3: "),
+        print_array({^a3: ^int}, 10)
+    end
+# ======================== HELPERS ========================
+
+fun print_array(arr: ^int, len: int): void =
+    let
+        var i: int
+        fun printf(s: ^char, x: int): void
+
+        # override native
+        fun at(arr: ^int, idx: int): ^int =
+            return {{arr: int} + (idx * sizeof int): ^int}
+    in
+        i = 0,
+        putchar('['),
+        while i < len do
+            printf(" %d", at(arr, i)^),
+            i = i + 1
+        end,
+        puts(" ]\0x0A")
+    end

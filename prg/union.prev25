@@ -1,0 +1,27 @@
+fun printf(s: ^char, v1: int, v2: int): void
+
+typ Point = {
+    a: [2]int,
+    b: <x: int, y: int>,
+    c: <b1: bool, b2: bool>
+}
+
+var p1: Point
+var p2: Point
+
+fun main(): int =
+    p1.b.x = 0,
+    p1.b.y = 1,
+    p2.b.x = 2,
+    p2.b.y = 3,
+
+    printf("p1.a = [%d, %d]\0x0A", p1.a[0], p1.a[1]),
+    printf("p1.b = <x: %d, y: %d>\0x0A", p1.b.x, p1.b.y),
+    {printf: (^char, bool, bool):void}("p1.c = <b1: %b, b2: %b>\0x0A", p1.c.b1, p1.c.b2),
+    {printf: (^char, bool, bool):void}("p1.c = <b1: %B, b2: %B>\0x0A", p1.c.b1, p1.c.b2),
+
+    printf("p2.a = [%d, %d]\0x0A", p2.a[0], p2.a[1]),
+    printf("p2.b = <x: %d, y: %d>\0x0A", p2.b.x, p2.b.y),
+    {printf: (^char, bool, bool):void}("p2.c = <b1: %b, b2: %b>\0x0A", p2.c.b1, p2.c.b2),
+    {printf: (^char, bool, bool):void}("p2.c = <b1: %B, b2: %B>\0x0A", p2.c.b1, p2.c.b2),
+    return 0

@@ -1,0 +1,29 @@
+fun putint(x: int): void
+fun puts(str: ^char): void
+fun putchar(c: char): void
+
+
+fun fib(n: int): int =
+    if n <= 1 then
+        return 1
+    end,
+
+    return fib(n-1) + fib(n - 2)
+
+fun main(): int =
+
+    let var i: int in
+        i = 0,
+        while i <= 15 do
+            puts("fib("),
+            putint(i),
+            printInt(") = " , fib(i)),
+            i = i + 1
+        end
+    end,
+    return 0
+
+fun printInt(msg: ^char, x: int): void =
+    puts(msg),
+    putint(x),
+    putchar('\0x0A')

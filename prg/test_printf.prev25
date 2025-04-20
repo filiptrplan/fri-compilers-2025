@@ -1,0 +1,32 @@
+fun printf(str: ^char): void
+
+var p: ^char
+
+fun main(): int =
+    let var a: char in p = ^a end,
+    printf("Normal printf\0x0A"),
+    let fun printf(str: ^char, x: int): void in
+        printf("int: %d\0x0A", 42)
+    end,
+    let fun printf(str: ^char, hex: int): void in
+        printf("int hex: %x\0x0A", 42),
+        printf("int hex upper: %X\0x0A", 42)
+    end,
+    let fun printf(str: ^char, c: char): void in
+        printf("char: %c\0x0A", 'a')
+    end,
+    let fun printf(str: ^char, p: ^char): void in
+        printf("str: %s\0x0A", "Hello World"),
+        printf("ptr lower: %p\0x0A", p),
+        printf("ptr upper: %P\0x0A", p)
+    end,
+    let fun printf(str: ^char, x1: int, x2: int): void in
+        printf("int int: %d + %d\0x0A", 42, 27)
+    end,
+    let fun printf(str: ^char, x: int, c: char, s: ^char): void in
+        printf("int char str: %d, %c, %s\0x0A", 42, 'A', "Hola")
+    end,
+    let fun printf(str: ^char, s1: ^char, s2: ^char): void in
+        printf("str str: %s, %s\0x0A", "Hello", "World")
+    end,
+    return 0

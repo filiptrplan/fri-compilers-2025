@@ -1,0 +1,10 @@
+var g : int
+
+fun main(): int =
+    g = 5,
+    let
+        var l : int
+    in
+        l = 5,
+        return g-l
+    end

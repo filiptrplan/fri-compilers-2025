@@ -1,0 +1,11 @@
+:-) This is Prev25 compiler:
+p1.a = [0, 1]
+p1.b = <x: 0, y: 1>
+p1.c = <b1: 0, b2: 1>
+p1.c = <b1: false, b2: true>
+p2.a = [2, 3]
+p2.b = <x: 2, y: 3>
+p2.c = <b1: 1, b2: 1>
+p2.c = <b1: true, b2: true>
+EXIT CODE: 0
+:-) Done.

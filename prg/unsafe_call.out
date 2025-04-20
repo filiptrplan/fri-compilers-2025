@@ -1,0 +1,9 @@
+:-) This is Prev25 compiler:
+x : 5
+y^: 10
+z : 65
+w : 10
+y == ^z: false
+y == ^w: true
+EXIT CODE: 0
+:-) Done.

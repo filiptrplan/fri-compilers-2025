@@ -1,0 +1,99 @@
+fun putchar(c: char): void
+fun puts(str: ^char): void
+fun putint(x: int): void
+
+fun solve(
+    tab: ^[8]int,
+    all_qs: int, # število vseh kraljic
+    num_qs: int  # število že postavljenih kraljic
+): int =
+    if num_qs == all_qs then 
+        izpis(tab, all_qs),
+        return 1
+    end,
+
+    let
+        var num_sol: int # number of solutions
+        var i: int
+        var j: int
+        var valid: bool
+    in
+        num_sol = 0,
+        i = 0,
+        while i < all_qs do
+            valid = true,
+            j = 0,
+            while j < num_qs do
+                if 
+                    (tab^[j] == i) # stolpec
+                    | (abs(i - tab^[j]) == abs(num_qs - j)) # diagonala
+                then
+                    valid = false
+                end,
+                j = j + 1
+            end,
+            if valid then
+                tab^[num_qs] = i,
+                num_sol = num_sol + solve(tab, all_qs, num_qs + 1)
+            end,
+            i = i + 1
+        end,
+        return num_sol
+    end
+
+fun abs(x: int): int =
+    if x < 0 then
+        return -x
+    end,
+    return x
+
+fun izpis(tab: ^[8]int, len: int): void =
+    izpis_crte(len),
+    let
+        var i: int
+        var j: int
+    in
+        i = 0,
+        while i < len do
+            j = 0,
+            while j < len do
+                if tab^[i] == j then
+                    puts("|Q")
+                else
+                    puts("|_")
+                end,
+                j = j + 1
+            end,
+            putchar('|'),
+            putchar('\0x0A'),
+            i = i + 1
+        end
+    end,
+    izpis_crte(len),
+    putchar('\0x0A')
+
+fun izpis_crte(len: int): void =
+    let var i: int in
+    i = 0,
+        while i < len do
+            puts("--"),
+            i = i + 1
+        end
+    end,
+    putchar('-'),
+    putchar('\0x0A')
+
+fun printInt(msg: ^char, i: int): void =
+    puts(msg),
+    putint(i),
+    putchar('\0x0A')
+
+var tab: [8]int
+fun main(): int =
+    let
+        var solutions: int
+    in
+        solutions = solve(^tab, 8, 0),
+        printInt("Number of solutions: ", solutions)
+    end,
+    return 0

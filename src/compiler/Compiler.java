@@ -224,10 +224,10 @@ public class Compiler {
 					Abstr.tree.accept(new ChunkGenerator(), null);
 					imclin.log();
 
-					// if (true) {
-					// Interpreter interpreter = new Interpreter(ImcLin.dataChunks(), ImcLin.codeChunks());
-					// System.out.println("EXIT CODE: " + interpreter.run("_main"));
-					// }
+					if (true) {
+						Interpreter interpreter = new Interpreter(ImcLin.dataChunks(), ImcLin.codeChunks());
+						System.out.println("EXIT CODE: " + interpreter.run("_main"));
+					}
 				}
 				if (cmdLineOptValues.get("--target-phase").equals("imclin"))
 					break;

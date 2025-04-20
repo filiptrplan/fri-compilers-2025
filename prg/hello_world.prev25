@@ -1,0 +1,5 @@
+fun puts(str: ^char): void
+
+fun main(): int =
+    puts("Hello World\0x0A"),
+    return 0

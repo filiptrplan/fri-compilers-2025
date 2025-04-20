@@ -1,0 +1,19 @@
+fun putint(c: int): void
+
+fun f(c: int): int =
+    putint(c),
+    return c
+
+fun g(c1: int, c2: int, c3: int): int =
+    putint(c3+1),
+    return c3 + 1
+
+var m : int
+
+fun p(c: int): ^int =
+    putint(c),
+    return ^m
+
+fun main(): int =
+    p(f(0)+1)^ = g(g(f(2),f(3),f(4)), f(f(6)+1), 7),
+    return 0

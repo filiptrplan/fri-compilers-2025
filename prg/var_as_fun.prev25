@@ -1,0 +1,19 @@
+fun printf(s: ^char, c: int): void
+
+fun f1(a: int): int =
+    return a * 2
+
+var var_fun1: (int): int
+
+fun main(): int =
+    let
+        var var_fun2: (int, int): int
+        fun f2(a: int, b: int): int =
+            return a * b
+    in
+        var_fun1 = f1,
+        var_fun2 = f2,
+        printf("var F1: %d\0x0A", var_fun1(f1(5))),
+        printf("var F2: %d\0x0A", var_fun2(5, 5))
+    end,
+    return 0

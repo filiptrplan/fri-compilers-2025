@@ -1,0 +1,34 @@
+fun puts(s: ^char): void
+fun putchar(c: char): void
+fun putint(c: char): void
+fun getint(): int
+fun random(l: int, u: int): int
+fun printf(s: ^char, x: int): void
+
+var secret_number: int
+var guess: int
+var equal: bool
+
+fun main(): int =
+    puts("Guess the number!\0x0A"),
+    secret_number = random(1, 101),
+
+    equal = false,
+    while !equal do
+        puts("Please input your guess.\0x0A"),
+        guess = getint(),
+        printf("You guessed: %d\0x0A", guess),
+
+        if guess < secret_number then
+            puts("Too small!\0x0A")
+        else
+            if guess > secret_number then
+                puts("Too big!\0x0A")
+            else
+                puts("You win!\0x0A"),
+                equal = true
+            end
+        end
+    end,
+
+    return 0

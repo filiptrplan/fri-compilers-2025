@@ -1,0 +1,42 @@
+fun new(size: int): ^char
+fun del(ptr: ^char): void
+
+fun putint(x: int): void
+fun putchar(c: char): void
+fun puts(str: ^char): void
+
+fun set_array(arr: ^[20]int): void =
+    let var i: int in
+        i = 0,
+        while i < 20 do
+            arr^[i] = i,
+            i = i + 1
+        end
+    end
+
+fun print_array(arr: ^[20]int): void =
+    let var i: int in
+        i = 0,
+        while i < 20 do
+            puts("array at "),
+            putint(i),
+            printInt(" = ", arr^[i]),
+            i = i + 1
+        end
+    end
+
+fun printInt(msg: ^char, x: int): void =
+    puts(msg),
+    putint(x),
+    putchar('\0x0A')
+
+fun main(): int =
+    let
+        var seznam: ^int
+    in
+        seznam = {new(20 * sizeof int) : ^int},
+        set_array(^{seznam: [20]int}),
+        print_array(^{seznam: [20]int}),
+        del({seznam : ^char})
+    end,
+    return 0
