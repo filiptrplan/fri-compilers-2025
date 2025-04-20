@@ -114,7 +114,7 @@ fun del_node(root: ^Node, key: int): ^Node =
 
     let var succ: ^Node in
         succ = get_successor(root),
-        root^.key = succ^.key,
+        root^.key = succ^.key, 
         root^.right = del_node(root^.right, succ^.key)
     end,
 
@@ -122,11 +122,6 @@ fun del_node(root: ^Node, key: int): ^Node =
 
 fun main(): int =
     let
-        typ Node = <
-            key: int,
-            left: ^Node,
-            right: ^Node
-        >
         var root: ^Node
         var found_node: ^Node
     in

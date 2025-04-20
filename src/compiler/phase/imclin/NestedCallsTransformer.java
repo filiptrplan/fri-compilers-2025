@@ -119,12 +119,15 @@ public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> 
 	@Override
 	public IMC.Instr visit(IMC.STMTS stmts, IMC.Stmt visArg) {
 		Vector<IMC.Stmt> newStmts = new Vector<>();
+		Vector<IMC.Stmt> oldStmtsVec = currentStmts;
+		// We must pass this new inner vector to the visitor so we
+		// don't generate out-of-order calls
+		currentStmts = newStmts;
 		for (IMC.Stmt stmt : stmts.stmts) {
 			IMC.Stmt transformedStmt = (IMC.Stmt) stmt.accept(this, visArg);
-			newStmts.addAll(currentStmts);
-			currentStmts.clear();
 			newStmts.add(transformedStmt);
 		}
+		currentStmts = oldStmtsVec;
 		return new IMC.STMTS(newStmts, stmts.startLabel);
 	}
 

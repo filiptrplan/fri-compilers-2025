@@ -250,8 +250,9 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 	public IMC.Instr visit(AST.WhileStmt whileStmt, Object arg) {
 		IMC.Expr expr = (IMC.Expr) whileStmt.condExpr.accept(this, arg);
 		IMC.STMTS whileBodyStmts = (IMC.STMTS) whileStmt.stmts.accept(this, arg);
+
 		// This label denotes the top of the while loop
-		MEM.Label whileLabel = new MEM.Label();
+		MEM.Label whileTopLabel = new MEM.Label();
 		MEM.Label whileBodyLabel = whileBodyStmts.startLabel;
 		MEM.Label whileExitLabel = new MEM.Label();
 
@@ -260,12 +261,11 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		stmts.add(new IMC.CJUMP(expr, new IMC.NAME(whileBodyLabel), new IMC.NAME(whileExitLabel)));
 		stmts.add(whileBodyStmts);
 		// At the end we jump to the condition again
-		whileBodyStmts.stmts.add(new IMC.JUMP(new IMC.NAME(whileLabel)));
-		stmts.add(whileBodyStmts);
+		stmts.add(new IMC.JUMP(new IMC.NAME(whileTopLabel)));
 		// Then we also add the label for exiting the function
 		stmts.add(new IMC.LABEL(whileExitLabel));
 
-		IMC.Stmt instr = new IMC.STMTS(stmts, whileLabel);
+		IMC.Stmt instr = new IMC.STMTS(stmts, whileTopLabel);
 		ImcGen.stmt.put(whileStmt, instr);
 		return instr;
 	}

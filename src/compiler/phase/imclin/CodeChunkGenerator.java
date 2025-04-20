@@ -14,6 +14,8 @@ import compiler.phase.memory.MEM;
 import compiler.phase.memory.Memory;
 
 public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
+	private boolean DEBUG = false;
+
 	/**
 	 * A basic block. This is a piece of code that doesn't contain any jumps
 	 * in it. That way we make sure that it always executes in full.
@@ -229,7 +231,7 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 	}
 
 	public Object visit(AST.DefFunDefn defFunDefn, Object arg) {
-		boolean DEBUG = defFunDefn.name.equals("fib");
+		boolean DEBUG = defFunDefn.name.equals("insert");
 		DEBUG = false;
 		if (DEBUG) {
 			Report.info("========== " + defFunDefn.name + " ==========");
@@ -243,7 +245,18 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 			IMC.Instr newStmtInstr = stmtInstr.accept(new NestedCallsTransformer(stmts), null);
 			stmts.add((IMC.Stmt) newStmtInstr);
 			if (DEBUG) {
-				Report.info(newStmtInstr.toString());
+				Report.info("===== prev =====");
+				Report.info(stmtInstr.toString());
+				Report.info("===========");
+				for (IMC.Stmt stmt2 : stmts) {
+					Report.info(stmt2.toString());
+				}
+			}
+		}
+
+		if (DEBUG) {
+			for (IMC.Stmt stmt : stmts) {
+				Report.info(stmt.toString());
 			}
 		}
 
@@ -287,6 +300,7 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 		// Then we visit other functions
 		defFunDefn.stmts.accept(this, arg);
 
+		DEBUG = false;
 		return null;
 	}
 }
