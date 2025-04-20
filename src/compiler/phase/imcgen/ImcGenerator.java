@@ -52,8 +52,10 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 	public static IMC.Expr unwrapMem(IMC.Expr mem) {
 		if (mem instanceof IMC.MEM8) {
 			return ((IMC.MEM8) mem).addr;
-		} else {
+		} else if (mem instanceof IMC.MEM1) {
 			return ((IMC.MEM1) mem).addr;
+		} else {
+			return mem;
 		}
 	}
 

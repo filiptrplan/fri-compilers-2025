@@ -100,8 +100,21 @@ public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> 
 	@Override
 	public IMC.Instr visit(IMC.MOVE move, IMC.Stmt visArg) {
 		IMC.Expr newDst = (IMC.Expr) move.dst.accept(this, visArg);
-		IMC.Expr newSrc = (IMC.Expr) move.src.accept(this, visArg);
-		return new IMC.MOVE(newDst, newSrc);
+
+		// If it is a temp, we are not saving the LHS because there is no need to
+		if (newDst instanceof IMC.TEMP) {
+			IMC.Expr newSrc = (IMC.Expr) move.src.accept(this, visArg);
+			return new IMC.MOVE(newDst, newSrc);
+		} else {
+			// Otherwise we save the LHS with an extra move
+			IMC.TEMP temp = new IMC.TEMP(new MEM.Temp());
+			IMC.MOVE moveDst = new IMC.MOVE(temp, ImcGenerator.unwrapMem(newDst));
+			currentStmts.add(moveDst);
+
+			IMC.Expr newSrc = (IMC.Expr) move.src.accept(this, visArg);
+			return new IMC.MOVE(new IMC.MEM8(temp), newSrc);
+		}
+
 	}
 
 	@Override
