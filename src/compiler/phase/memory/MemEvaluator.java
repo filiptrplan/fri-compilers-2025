@@ -115,7 +115,11 @@ public class MemEvaluator implements AST.FullVisitor<Object, Object> {
 		// We are in the global namespace
 		if (depth == 0) {
 			if (TypeChecker.equivalent(type, new TYP.PtrType(TYP.CharType.type))) {
-				Memory.accesses.put(varDefn, new MEM.AbsAccess(size, new MEM.Label(varDefn.name), ""));
+				StringBuilder sb = new StringBuilder();
+				for (int i = 0; i < size; i++) {
+					sb.append(0);
+				}
+				Memory.accesses.put(varDefn, new MEM.AbsAccess(size, new MEM.Label(varDefn.name), sb.toString()));
 			} else {
 				Memory.accesses.put(varDefn, new MEM.AbsAccess(size, new MEM.Label(varDefn.name)));
 			}
