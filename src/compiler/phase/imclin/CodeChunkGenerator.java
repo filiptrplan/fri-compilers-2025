@@ -92,9 +92,20 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 				label = new MEM.Label();
 				// We recursively generate the basic blocks
 				blocks.addAll(generateBasicBlocks(stmtsInstr.stmts, exitFunctionLabel));
-			} else if (stmt instanceof IMC.LABEL && currentBlockStmts.size() == 0) {
-				// If the first statement is a label, we use that for our basic block
-				label = ((IMC.LABEL) stmt).label;
+			} else if (stmt instanceof IMC.LABEL) {
+				if (currentBlockStmts.size() == 0) {
+					// If the first statement is a label, we use that for our basic block
+					label = ((IMC.LABEL) stmt).label;
+				} else {
+					// We create a new basic block with an unconditional jump
+					MEM.Label currentLabel = ((IMC.LABEL) stmt).label;
+					BasicBlock block = new BasicBlock(label, new IMC.JUMP(new IMC.NAME(currentLabel)),
+							currentBlockStmts);
+					blocks.add(block);
+					// We then use this label as the start of the new block
+					label = currentLabel;
+					currentBlockStmts = new Vector<>();
+				}
 			} else {
 				currentBlockStmts.add(stmt);
 			}
@@ -212,6 +223,7 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 	}
 
 	public Object visit(AST.DefFunDefn defFunDefn, Object arg) {
+		boolean DEBUG = false;
 		Vector<IMC.Stmt> stmts = new Vector<>();
 		stmts.add(new IMC.LABEL(ImcGen.entryLabel.get(defFunDefn)));
 		// Resolve nested calls
@@ -219,9 +231,10 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 			IMC.Instr stmtInstr = ImcGen.stmt.get(stmt);
 			IMC.Instr newStmtInstr = stmtInstr.accept(new NestedCallsTransformer(stmts), null);
 			stmts.add((IMC.Stmt) newStmtInstr);
+			if (DEBUG) {
+				Report.info(newStmtInstr.toString());
+			}
 		}
-
-		boolean DEBUG = false;
 
 		// Generate basic blocks and reorder them
 		Vector<BasicBlock> blocks = generateBasicBlocks(stmts, ImcGen.exitLabel.get(defFunDefn));

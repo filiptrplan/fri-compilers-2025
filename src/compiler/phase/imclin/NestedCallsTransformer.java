@@ -27,19 +27,6 @@ public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> 
 		this.currentStmts = _currentStmts;
 	}
 
-	/** Linearizes any IMC.STMTS one level deep */
-	private Vector<IMC.Stmt> linearizeStmts(Vector<IMC.Stmt> origStmts) {
-		Vector<IMC.Stmt> newStmts = new Vector<>();
-		for (IMC.Stmt stmt : origStmts) {
-			if (stmt instanceof IMC.STMTS) {
-				newStmts.addAll(((IMC.STMTS) stmt).stmts);
-			} else {
-				newStmts.add(stmt);
-			}
-		}
-		return newStmts;
-	}
-
 	@Override
 	public IMC.Instr visit(IMC.CALL call, IMC.Stmt arg) {
 		IMC.CALL origCallInstr = call;

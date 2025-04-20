@@ -676,6 +676,7 @@ public class IMC {
 		 */
 		public STMTS(Vector<Stmt> stmts, MEM.Label startLabel) {
 			this.stmts = new Vector<Stmt>(stmts);
+			this.stmts.addFirst(new IMC.LABEL(startLabel));
 			this.startLabel = startLabel;
 		}
 
