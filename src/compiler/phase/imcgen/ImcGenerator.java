@@ -426,8 +426,8 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 			AST.Node argExpr = callExpr.argExprs.get(i);
 			IMC.Expr argExprInstr = (IMC.Expr) argExpr.accept(this, arg);
 			args.add(argExprInstr);
-			offset += MemEvaluator.alignedSize(SemAn.ofType.get(argExpr).actualType());
 			offs.add(offset);
+			offset += MemEvaluator.alignedSize(SemAn.ofType.get(argExpr).actualType());
 		}
 		IMC.Expr instr = new IMC.CALL(funExprAddr, offs, args);
 		ImcGen.expr.put(callExpr, instr);
