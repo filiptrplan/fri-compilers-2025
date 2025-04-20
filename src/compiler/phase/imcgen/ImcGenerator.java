@@ -49,6 +49,14 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		}
 	}
 
+	public static IMC.Expr unwrapMem(IMC.Expr mem) {
+		if (mem instanceof IMC.MEM8) {
+			return ((IMC.MEM8) mem).addr;
+		} else {
+			return ((IMC.MEM1) mem).addr;
+		}
+	}
+
 	/** Get the address this expression represents */
 	private IMC.Expr getAddress(IMC.Expr expr) {
 		if (expr instanceof IMC.MEM8) {
@@ -162,6 +170,11 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 	public IMC.Instr visit(AST.AssignStmt assignStmt, Object arg) {
 		IMC.Expr dstExpr = (IMC.Expr) assignStmt.dstExpr.accept(this, arg);
 		IMC.Expr srcExpr = (IMC.Expr) assignStmt.srcExpr.accept(this, arg);
+		// Functions should always in the end be some kind of label that points in the
+		// code section
+		if (SemAn.ofType.get(assignStmt.srcExpr).actualType() instanceof TYP.FunType) {
+			srcExpr = unwrapMem(srcExpr);
+		}
 		IMC.Stmt stmt = new IMC.MOVE(dstExpr, srcExpr);
 		ImcGen.stmt.put(assignStmt, stmt);
 		return stmt;
@@ -406,7 +419,16 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 	@Override
 	public IMC.Instr visit(AST.CallExpr callExpr, Object arg) {
 		// We know that the funExpr will return the address of the function
-		IMC.Expr funExprAddr = getAddress((IMC.Expr) callExpr.funExpr.accept(this, arg));
+		IMC.Expr funExprAddr = null;
+
+		// If the expression is a name expression it could be either a DefFunDefn or a
+		// variable. If it is a variable it must be handled differently because the MEM
+		// must be preserved.
+		if (callExpr.funExpr instanceof AST.NameExpr && SemAn.defAt.get(callExpr.funExpr) instanceof AST.VarDefn) {
+			funExprAddr = (IMC.Expr) callExpr.funExpr.accept(this, arg);
+		} else {
+			funExprAddr = getAddress((IMC.Expr) callExpr.funExpr.accept(this, arg));
+		}
 		Vector<IMC.Expr> args = new Vector<>();
 		Vector<Long> offs = new Vector<>();
 

@@ -494,11 +494,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 		TYP.Type type = SemAn.ofType.get(SemAn.defAt.get(nameExpr));
 		SemAn.ofType.put(nameExpr, type);
 		SemAn.isConst.put(nameExpr, false);
-		if (type.actualType() instanceof TYP.FunType) {
-			SemAn.isAddr.put(nameExpr, false);
-		} else {
-			SemAn.isAddr.put(nameExpr, true);
-		}
+		SemAn.isAddr.put(nameExpr, true);
 		return type;
 	}
 
@@ -664,7 +660,7 @@ public class TypeChecker implements AST.FullVisitor<TYP.Type, Argument> {
 		}
 
 		if (!SemAn.isAddr.get(assignStmt.dstExpr)) {
-			throw new Report.Error(assignStmt.dstExpr, "Assignment requires and adressable expression.");
+			throw new Report.Error(assignStmt.dstExpr, "Assignment requires an adressable expression.");
 		}
 
 		return TYP.VoidType.type;
