@@ -49,9 +49,7 @@ public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> 
 		for (IMC.Expr expr : call.args) {
 			IMC.Expr newArg = (IMC.Expr) expr.accept(this, null);
 			IMC.TEMP argTemp = new IMC.TEMP(new MEM.Temp());
-			// TODO: If i always wrap with MEM8 is there anything wrong with that?
-			// temp variables should always be either registers or aligned on 8 bytes.
-			IMC.MOVE moveArg = new IMC.MOVE(new IMC.MEM8(argTemp), newArg);
+			IMC.MOVE moveArg = new IMC.MOVE(argTemp, newArg);
 			currentStmts.add(moveArg);
 			newargsVector.add(argTemp);
 		}
