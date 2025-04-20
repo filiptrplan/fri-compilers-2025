@@ -42,8 +42,10 @@ public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> 
 		}
 
 		IMC.CALL newCallInstr = new IMC.CALL(origCallInstr.addr, origCallInstr.offs, newargsVector);
+		MEM.Temp tempValue = new MEM.Temp();
+		currentStmts.add(new IMC.MOVE(new IMC.TEMP(tempValue), newCallInstr));
 
-		return newCallInstr;
+		return new IMC.TEMP(tempValue);
 	}
 
 	@Override

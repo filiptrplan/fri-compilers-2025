@@ -672,11 +672,12 @@ public class IMC {
 		 * Constructs a sequence of statements.
 		 * 
 		 * @param stmts      The sequence of statements.
-		 * @param startLabel The label that points to the first Statement
+		 * @param startLabel The label that points to the first statement.
+		 *                   This label will be added into the statements in the stage
+		 *                   of linearization
 		 */
 		public STMTS(Vector<Stmt> stmts, MEM.Label startLabel) {
 			this.stmts = new Vector<Stmt>(stmts);
-			this.stmts.addFirst(new IMC.LABEL(startLabel));
 			this.startLabel = startLabel;
 		}
 
@@ -698,6 +699,8 @@ public class IMC {
 		public String toString() {
 			StringBuffer buffer = new StringBuffer();
 			buffer.append("STMTS(");
+			buffer.append(startLabel.name);
+			buffer.append(")(");
 			for (int s = 0; s < stmts.size(); s++) {
 				if (s > 0)
 					buffer.append(",");

@@ -64,38 +64,44 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 	}
 
 	/**
+	 * Recursively linearizes any IMC.STMTS instructions and adds the startLabels
+	 */
+	private Vector<IMC.Stmt> linearizeStmts(Vector<IMC.Stmt> stmts) {
+		Vector<IMC.Stmt> newStmts = new Vector<>();
+		for (IMC.Stmt stmt : stmts) {
+			if (stmt instanceof IMC.STMTS) {
+				IMC.STMTS stmtsInstr = (IMC.STMTS) stmt;
+				newStmts.add(new IMC.LABEL(stmtsInstr.startLabel));
+				newStmts.addAll(linearizeStmts(stmtsInstr.stmts));
+			} else {
+				newStmts.add(stmt);
+			}
+		}
+		return newStmts;
+	}
+
+	/**
 	 * Generates basic blocks recursively from a vector of stmts
 	 */
-	private Vector<BasicBlock> generateBasicBlocks(Vector<IMC.Stmt> stmts, MEM.Label exitFunctionLabel) {
+	private Vector<BasicBlock> generateBasicBlocks(Vector<IMC.Stmt> stmts, MEM.Label exitFunctionLabel,
+			MEM.Label startLabel) {
 		Vector<BasicBlock> blocks = new Vector<>();
 		Vector<IMC.Stmt> currentBlockStmts = new Vector<>();
-		MEM.Label label = new MEM.Label();
+		MEM.Label label = startLabel;
+		boolean setCustomLabel = true;
 		for (IMC.Stmt stmt : stmts) {
 			if (stmt instanceof IMC.CJUMP || stmt instanceof IMC.JUMP) {
 				BasicBlock block = new BasicBlock(label, stmt, currentBlockStmts);
 				blocks.add(block);
 				currentBlockStmts = new Vector<>();
 				label = new MEM.Label();
-			} else if (stmt instanceof IMC.STMTS) {
-				// We finish the basic block and add a jump to start of this STMTS instruction.
-				// This should be okay because when we linearize we remove jumps that points to
-				// the basic block right behind this one.
-				IMC.STMTS stmtsInstr = (IMC.STMTS) stmt;
-				if (currentBlockStmts.size() != 0) {
-					IMC.JUMP jump = new IMC.JUMP(new IMC.NAME(stmtsInstr.startLabel));
-					BasicBlock block = new BasicBlock(label, jump, currentBlockStmts);
-					blocks.add(block);
-				}
-				// We need to create a new blockstmts instead of clearing it because we pass
-				// it to the BasicBlock class
-				currentBlockStmts = new Vector<>();
-				label = new MEM.Label();
-				// We recursively generate the basic blocks
-				blocks.addAll(generateBasicBlocks(stmtsInstr.stmts, exitFunctionLabel));
+				setCustomLabel = false;
 			} else if (stmt instanceof IMC.LABEL) {
-				if (currentBlockStmts.size() == 0) {
-					// If the first statement is a label, we use that for our basic block
+				if (!setCustomLabel) {
+					// If the current label is automatically generated, we set it to this one,
+					// otherwise we create a new block in order not to lose any labels
 					label = ((IMC.LABEL) stmt).label;
+					setCustomLabel = true;
 				} else {
 					// We create a new basic block with an unconditional jump
 					MEM.Label currentLabel = ((IMC.LABEL) stmt).label;
@@ -223,9 +229,14 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 	}
 
 	public Object visit(AST.DefFunDefn defFunDefn, Object arg) {
-		boolean DEBUG = false;
+		boolean DEBUG = defFunDefn.name.equals("fib");
+		DEBUG = false;
+		if (DEBUG) {
+			Report.info("========== " + defFunDefn.name + " ==========");
+			Report.info("ENTRY: " + ImcGen.entryLabel.get(defFunDefn).name);
+			Report.info("EXIT: " + ImcGen.exitLabel.get(defFunDefn).name);
+		}
 		Vector<IMC.Stmt> stmts = new Vector<>();
-		stmts.add(new IMC.LABEL(ImcGen.entryLabel.get(defFunDefn)));
 		// Resolve nested calls
 		for (AST.Stmt stmt : defFunDefn.stmts) {
 			IMC.Instr stmtInstr = ImcGen.stmt.get(stmt);
@@ -236,8 +247,19 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 			}
 		}
 
+		// We first linearize stmts to get rid of IMC.STMTS
+		stmts = linearizeStmts(stmts);
+
+		if (DEBUG) {
+			Report.info("LINEARIZED STMTS");
+			for (IMC.Stmt stmt : stmts) {
+				Report.info(stmt.toString());
+			}
+		}
+
 		// Generate basic blocks and reorder them
-		Vector<BasicBlock> blocks = generateBasicBlocks(stmts, ImcGen.exitLabel.get(defFunDefn));
+		Vector<BasicBlock> blocks = generateBasicBlocks(stmts, ImcGen.exitLabel.get(defFunDefn),
+				ImcGen.entryLabel.get(defFunDefn));
 		HashMap<String, BasicBlock> blockMap = makeBasicBlockMap(blocks);
 		if (DEBUG) {
 			Report.info("original");

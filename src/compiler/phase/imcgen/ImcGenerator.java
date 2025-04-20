@@ -74,7 +74,6 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		if (nodes.get(0) instanceof AST.Stmt) {
 			Vector<IMC.Stmt> stmts = new Vector<>();
 			MEM.Label startLabel = new MEM.Label();
-			stmts.add(new IMC.LABEL(startLabel));
 			for (final AST.Node node : nodes)
 				stmts.add((IMC.Stmt) node.accept(this, arg));
 			instr = new IMC.STMTS(stmts, startLabel);
@@ -186,7 +185,6 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		thenStmt.stmts.add(new IMC.JUMP(new IMC.NAME(exitLabel)));
 
 		Vector<IMC.Stmt> stmts = new Vector<>();
-		stmts.add(new IMC.LABEL(entryLabel));
 		stmts.add(new IMC.CJUMP(condExpr, new IMC.NAME(thenStmt.startLabel),
 				new IMC.NAME(exitLabel)));
 		stmts.add(thenStmt);
@@ -212,7 +210,6 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		MEM.Label elseLabel = elseStmt.startLabel;
 
 		Vector<IMC.Stmt> stmts = new Vector<>();
-		stmts.add(new IMC.LABEL(entryLabel));
 		stmts.add(new IMC.CJUMP(condExpr, new IMC.NAME(thenLabel), new IMC.NAME(elseLabel)));
 		stmts.add(thenStmt);
 		stmts.add(elseStmt);
@@ -246,8 +243,6 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		MEM.Label whileExitLabel = new MEM.Label();
 
 		Vector<IMC.Stmt> stmts = new Vector<>();
-		// We first label our while loop
-		stmts.add(new IMC.LABEL(whileLabel));
 		// Then we check the condition
 		stmts.add(new IMC.CJUMP(expr, new IMC.NAME(whileBodyLabel), new IMC.NAME(whileExitLabel)));
 		stmts.add(whileBodyStmts);
