@@ -99,8 +99,8 @@ public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> 
 
 	@Override
 	public IMC.Instr visit(IMC.MOVE move, IMC.Stmt visArg) {
-		IMC.Expr newSrc = (IMC.Expr) move.src.accept(this, visArg);
 		IMC.Expr newDst = (IMC.Expr) move.dst.accept(this, visArg);
+		IMC.Expr newSrc = (IMC.Expr) move.src.accept(this, visArg);
 		return new IMC.MOVE(newDst, newSrc);
 	}
 
