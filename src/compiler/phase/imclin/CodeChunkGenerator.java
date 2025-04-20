@@ -213,6 +213,7 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 
 	public Object visit(AST.DefFunDefn defFunDefn, Object arg) {
 		Vector<IMC.Stmt> stmts = new Vector<>();
+		stmts.add(new IMC.LABEL(ImcGen.entryLabel.get(defFunDefn)));
 		// Resolve nested calls
 		for (AST.Stmt stmt : defFunDefn.stmts) {
 			IMC.Instr stmtInstr = ImcGen.stmt.get(stmt);
@@ -220,17 +221,23 @@ public class CodeChunkGenerator implements AST.FullVisitor<Object, Object> {
 			stmts.add((IMC.Stmt) newStmtInstr);
 		}
 
+		boolean DEBUG = false;
+
 		// Generate basic blocks and reorder them
 		Vector<BasicBlock> blocks = generateBasicBlocks(stmts, ImcGen.exitLabel.get(defFunDefn));
 		HashMap<String, BasicBlock> blockMap = makeBasicBlockMap(blocks);
-		Report.info("original");
-		for (BasicBlock block : blocks) {
-			Report.info(block.toString());
+		if (DEBUG) {
+			Report.info("original");
+			for (BasicBlock block : blocks) {
+				Report.info(block.toString());
+			}
 		}
-		Report.info("linearized");
 		Vector<BasicBlock> permutedBlocks = permuteBlocks(blocks.firstElement(), blockMap);
-		for (BasicBlock block : permutedBlocks) {
-			Report.info(block.toString());
+		if (DEBUG) {
+			Report.info("linearized");
+			for (BasicBlock block : permutedBlocks) {
+				Report.info(block.toString());
+			}
 		}
 
 		// Ge the statements from the permuted blocks
