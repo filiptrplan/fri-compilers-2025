@@ -39,26 +39,31 @@ public class ASM {
 		}
 	}
 
-	public abstract class Instr {
+	static public abstract class Instr {
 	}
 
 	/** A label in the machine code */
-	public class Label extends Instr {
+	static public class Label extends Instr {
 		/** The string representation of {@link compiler.phase.memory.MEM.Label} */
 		public String label;
 
 		public Label(String label) {
 			this.label = label;
 		}
+
+		@Override
+		public String toString() {
+			return label + ":";
+		}
 	}
 
 	/** Represents any instruction with operands */
-	public class Oper extends Instr {
+	public static class Oper extends Instr {
 		/**
 		 * The string representation of operands.
 		 * - labels start with L
 		 * - temps start with T
-		 * - constants are just numbers
+		 * - constants are just numbers prefixed with C
 		 * The `usedOps` are for the operands that are used by the instruction.
 		 */
 		public final Vector<String> useOps;
@@ -68,6 +73,11 @@ public class ASM {
 		 * another register)
 		 */
 		public final Vector<String> defOps;
+		/*
+		 * The string representation of the operand instruction.
+		 * The placeholders for the useOps registers are #1, #2, #3, ...
+		 * The placeholders for the defOpss registers are $1, $2, $3 ...
+		 */
 		public final String opcode;
 
 		public Oper(String opcode, Vector<String> defOps, Vector<String> useOps) {
@@ -75,13 +85,25 @@ public class ASM {
 			this.defOps = defOps;
 			this.useOps = useOps;
 		}
+
+		@Override
+		public String toString() {
+			String result = opcode;
+			for (int i = 0; i < defOps.size(); i++) {
+				result = result.replace("$" + (i + 1), defOps.get(i));
+			}
+			for (int i = 0; i < useOps.size(); i++) {
+				result = result.replace("#" + (i + 1), useOps.get(i));
+			}
+			return "\t" + result;
+		}
 	}
 
 	/**
 	 * A special case of an instruction called move.
 	 * It signifies ONLY instructions that copy one register to another
 	 */
-	public class Move extends Oper {
+	public static class Move extends Oper {
 		public Move(String opcode, String destination, String source) {
 			super(opcode, new Vector<String>() {
 				{
