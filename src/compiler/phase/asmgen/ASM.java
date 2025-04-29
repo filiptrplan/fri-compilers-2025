@@ -1,4 +1,4 @@
-package compiler.phase.mcgen;
+package compiler.phase.asmgen;
 
 import java.util.Vector;
 
@@ -8,7 +8,7 @@ import compiler.phase.memory.MEM;
 /**
  * Machine code instruction representation
  */
-public class MC {
+public class ASM {
 	/**
 	 * A chunk of machine code.
 	 */
@@ -17,7 +17,7 @@ public class MC {
 		/** A frame of a function. */
 		public final MEM.Frame frame;
 		/** The instructions of a function body. */
-		private final Vector<MC.Instr> instructions;
+		private final Vector<ASM.Instr> instructions;
 		/** The function's body entry label, i.e., the label the prologue jumps to. */
 		public final MEM.Label entryLabel;
 		/**
@@ -31,7 +31,7 @@ public class MC {
 		 * @param codeChunk    The code chunk from the ImcLin phase this is based on
 		 * @param instructions The machine code instructions of the function body
 		 */
-		public CodeInstrChunk(LIN.CodeChunk codeChunk, Vector<MC.Instr> instrs) {
+		public CodeInstrChunk(LIN.CodeChunk codeChunk, Vector<ASM.Instr> instrs) {
 			this.frame = codeChunk.frame;
 			this.instructions = instrs;
 			this.entryLabel = codeChunk.entryLabel;
