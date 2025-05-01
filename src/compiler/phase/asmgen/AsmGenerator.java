@@ -17,9 +17,11 @@ public class AsmGenerator implements IMC.Visitor<String, Object> {
 	 */
 
 	private final Vector<ASM.Instr> instructions;
+	public final MEM.Frame callFrame;
 
-	public AsmGenerator(Vector<ASM.Instr> instructions) {
+	public AsmGenerator(Vector<ASM.Instr> instructions, MEM.Frame frame) {
 		this.instructions = instructions;
+		this.callFrame = frame;
 	}
 
 	@Override

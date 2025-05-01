@@ -297,4 +297,37 @@ public class Tiles {
 		}
 	}
 
+	public static class CallTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			return instr instanceof IMC.CALL;
+		}
+
+		@Override
+		public int getSize() {
+			return 1;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.CALL call = (IMC.CALL) instr;
+			String temp = newTemp();
+			String func = call.addr.accept(generator, instructions);
+			Vector<String> args = new Vector<>();
+			for (IMC.Expr arg : call.args) {
+				// Because of linearization these will always be temps
+				args.add(arg.accept(generator, instructions));
+			}
+
+			for (int i = 0; i < args.size(); i++) {
+				instructions
+						.add(new ASM.Oper("sd #1, " + call.offs.get(i) + "(#2)", null, doubleOp(args.get(i), "SP")));
+			}
+
+			instructions.add(new ASM.Oper("jal $1, #1", singleOp(temp), singleOp(func)));
+			// The result is stored on the stack, we denote this with RV
+			return "RV";
+		}
+	}
+
 }

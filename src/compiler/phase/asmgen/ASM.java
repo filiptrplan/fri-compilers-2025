@@ -61,9 +61,14 @@ public class ASM {
 	public static class Oper extends Instr {
 		/**
 		 * The string representation of operands.
+		 *
 		 * - labels start with L
 		 * - temps start with T
-		 * - constants are just numbers prefixed with C
+		 * - constants are just numbers
+		 * - special cases of FP and SP
+		 * - RV denotes that this is a return value of a function and is returned
+		 * on the stack
+		 *
 		 * The `usedOps` are for the operands that are used by the instruction.
 		 */
 		public final Vector<String> useOps;
