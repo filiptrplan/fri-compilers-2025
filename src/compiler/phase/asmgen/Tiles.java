@@ -17,6 +17,113 @@ public class Tiles {
 		return vec;
 	}
 
+	// --- Statement Tiles ---
+
+	/**
+	 * Tile for LABEL(label) -> label:
+	 */
+	public static class LabelTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			return instr instanceof IMC.LABEL;
+		}
+
+		@Override
+		public int getSize() {
+			return 1;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.LABEL label = (IMC.LABEL) instr;
+			instructions.add(new ASM.Label(label.label.name));
+			return label.label.name;
+		}
+	}
+
+	/** Tile for JUMP(expr) -> jr reg */
+	public static class JumpTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			return instr instanceof IMC.JUMP;
+		}
+
+		@Override
+		public int getSize() {
+			return 2;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.JUMP jump = (IMC.JUMP) instr;
+			String targetRegister = jump.addr.accept(generator, instructions);
+			instructions.add(new ASM.Oper("jr #1", null, singleOp(targetRegister)));
+			return null;
+		}
+	}
+
+	/**
+	 * Tile for JUMP(NAME(label)) -> jr reg
+	 */
+	public static class JumpNameTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.JUMP jump) {
+				return jump.addr instanceof IMC.NAME;
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			return 3;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.JUMP jump = (IMC.JUMP) instr;
+			IMC.NAME name = (IMC.NAME) jump.addr;
+			instructions.add(new ASM.Oper("j #1", null, singleOp(name.label.name)));
+			return null;
+		}
+	}
+
+	/**
+	 * Tile for CJUMP(cond, NAME(trueLabel), NAME(falseLabel)) -> bnez condReg,
+	 * trueLabel
+	 * Assumes the falseLabel immediately follows this instruction due to
+	 * linearization.
+	 */
+	public static class CJumpTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.CJUMP cjump) {
+				// Check if both targets are NAMEs, as expected after linearization
+				return cjump.posAddr instanceof IMC.NAME && cjump.negAddr instanceof IMC.NAME;
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			return 3;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.CJUMP cjump = (IMC.CJUMP) instr;
+
+			String condReg = cjump.cond.accept(generator, instructions);
+			// We only need the true label, as the false label is the next instruction
+			String trueLabel = ((IMC.NAME) cjump.posAddr).label.name;
+
+			// Branch if condition register is not zero (true)
+			instructions.add(new ASM.Oper("bnez #1, #2", null, doubleOp(condReg, trueLabel)));
+
+			return null;
+		}
+	}
+
 	private static Vector<String> doubleOp(String op1, String op2) {
 		Vector<String> vec = new Vector<>();
 		vec.add(op1);
