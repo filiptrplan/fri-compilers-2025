@@ -17,9 +17,3 @@ public interface Tile {
 	 */
 	String emit(AsmGenerator generator, Vector<ASM.Instr> instructions, IMC.Instr instr);
 }
-
-public class ConstTile implements Tile {
-	boolean matches(IMC.Instr instr) {
-		return instr instanceof IMC.CONST;
-	}
-}

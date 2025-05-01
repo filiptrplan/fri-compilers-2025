@@ -40,7 +40,7 @@ public class Tiles {
 		}
 
 		@Override
-		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+		public String emit(AsmGenerator generator, Vector<ASM.Instr> instructions, IMC.Instr instr) {
 			return Long.toString(((IMC.CONST) instr).value);
 		}
 	}
@@ -356,10 +356,10 @@ public class Tiles {
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.MOVE move = (IMC.MOVE) instr;
 			String r1 = move.dst.accept(generator, null);
-			String constant = move.src.accept(generator, null)
+			String constant = move.src.accept(generator, null);
 
 			instructions.add(new ASM.Oper("li $1, #1", singleOp(r1), singleOp(constant)));
-			return null; 
+			return null;
 		}
 	}
 
@@ -396,7 +396,7 @@ public class Tiles {
 	 * Differs from `MoveTempTempTile` because it generates an ASM.Oper, not an
 	 * ASM.Move
 	 */
-	public static class MoveTempTempTile implements Tile {
+	public static class MoveTempTile implements Tile {
 		@Override
 		public boolean matches(IMC.Instr instr) {
 			if (instr instanceof IMC.MOVE move) {
@@ -435,20 +435,17 @@ public class Tiles {
 
 		@Override
 		public int getSize() {
-			return 1; // la instruction
+			return 3;
 		}
 
 		@Override
 		public String emit(AsmGenerator generator, Vector<ASM.Instr> instructions, IMC.Instr instr) {
 			IMC.MOVE move = (IMC.MOVE) instr;
-			IMC.TEMP dstTemp = (IMC.TEMP) move.dst;
-			IMC.NAME srcName = (IMC.NAME) move.src;
-
-			String r1 = dstTemp.toString();
-			String name = srcName.label.toString();
+			String r1 = move.dst.accept(generator, null);
+			String name = move.src.accept(generator, null);
 
 			instructions.add(new ASM.Oper("la $1, #1", singleOp(r1), singleOp(name)));
-			return null; // Statements don't return a result register
+			return null;
 		}
 	}
 
@@ -466,8 +463,7 @@ public class Tiles {
 
 		@Override
 		public int getSize() {
-			// Size depends on evaluating r1 and r2, store is 1.
-			return 1;
+			return 2;
 		}
 
 		@Override
@@ -475,10 +471,9 @@ public class Tiles {
 			IMC.MOVE move = (IMC.MOVE) instr;
 			IMC.MEM8 dstMem = (IMC.MEM8) move.dst;
 
-			String r1 = dstMem.addr.accept(generator, instructions); // Base address register
-			String r2 = move.src.accept(generator, instructions); // Source value register
+			String r1 = dstMem.addr.accept(generator, instructions);
+			String r2 = move.src.accept(generator, instructions);
 
-			// sd r2, 0(r1)
 			instructions.add(new ASM.Oper("sd #1, 0(#2)", null, doubleOp(r2, r1)));
 			return null;
 		}
@@ -503,8 +498,7 @@ public class Tiles {
 
 		@Override
 		public int getSize() {
-			// Size depends on evaluating r2, store is 1.
-			return 1;
+			return 5;
 		}
 
 		@Override
@@ -512,15 +506,15 @@ public class Tiles {
 			IMC.MOVE move = (IMC.MOVE) instr;
 			IMC.MEM8 dstMem = (IMC.MEM8) move.dst;
 			IMC.BINOP binop = (IMC.BINOP) dstMem.addr;
-			IMC.TEMP baseReg = (IMC.TEMP) binop.fstExpr;
-			IMC.CONST offsetConst = (IMC.CONST) binop.sndExpr;
 
-			String r1 = baseReg.toString(); // Base address register (already a TEMP)
-			String imm = Long.toString(offsetConst.value); // Immediate offset
-			String r2 = move.src.accept(generator, instructions); // Source value register
+			String r1 = binop.fstExpr.accept(generator, null);
+			String imm = binop.sndExpr.accept(generator, null);
+			String r2 = move.src.accept(generator, instructions);
 
-			// sd r2, imm(r1)
-			instructions.add(new ASM.Oper("sd #1, #2(#3)", null, List.of(r2, imm, r1)));
+			Vector<String> useVec = new Vector<>();
+			useVec.addAll(List.of(r2, imm, r1));
+
+			instructions.add(new ASM.Oper("sd #1, #2(#3)", null, useVec));
 			return null;
 		}
 	}
@@ -539,8 +533,7 @@ public class Tiles {
 
 		@Override
 		public int getSize() {
-			// Size depends on evaluating r1 and r2, store is 1.
-			return 1;
+			return 2;
 		}
 
 		@Override
@@ -548,8 +541,8 @@ public class Tiles {
 			IMC.MOVE move = (IMC.MOVE) instr;
 			IMC.MEM1 dstMem = (IMC.MEM1) move.dst;
 
-			String r1 = dstMem.addr.accept(generator, instructions); // Base address register
-			String r2 = move.src.accept(generator, instructions); // Source value register
+			String r1 = dstMem.addr.accept(generator, instructions);
+			String r2 = move.src.accept(generator, instructions);
 
 			// sb r2, 0(r1)
 			instructions.add(new ASM.Oper("sb #1, 0(#2)", null, doubleOp(r2, r1)));
@@ -576,8 +569,7 @@ public class Tiles {
 
 		@Override
 		public int getSize() {
-			// Size depends on evaluating r2, store is 1.
-			return 1;
+			return 5;
 		}
 
 		@Override
@@ -585,15 +577,15 @@ public class Tiles {
 			IMC.MOVE move = (IMC.MOVE) instr;
 			IMC.MEM1 dstMem = (IMC.MEM1) move.dst;
 			IMC.BINOP binop = (IMC.BINOP) dstMem.addr;
-			IMC.TEMP baseReg = (IMC.TEMP) binop.fstExpr;
-			IMC.CONST offsetConst = (IMC.CONST) binop.sndExpr;
 
-			String r1 = baseReg.toString(); // Base address register (already a TEMP)
-			String imm = Long.toString(offsetConst.value); // Immediate offset
-			String r2 = move.src.accept(generator, instructions); // Source value register
+			String r1 = binop.fstExpr.accept(generator, null);
+			String imm = binop.sndExpr.accept(generator, null);
+			String r2 = move.src.accept(generator, instructions);
 
-			// sb r2, imm(r1)
-			instructions.add(new ASM.Oper("sb #1, #2(#3)", null, List.of(r2, imm, r1)));
+			Vector<String> useVec = new Vector<>();
+			useVec.addAll(List.of(r2, imm, r1));
+
+			instructions.add(new ASM.Oper("sb #1, #2(#3)", null, useVec));
 			return null;
 		}
 	}
