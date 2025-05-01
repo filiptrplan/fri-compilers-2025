@@ -2,19 +2,12 @@ package compiler.phase.asmgen;
 
 import java.util.Vector;
 
+import compiler.common.report.Report;
 import compiler.phase.imcgen.IMC;
 import compiler.phase.memory.MEM;
 
 /** Generates assembly code from intermediate code */
 public class AsmGenerator implements IMC.Visitor<String, Object> {
-	/**
-	 * A comment on what the return value of the visitor means.
-	 * The return value of an expression is the register that contains the result of
-	 * the expression. So it will return a String with the format T{number}
-	 * If the return value is a constant, then the constant is the return value (aka
-	 * a string with the format C{number}).
-	 * The return value of a statement is null.
-	 */
 
 	private final Vector<ASM.Instr> instructions;
 	public final MEM.Frame callFrame;
@@ -24,27 +17,109 @@ public class AsmGenerator implements IMC.Visitor<String, Object> {
 		this.callFrame = frame;
 	}
 
-	@Override
-	public Object visit(IMC.STMTS stmts, Object visArg) {
-		for (IMC.Stmt stmt : stmts.stmts)
-			stmt.accept(this, visArg);
+	/** Implementation of the maximal munch algorithm */
+	private String matchTiles(IMC.Instr instr) {
+		int maxSize = 0;
+		Tile maxTile = null;
+		for (Tile tile : Tiles.availableTiles) {
+			if (tile.matches(instr)) {
+				int size = tile.getSize();
+				if (size > maxSize) {
+					maxSize = size;
+					maxTile = tile;
+				}
+			}
+		}
+
+		if (maxTile == null) {
+			// Should not happen, a tile is not matched
+			throw new Report.InternalError();
+		}
+
+		maxTile.emit(this, instructions, instr);
 		return null;
 	}
 
 	@Override
-	public Object visit(IMC.CONST constant, Object visArg) {
-		return constant.value;
+	public String visit(IMC.STMTS stmts, Object visArg) {
+		for (IMC.Stmt stmt : stmts.stmts)
+			matchTiles(stmt);
+		return null;
 	}
 
 	@Override
-	public Object visit(IMC.TEMP temp, Object visArg) {
-		return temp.temp;
+	public String visit(IMC.CONST constant, Object visArg) {
+		matchTiles(constant);
+		return null;
 	}
 
 	@Override
-	public Object visit(IMC.NAME name, Object visArg) {
-		MEM.Temp temp = new MEM.Temp();
-		instructions.add(new ASM.Oper("la $1, #1", singleOp(temp.toString()), singleOp(name.label.toString())));
-		return temp.toString();
+	public String visit(IMC.TEMP temp, Object visArg) {
+		return matchTiles(temp);
+	}
+
+	@Override
+	public String visit(IMC.NAME name, Object visArg) {
+		return matchTiles(name);
+	}
+
+	@Override
+	public String visit(IMC.BINOP binOp, Object visArg) {
+		return matchTiles(binOp);
+	}
+
+	@Override
+	public String visit(IMC.CALL call, Object visArg) {
+		return matchTiles(call);
+	}
+
+	@Override
+	public String visit(IMC.MEM1 mem, Object visArg) {
+		return matchTiles(mem);
+	}
+
+	@Override
+	public String visit(IMC.MEM8 mem, Object visArg) {
+		return matchTiles(mem);
+	}
+
+	@Override
+	public String visit(IMC.SEXPR sExpr, Object visArg) {
+		return matchTiles(sExpr);
+	}
+
+	@Override
+	public String visit(IMC.UNOP unOp, Object visArg) {
+		return matchTiles(unOp);
+	}
+
+	@Override
+	public String visit(IMC.CJUMP cjump, Object visArg) {
+		matchTiles(cjump);
+		return null;
+	}
+
+	@Override
+	public String visit(IMC.ESTMT eStmt, Object visArg) {
+		matchTiles(eStmt);
+		return null;
+	}
+
+	@Override
+	public String visit(IMC.JUMP jump, Object visArg) {
+		matchTiles(jump);
+		return null;
+	}
+
+	@Override
+	public String visit(IMC.LABEL label, Object visArg) {
+		matchTiles(label);
+		return null;
+	}
+
+	@Override
+	public String visit(IMC.MOVE move, Object visArg) {
+		matchTiles(move);
+		return null;
 	}
 }

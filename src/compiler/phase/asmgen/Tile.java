@@ -13,7 +13,15 @@ public interface Tile {
 
 	/**
 	 * Emits the instructions. Returns the register / place where the result is
-	 * stored
+	 * stored.
+	 * The return value of an expression is the register that contains the result of
+	 * the expression. So it will return a String with the format T{number}
+	 * If the return value is a constant, then the constant is the return value (aka
+	 * a string with the format {number}).
+	 * The return value of a statement is null.
+	 *
+	 * This function also visits all the sub-instructions in the tree with the
+	 * generator visitor.
 	 */
 	String emit(AsmGenerator generator, Vector<ASM.Instr> instructions, IMC.Instr instr);
 }

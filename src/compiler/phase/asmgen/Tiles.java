@@ -17,6 +17,33 @@ public class Tiles {
 		return vec;
 	}
 
+	public static final List<Tile> availableTiles = List.of(
+			new MoveTempConstTile(),
+			new MoveTempTempTile(),
+			new MoveTempNameTile(),
+			new MoveMem8ImmTile(),
+			new MoveMem1ImmTile(),
+			new MoveMem8RegTile(),
+			new MoveMem1RegTile(),
+			new MoveTempTile(),
+
+			new Mem8ImmTile(),
+			new Mem1ImmTile(),
+			new Mem8RegTile(),
+			new Mem1RegTile(),
+
+			new ConstTile(),
+			new TempTile(),
+			new NameTile(),
+			new BinopTile(),
+			new UnopTile(),
+			new CallTile(),
+
+			new LabelTile(),
+			new JumpNameTile(),
+			new JumpTile(),
+			new CJumpTile());
+
 	// --- Statement Tiles ---
 
 	/**
