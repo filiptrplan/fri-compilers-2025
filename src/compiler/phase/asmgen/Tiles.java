@@ -1,5 +1,6 @@
 package compiler.phase.asmgen;
 
+import java.util.List;
 import java.util.Vector;
 
 import compiler.common.report.Report;
@@ -26,6 +27,8 @@ public class Tiles {
 	private static String newTemp() {
 		return (new MEM.Temp()).toString();
 	}
+
+	// --- Expression tiles ---
 
 	public static class ConstTile implements Tile {
 		public boolean matches(IMC.Instr instr) {
@@ -327,6 +330,271 @@ public class Tiles {
 			instructions.add(new ASM.Oper("jal $1, #1", singleOp(temp), singleOp(func)));
 			// The result is stored on the stack, we denote this with RV
 			return "RV";
+		}
+	}
+
+	// --- MOVE Tiles ---
+
+	/**
+	 * Tile for MOVE(TEMP(r1), CONST(const)) -> li r1, const
+	 */
+	public static class MoveTempConstTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.MOVE move) {
+				return move.dst instanceof IMC.TEMP && move.src instanceof IMC.CONST;
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			return 3;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.MOVE move = (IMC.MOVE) instr;
+			String r1 = move.dst.accept(generator, null);
+			String constant = move.src.accept(generator, null)
+
+			instructions.add(new ASM.Oper("li $1, #1", singleOp(r1), singleOp(constant)));
+			return null; 
+		}
+	}
+
+	/**
+	 * Tile for MOVE(TEMP(r1), TEMP(r2)) -> mv r1, r2
+	 */
+	public static class MoveTempTempTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.MOVE move) {
+				return move.dst instanceof IMC.TEMP && move.src instanceof IMC.TEMP;
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			return 3;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.MOVE move = (IMC.MOVE) instr;
+			String r2 = move.src.accept(generator, null);
+			String r1 = move.dst.accept(generator, null);
+
+			instructions.add(new ASM.Move("mv $1, #1", r1, r2));
+			return null;
+		}
+	}
+
+	/**
+	 * Tile for MOVE(TEMP(r1), r2) -> mv r1, r2
+	 * Differs from `MoveTempTempTile` because it generates an ASM.Oper, not an
+	 * ASM.Move
+	 */
+	public static class MoveTempTempTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.MOVE move) {
+				return move.dst instanceof IMC.TEMP;
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			return 2;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.MOVE move = (IMC.MOVE) instr;
+			String r2 = move.src.accept(generator, null);
+			String r1 = move.dst.accept(generator, null);
+
+			instructions.add(new ASM.Oper("mv $1, #1", singleOp(r1), singleOp(r2)));
+			return null;
+		}
+	}
+
+	/**
+	 * Tile for MOVE(TEMP(r1), NAME(name)) -> la r1, name
+	 */
+	public static class MoveTempNameTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.MOVE move) {
+				return move.dst instanceof IMC.TEMP && move.src instanceof IMC.NAME;
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			return 1; // la instruction
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<ASM.Instr> instructions, IMC.Instr instr) {
+			IMC.MOVE move = (IMC.MOVE) instr;
+			IMC.TEMP dstTemp = (IMC.TEMP) move.dst;
+			IMC.NAME srcName = (IMC.NAME) move.src;
+
+			String r1 = dstTemp.toString();
+			String name = srcName.label.toString();
+
+			instructions.add(new ASM.Oper("la $1, #1", singleOp(r1), singleOp(name)));
+			return null; // Statements don't return a result register
+		}
+	}
+
+	/**
+	 * Tile for MOVE(MEM8(r1), r2) -> sd r2, 0(r1)
+	 */
+	public static class MoveMem8RegTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.MOVE move) {
+				return move.dst instanceof IMC.MEM8;
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			// Size depends on evaluating r1 and r2, store is 1.
+			return 1;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.MOVE move = (IMC.MOVE) instr;
+			IMC.MEM8 dstMem = (IMC.MEM8) move.dst;
+
+			String r1 = dstMem.addr.accept(generator, instructions); // Base address register
+			String r2 = move.src.accept(generator, instructions); // Source value register
+
+			// sd r2, 0(r1)
+			instructions.add(new ASM.Oper("sd #1, 0(#2)", null, doubleOp(r2, r1)));
+			return null;
+		}
+	}
+
+	/**
+	 * Tile for MOVE(MEM8(BINOP(ADD, TEMP(r1), CONST(imm))), r2) -> sd r2, imm(r1)
+	 */
+	public static class MoveMem8ImmTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.MOVE move) {
+				if (move.dst instanceof IMC.MEM8 mem8) {
+					if (mem8.addr instanceof IMC.BINOP binop) {
+						return binop.oper == Oper.ADD && binop.fstExpr instanceof IMC.TEMP
+								&& binop.sndExpr instanceof IMC.CONST;
+					}
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			// Size depends on evaluating r2, store is 1.
+			return 1;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.MOVE move = (IMC.MOVE) instr;
+			IMC.MEM8 dstMem = (IMC.MEM8) move.dst;
+			IMC.BINOP binop = (IMC.BINOP) dstMem.addr;
+			IMC.TEMP baseReg = (IMC.TEMP) binop.fstExpr;
+			IMC.CONST offsetConst = (IMC.CONST) binop.sndExpr;
+
+			String r1 = baseReg.toString(); // Base address register (already a TEMP)
+			String imm = Long.toString(offsetConst.value); // Immediate offset
+			String r2 = move.src.accept(generator, instructions); // Source value register
+
+			// sd r2, imm(r1)
+			instructions.add(new ASM.Oper("sd #1, #2(#3)", null, List.of(r2, imm, r1)));
+			return null;
+		}
+	}
+
+	/**
+	 * Tile for MOVE(MEM1(r1), r2) -> sb r2, 0(r1)
+	 */
+	public static class MoveMem1RegTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.MOVE move) {
+				return move.dst instanceof IMC.MEM1;
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			// Size depends on evaluating r1 and r2, store is 1.
+			return 1;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.MOVE move = (IMC.MOVE) instr;
+			IMC.MEM1 dstMem = (IMC.MEM1) move.dst;
+
+			String r1 = dstMem.addr.accept(generator, instructions); // Base address register
+			String r2 = move.src.accept(generator, instructions); // Source value register
+
+			// sb r2, 0(r1)
+			instructions.add(new ASM.Oper("sb #1, 0(#2)", null, doubleOp(r2, r1)));
+			return null;
+		}
+	}
+
+	/**
+	 * Tile for MOVE(MEM1(BINOP(ADD, TEMP(r1), CONST(imm))), r2) -> sb r2, imm(r1)
+	 */
+	public static class MoveMem1ImmTile implements Tile {
+		@Override
+		public boolean matches(IMC.Instr instr) {
+			if (instr instanceof IMC.MOVE move) {
+				if (move.dst instanceof IMC.MEM1 mem1) {
+					if (mem1.addr instanceof IMC.BINOP binop) {
+						return binop.oper == Oper.ADD && binop.fstExpr instanceof IMC.TEMP
+								&& binop.sndExpr instanceof IMC.CONST;
+					}
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public int getSize() {
+			// Size depends on evaluating r2, store is 1.
+			return 1;
+		}
+
+		@Override
+		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
+			IMC.MOVE move = (IMC.MOVE) instr;
+			IMC.MEM1 dstMem = (IMC.MEM1) move.dst;
+			IMC.BINOP binop = (IMC.BINOP) dstMem.addr;
+			IMC.TEMP baseReg = (IMC.TEMP) binop.fstExpr;
+			IMC.CONST offsetConst = (IMC.CONST) binop.sndExpr;
+
+			String r1 = baseReg.toString(); // Base address register (already a TEMP)
+			String imm = Long.toString(offsetConst.value); // Immediate offset
+			String r2 = move.src.accept(generator, instructions); // Source value register
+
+			// sb r2, imm(r1)
+			instructions.add(new ASM.Oper("sb #1, #2(#3)", null, List.of(r2, imm, r1)));
+			return null;
 		}
 	}
 
