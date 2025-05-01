@@ -175,7 +175,7 @@ public class Tiles {
 
 		@Override
 		public String emit(AsmGenerator generator, Vector<ASM.Instr> instructions, IMC.Instr instr) {
-			return Long.toString(((IMC.CONST) instr).value);
+			return String.valueOf(((IMC.CONST) instr).value);
 		}
 	}
 
@@ -211,7 +211,7 @@ public class Tiles {
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.NAME name = (IMC.NAME) instr;
 			MEM.Temp temp = new MEM.Temp();
-			instructions.add(new ASM.Oper("la $1, #1", singleOp(temp.toString()), singleOp(name.label.toString())));
+			instructions.add(new ASM.Oper("la $1, #1", singleOp(temp.toString()), singleOp(name.label.name)));
 			return temp.toString();
 		}
 	}
@@ -520,7 +520,7 @@ public class Tiles {
 			String r2 = move.src.accept(generator, null);
 			String r1 = move.dst.accept(generator, null);
 
-			instructions.add(new ASM.Move("mv $1, #1", r1, r2));
+			instructions.add(new ASM.Move("mv $1, #1", singleOp(r1), singleOp(r2)));
 			return null;
 		}
 	}

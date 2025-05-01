@@ -2,6 +2,7 @@ package compiler.phase.asmgen;
 
 import java.util.Vector;
 
+import compiler.common.report.Report;
 import compiler.phase.imclin.LIN;
 import compiler.phase.memory.MEM;
 
@@ -17,7 +18,7 @@ public class ASM {
 		/** A frame of a function. */
 		public final MEM.Frame frame;
 		/** The instructions of a function body. */
-		private final Vector<ASM.Instr> instructions;
+		public final Vector<ASM.Instr> instructions;
 		/** The function's body entry label, i.e., the label the prologue jumps to. */
 		public final MEM.Label entryLabel;
 		/**
@@ -62,7 +63,7 @@ public class ASM {
 		/**
 		 * The string representation of operands.
 		 *
-		 * - labels start with L
+		 * - labels start with L or _ (for named functions)
 		 * - temps start with T
 		 * - constants are just numbers
 		 * - special cases of FP and SP
@@ -94,11 +95,15 @@ public class ASM {
 		@Override
 		public String toString() {
 			String result = opcode;
-			for (int i = 0; i < defOps.size(); i++) {
-				result = result.replace("$" + (i + 1), defOps.get(i));
+			if (defOps != null) {
+				for (int i = 0; i < defOps.size(); i++) {
+					result = result.replace("$" + Integer.toString(i + 1), defOps.get(i));
+				}
 			}
-			for (int i = 0; i < useOps.size(); i++) {
-				result = result.replace("#" + (i + 1), useOps.get(i));
+			if (useOps != null) {
+				for (int i = 0; i < useOps.size(); i++) {
+					result = result.replace("#" + Integer.toString(i + 1), useOps.get(i));
+				}
 			}
 			return "\t" + result;
 		}
@@ -109,16 +114,8 @@ public class ASM {
 	 * It signifies ONLY instructions that copy one register to another
 	 */
 	public static class Move extends Oper {
-		public Move(String opcode, String destination, String source) {
-			super(opcode, new Vector<String>() {
-				{
-					add(destination);
-				}
-			}, new Vector<String>() {
-				{
-					add(source);
-				}
-			});
+		public Move(String opcode, Vector<String> destination, Vector<String> source) {
+			super(opcode, destination, source);
 		}
 	}
 }

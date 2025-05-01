@@ -33,11 +33,12 @@ public class AsmGenerator implements IMC.Visitor<String, Object> {
 
 		if (maxTile == null) {
 			// Should not happen, a tile is not matched
+			Report.info(instr.toString());
 			throw new Report.InternalError();
 		}
 
-		maxTile.emit(this, instructions, instr);
-		return null;
+		String temp = maxTile.emit(this, instructions, instr);
+		return temp;
 	}
 
 	@Override
@@ -49,8 +50,7 @@ public class AsmGenerator implements IMC.Visitor<String, Object> {
 
 	@Override
 	public String visit(IMC.CONST constant, Object visArg) {
-		matchTiles(constant);
-		return null;
+		return matchTiles(constant);
 	}
 
 	@Override
@@ -101,7 +101,7 @@ public class AsmGenerator implements IMC.Visitor<String, Object> {
 
 	@Override
 	public String visit(IMC.ESTMT eStmt, Object visArg) {
-		matchTiles(eStmt);
+		matchTiles(eStmt.expr);
 		return null;
 	}
 
@@ -113,8 +113,7 @@ public class AsmGenerator implements IMC.Visitor<String, Object> {
 
 	@Override
 	public String visit(IMC.LABEL label, Object visArg) {
-		matchTiles(label);
-		return null;
+		return matchTiles(label);
 	}
 
 	@Override

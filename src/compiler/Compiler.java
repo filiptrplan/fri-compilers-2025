@@ -7,6 +7,7 @@ import java.util.*;
 
 import compiler.common.report.*;
 import compiler.phase.lexan.*;
+import compiler.phase.asmgen.*;
 import compiler.phase.synan.*;
 import compiler.phase.abstr.*;
 import compiler.phase.seman.*;
@@ -228,6 +229,11 @@ public class Compiler {
 						Interpreter interpreter = new Interpreter(ImcLin.dataChunks(), ImcLin.codeChunks());
 						System.out.println("EXIT CODE: " + interpreter.run("_main"));
 					}
+				}
+
+				try (AsmGen asmGen = new AsmGen()) {
+					asmGen.generateAsm();
+					asmGen.printAsm();
 				}
 				if (cmdLineOptValues.get("--target-phase").equals("imclin"))
 					break;
