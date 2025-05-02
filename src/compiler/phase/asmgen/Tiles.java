@@ -586,13 +586,22 @@ public class Tiles {
 			IMC.UNOP unop = (IMC.UNOP) instr;
 			String r1 = unop.subExpr.accept(generator, instructions);
 			String rd = newTemp();
+			boolean isR1Const = isConstant(r1);
 
 			switch (unop.oper) {
 				case NEG:
+					if (isR1Const) {
+						// Constant folding
+						return String.valueOf(-Long.parseLong(r1));
+					}
 					// rd = 0 - r1
 					instructions.add(new ASM.Oper("sub $1, x0, #1", singleOp(rd), singleOp(r1)));
 					break;
 				case NOT:
+					if (isR1Const) {
+						// Constant folding
+						return String.valueOf(Long.parseLong(r1) == 0 ? 1 : 0);
+					}
 					// rd = (r1 == 0) ? 1 : 0
 					instructions.add(new ASM.Oper("seqz $1, #1", singleOp(rd), singleOp(r1)));
 					break;
@@ -626,6 +635,7 @@ public class Tiles {
 			}
 
 			for (int i = 0; i < args.size(); i++) {
+				// We know that all arguments are registers because of the linearization step
 				instructions
 						.add(new ASM.Oper("sd #1, " + call.offs.get(i) + "(#2)", null, doubleOp(args.get(i), "SP")));
 			}
@@ -719,7 +729,11 @@ public class Tiles {
 			String r2 = move.src.accept(generator, null);
 			String r1 = move.dst.accept(generator, null);
 
-			instructions.add(new ASM.Oper("mv $1, #1", singleOp(r1), singleOp(r2)));
+			if (isConstant(r2)) {
+				instructions.add(new ASM.Oper("li $1, #1", singleOp(r1), singleOp(r2)));
+			} else {
+				instructions.add(new ASM.Oper("mv $1, #1", singleOp(r1), singleOp(r2)));
+			}
 			return null;
 		}
 	}
