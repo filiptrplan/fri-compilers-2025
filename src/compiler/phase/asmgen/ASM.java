@@ -2,7 +2,6 @@ package compiler.phase.asmgen;
 
 import java.util.Vector;
 
-import compiler.common.report.Report;
 import compiler.phase.imclin.LIN;
 import compiler.phase.memory.MEM;
 

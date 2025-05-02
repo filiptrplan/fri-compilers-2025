@@ -112,7 +112,13 @@ public class NestedCallsTransformer implements IMC.Visitor<IMC.Instr, IMC.Stmt> 
 			currentStmts.add(moveDst);
 
 			IMC.Expr newSrc = (IMC.Expr) move.src.accept(this, visArg);
-			return new IMC.MOVE(new IMC.MEM8(temp), newSrc);
+
+			// We must wrap the correct MEM for setting stuff like characters in strings
+			if (newDst instanceof IMC.MEM1) {
+				return new IMC.MOVE(new IMC.MEM1(temp), newSrc);
+			} else {
+				return new IMC.MOVE(new IMC.MEM8(temp), newSrc);
+			}
 		}
 
 	}
