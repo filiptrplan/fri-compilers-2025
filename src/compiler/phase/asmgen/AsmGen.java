@@ -37,7 +37,8 @@ public class AsmGen extends Phase {
 	/** Prints the generated assembly */
 	public void printAsm() {
 		for (ASM.CodeInstrChunk chunk : codeChunks) {
-			Report.info(" ------- " + chunk.frame.label.name + " ------- ");
+			Report.info(" ------- " + chunk.frame.label.name + " (FP=" + chunk.frame.FP + ", RV=" + chunk.frame.RV
+					+ ") ------- ");
 			for (ASM.Instr instr : chunk.instructions) {
 				Report.info(instr.toString());
 			}
