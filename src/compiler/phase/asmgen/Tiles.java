@@ -192,7 +192,7 @@ public class Tiles {
 
 		@Override
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
-			return ((IMC.TEMP) instr).toString();
+			return "T" + Long.toString(((IMC.TEMP) instr).temp.temp);
 		}
 	}
 
