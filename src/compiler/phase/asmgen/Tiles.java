@@ -461,7 +461,7 @@ public class Tiles {
 						.add(new ASM.Oper("sd #1, " + call.offs.get(i) + "(#2)", null, doubleOp(args.get(i), "SP")));
 			}
 
-			instructions.add(new ASM.Oper("jal $1, #1", singleOp(temp), singleOp(func)));
+			instructions.add(new ASM.Oper("jal $1, #1, 0", singleOp(temp), singleOp(func)));
 			// The result is stored on the stack, we denote this with RV
 			return "RV";
 		}
