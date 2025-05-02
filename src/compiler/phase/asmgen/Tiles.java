@@ -11,6 +11,23 @@ import compiler.phase.imcgen.IMC.BINOP.Oper;
 import compiler.phase.memory.MEM;
 
 public class Tiles {
+
+	// --- Helper Methods ---
+
+	private static boolean isConstant(String s) {
+		if (s == null || s.isEmpty()) {
+			return false;
+		}
+		// Simple check for integer literal (allows negative numbers)
+		return s.matches("-?\\d+");
+	}
+
+	private static String loadConstant(String constant, Vector<ASM.Instr> instructions) {
+		String tempReg = newTemp();
+		instructions.add(new ASM.Oper("li $1, #1", singleOp(tempReg), singleOp(constant)));
+		return tempReg;
+	}
+
 	private static Vector<String> singleOp(String op) {
 		Vector<String> vec = new Vector<>();
 		vec.add(op);
@@ -330,68 +347,220 @@ public class Tiles {
 
 		@Override
 		public int getSize() {
+			// Size is variable now, but let's keep it simple for now.
+			// A more accurate cost model could be used later.
 			return 1;
 		}
 
 		@Override
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.BINOP binop = (IMC.BINOP) instr;
-			String r1 = binop.fstExpr.accept(generator, instructions);
-			String r2 = binop.sndExpr.accept(generator, instructions);
+			String r1Str = binop.fstExpr.accept(generator, instructions);
+			String r2Str = binop.sndExpr.accept(generator, instructions);
 			String rd = newTemp();
+
+			boolean r1IsConst = isConstant(r1Str);
+			boolean r2IsConst = isConstant(r2Str);
+
+			// Handle constants
+			if (r1IsConst && r2IsConst) {
+				long val1 = Long.parseLong(r1Str);
+				long val2 = Long.parseLong(r2Str);
+				long result;
+				switch (binop.oper) {
+					case ADD:
+						result = val1 + val2;
+						break;
+					case SUB:
+						result = val1 - val2;
+						break;
+					case MUL:
+						result = val1 * val2;
+						break;
+					case DIV:
+						if (val2 == 0)
+							throw new Report.Error("Division by zero during constant folding.");
+						result = val1 / val2;
+						break;
+					case MOD:
+						if (val2 == 0)
+							throw new Report.Error("Modulo by zero during constant folding.");
+						result = val1 % val2;
+						break;
+					case AND:
+						result = val1 & val2;
+						break;
+					case OR:
+						result = val1 | val2;
+						break;
+					case EQU:
+						result = (val1 == val2) ? 1 : 0;
+						break;
+					case NEQ:
+						result = (val1 != val2) ? 1 : 0;
+						break;
+					case LTH:
+						result = (val1 < val2) ? 1 : 0;
+						break;
+					case LEQ:
+						result = (val1 <= val2) ? 1 : 0;
+						break;
+					case GTH:
+						result = (val1 > val2) ? 1 : 0;
+						break;
+					case GEQ:
+						result = (val1 >= val2) ? 1 : 0;
+						break;
+					default:
+						throw new Report.InternalError();
+				}
+				instructions.add(new ASM.Oper("li $1, #1", singleOp(rd), singleOp(String.valueOf(result))));
+				return rd;
+			}
+
+			String r1Reg = r1IsConst ? null : r1Str;
+			String r2Reg = r2IsConst ? null : r2Str;
+			String r1Const = r1IsConst ? r1Str : null;
+			String r2Const = r2IsConst ? r2Str : null;
 
 			switch (binop.oper) {
 				case ADD:
-					instructions.add(new ASM.Oper("add $1, #1, #2", singleOp(rd), doubleOp(r1, r2)));
+					if (r2IsConst) // reg + const
+						instructions.add(new ASM.Oper("addi $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Const)));
+					else if (r1IsConst) // const + reg -> reg + const
+						instructions.add(new ASM.Oper("addi $1, #1, #2", singleOp(rd), doubleOp(r2Reg, r1Const)));
+					else // reg + reg
+						instructions.add(new ASM.Oper("add $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
 					break;
 				case SUB:
-					instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(rd), doubleOp(r1, r2)));
+					if (r2IsConst) { // reg - const -> reg + (-const)
+						long negConst = -Long.parseLong(r2Const);
+						instructions.add(new ASM.Oper("addi $1, #1, #2", singleOp(rd),
+								doubleOp(r1Reg, String.valueOf(negConst))));
+					} else if (r1IsConst) { // const - reg
+						String r1Loaded = loadConstant(r1Const, instructions);
+						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(rd), doubleOp(r1Loaded, r2Reg)));
+					} else { // reg - reg
+						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
+					}
 					break;
 				case MUL:
-					instructions.add(new ASM.Oper("mul $1, #1, #2", singleOp(rd), doubleOp(r1, r2)));
+					if (r1IsConst) {
+						r1Reg = loadConstant(r1Const, instructions);
+					}
+					if (r2IsConst) {
+						r2Reg = loadConstant(r2Const, instructions);
+					}
+					instructions.add(new ASM.Oper("mul $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
 					break;
-				case DIV:
-					// Assuming signed division
-					instructions.add(new ASM.Oper("div $1, #1, #2", singleOp(rd), doubleOp(r1, r2)));
+				case DIV: // Assuming signed division
+					if (r1IsConst) {
+						r1Reg = loadConstant(r1Const, instructions);
+					}
+					if (r2IsConst) {
+						r2Reg = loadConstant(r2Const, instructions);
+					}
+					instructions.add(new ASM.Oper("div $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
 					break;
-				case MOD:
-					// Assuming signed remainder
-					instructions.add(new ASM.Oper("rem $1, #1, #2", singleOp(rd), doubleOp(r1, r2)));
+				case MOD: // Assuming signed remainder
+					if (r1IsConst) {
+						r1Reg = loadConstant(r1Const, instructions);
+					}
+					if (r2IsConst) {
+						r2Reg = loadConstant(r2Const, instructions);
+					}
+					instructions.add(new ASM.Oper("rem $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
 					break;
 				case AND:
-					instructions.add(new ASM.Oper("and $1, #1, #2", singleOp(rd), doubleOp(r1, r2)));
+					if (r2IsConst) // reg & const
+						instructions.add(new ASM.Oper("andi $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Const)));
+					else if (r1IsConst) // const & reg -> reg & const
+						instructions.add(new ASM.Oper("andi $1, #1, #2", singleOp(rd), doubleOp(r2Reg, r1Const)));
+					else // reg & reg
+						instructions.add(new ASM.Oper("and $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
 					break;
 				case OR:
-					instructions.add(new ASM.Oper("or $1, #1, #2", singleOp(rd), doubleOp(r1, r2)));
+					if (r2IsConst) // reg | const
+						instructions.add(new ASM.Oper("ori $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Const)));
+					else if (r1IsConst) // const | reg -> reg | const
+						instructions.add(new ASM.Oper("ori $1, #1, #2", singleOp(rd), doubleOp(r2Reg, r1Const)));
+					else // reg | reg
+						instructions.add(new ASM.Oper("or $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
 					break;
-				case EQU: {
+				case EQU: { // rd = (r1 == r2) ? 1 : 0
 					String t0 = newTemp();
-					instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1, r2)));
-					instructions.add(new ASM.Oper("seqz $1, #1", singleOp(rd), singleOp(t0)));
+					if (r2IsConst) { // reg == const -> sub -> seqz
+						long negConst = -Long.parseLong(r2Const);
+						instructions.add(new ASM.Oper("addi $1, #1, #2", singleOp(t0),
+								doubleOp(r1Reg, String.valueOf(negConst)))); // t0 = r1 - const
+					} else if (r1IsConst) { // const == reg -> sub -> seqz
+						String r1Loaded = loadConstant(r1Const, instructions);
+						// t0 = const - r2
+						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1Loaded, r2Reg)));
+					} else { // reg == reg -> sub -> seqz
+						// t0 = r1 - r2
+						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1Reg, r2Reg)));
+					}
+					instructions.add(new ASM.Oper("seqz $1, #1", singleOp(rd), singleOp(t0))); // rd = (t0 == 0)
 					break;
 				}
-				case NEQ: {
+				case NEQ: { // rd = (r1 != r2) ? 1 : 0
 					String t0 = newTemp();
-					instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1, r2)));
-					instructions.add(new ASM.Oper("snez $1, #1", singleOp(rd), singleOp(t0)));
+					if (r2IsConst) { // reg != const -> sub -> snez
+						long negConst = -Long.parseLong(r2Const);
+						instructions.add(new ASM.Oper("addi $1, #1, #2", singleOp(t0),
+								doubleOp(r1Reg, String.valueOf(negConst)))); // t0 = r1 - const
+					} else if (r1IsConst) { // const != reg -> sub -> snez
+						String r1Loaded = loadConstant(r1Const, instructions);
+						// t0 = const - r2
+						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1Loaded, r2Reg)));
+					} else { // reg != reg -> sub -> snez
+						// t0 = r1 - r2
+						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1Reg, r2Reg)));
+					}
+					instructions.add(new ASM.Oper("snez $1, #1", singleOp(rd), singleOp(t0))); // rd = (t0 != 0)
 					break;
 				}
-				case LTH:
-					instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r1, r2)));
+				case LTH: // rd = (r1 < r2) ? 1 : 0
+					if (r2IsConst) // reg < const
+						instructions.add(new ASM.Oper("slti $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Const)));
+					else if (r1IsConst) { // const < reg
+						String r1Loaded = loadConstant(r1Const, instructions);
+						instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r1Loaded, r2Reg)));
+					} else // reg < reg
+						instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
 					break;
-				case LEQ:
-					// rd = (r2 < r1) ? 0 : 1 which is !(r2 < r1)
-					instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r2, r1))); // rd = r2 < r1
-					instructions.add(new ASM.Oper("xori $1, #1, 1", singleOp(rd), singleOp(rd))); // rd = rd XOR 1
+				case LEQ: // rd = (r1 <= r2) ? 1 : 0 -> !(r2 < r1)
+					if (r1IsConst) { // const <= reg -> !(reg < const)
+						instructions.add(new ASM.Oper("slti $1, #1, #2", singleOp(rd), doubleOp(r2Reg, r1Const)));
+					} else if (r2IsConst) { // reg <= const -> !(const < reg)
+						String r2Loaded = loadConstant(r2Const, instructions);
+						instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r2Loaded, r1Reg)));
+					} else { // reg <= reg -> !(r2 < r1)
+						instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r2Reg, r1Reg)));
+					}
+					instructions.add(new ASM.Oper("xori $1, #1, 1", singleOp(rd), singleOp(rd))); // rd = !rd
 					break;
-				case GTH:
-					// rd = (r2 < r1)
-					instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r2, r1)));
+				case GTH: // rd = (r1 > r2) ? 1 : 0 -> r2 < r1
+					if (r1IsConst) { // const > reg -> reg < const
+						instructions.add(new ASM.Oper("slti $1, #1, #2", singleOp(rd), doubleOp(r2Reg, r1Const)));
+					} else if (r2IsConst) { // reg > const -> const < reg
+						String r2Loaded = loadConstant(r2Const, instructions);
+						instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r2Loaded, r1Reg)));
+					} else { // reg > reg -> r2 < r1
+						instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r2Reg, r1Reg)));
+					}
 					break;
-				case GEQ:
-					// rd = (r1 < r2) ? 0 : 1 which is !(r1 < r2)
-					instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r1, r2))); // rd = r1 < r2
-					instructions.add(new ASM.Oper("xori $1, #1, 1", singleOp(rd), singleOp(rd))); // rd = rd XOR 1
+				case GEQ: // rd = (r1 >= r2) ? 1 : 0 -> !(r1 < r2)
+					if (r2IsConst) { // reg >= const -> !(reg < const)
+						instructions.add(new ASM.Oper("slti $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Const)));
+					} else if (r1IsConst) { // const >= reg -> !(const < reg)
+						String r1Loaded = loadConstant(r1Const, instructions);
+						instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r1Loaded, r2Reg)));
+					} else { // reg >= reg -> !(r1 < r2)
+						instructions.add(new ASM.Oper("slt $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
+					}
+					instructions.add(new ASM.Oper("xori $1, #1, 1", singleOp(rd), singleOp(rd))); // rd = !rd
 					break;
 				default:
 					throw new Report.InternalError();
