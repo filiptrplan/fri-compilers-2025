@@ -1,0 +1,8 @@
+var a : ^char
+var b : int
+var c : [20]int
+var d : [10]char
+
+fun main() : int = 
+    d[9] = 'a',
+    a = "this is a sentence"

@@ -10,6 +10,8 @@ import compiler.phase.imclin.LIN;
 
 public class AsmGen extends Phase {
 	public static final Vector<ASM.CodeInstrChunk> codeChunks = new Vector<>();
+	public static final Vector<ASM.StringConstChunk> constChunks = new Vector<>();
+	public static final Vector<ASM.GlobalVarChunk> varChunks = new Vector<>();
 
 	public AsmGen() {
 		super("asmgen");
@@ -32,13 +34,37 @@ public class AsmGen extends Phase {
 			ASM.CodeInstrChunk instrChunk = new ASM.CodeInstrChunk(chunk, instrs);
 			codeChunks.add(instrChunk);
 		}
+
+		Vector<LIN.DataChunk> linDataChunks = ImcLin.dataChunks();
+		for (LIN.DataChunk linDataChunk : linDataChunks) {
+			ASM.DataInstrChunk dataInstrChunk = DataGenerator.processDataChunk(linDataChunk);
+			if (dataInstrChunk instanceof ASM.GlobalVarChunk varChunk) {
+				varChunks.add(varChunk);
+			} else if (dataInstrChunk instanceof ASM.StringConstChunk constChunk) {
+				constChunks.add(constChunk);
+			}
+		}
 	}
 
 	/** Prints the generated assembly */
 	public void printAsm() {
+		// String const section
+		Report.info(".rodata");
+		for (ASM.StringConstChunk chunk : constChunks) {
+			Report.info(chunk.toString());
+		}
+
+		// Data section
+		Report.info(".data");
+		for (ASM.GlobalVarChunk chunk : varChunks) {
+			Report.info(chunk.toString());
+		}
+
+		// Code section
+		Report.info(".text");
 		for (ASM.CodeInstrChunk chunk : codeChunks) {
-			Report.info(" ------- " + chunk.frame.label.name + " (FP=" + chunk.frame.FP + ", RV=" + chunk.frame.RV
-					+ ", entry=" + chunk.entryLabel.name + ", exit=" + chunk.exitLabel.name + ") ------- ");
+			Report.info("#------- " + chunk.frame.label.name + " (FP=" + chunk.frame.FP + ", RV=" + chunk.frame.RV
+					+ ", body=" + chunk.entryLabel.name + ", exit=" + chunk.exitLabel.name + ") ------- ");
 			for (ASM.Instr instr : chunk.instructions) {
 				Report.info(instr.toString());
 			}

@@ -10,6 +10,56 @@ import compiler.phase.memory.MEM;
  * Machine code instruction representation
  */
 public class ASM {
+	public static abstract class DataInstrChunk {
+		public String toString() {
+			return null;
+		}
+	}
+
+	/** A chunk of machine code describing global variables */
+	public static class GlobalVarChunk extends DataInstrChunk {
+		/** Name of global variable */
+		public final String label;
+		/** Size of global variable */
+		public final long size;
+
+		public GlobalVarChunk(String label, long size) {
+			this.label = label;
+			this.size = size;
+		}
+
+		@Override
+		public String toString() {
+			String s = "";
+			s += "\t.globl " + this.label + "\n";
+			s += "\t.align 3\n"; // For now we always align to 8 bytes
+			s += this.label + ":\n"; // Start the label
+			s += "\t.space " + Long.toString(size) + "\n\n"; // We always have uninitialized values
+			return s;
+		}
+	}
+
+	/** A chunk of machine code defining string constants */
+	public static class StringConstChunk extends DataInstrChunk {
+		/** Name of label */
+		public final String label;
+		/** Actual string */
+		public final String init;
+
+		public StringConstChunk(String label, String init) {
+			this.label = label;
+			this.init = init;
+		}
+
+		@Override
+		public String toString() {
+			String s = "";
+			s += this.label + ":\n"; // Start the label
+			s += "\t.string \"" + this.init + "\"\n\n"; // Assembler automatically adds null terminator
+			return s;
+		}
+	}
+
 	/**
 	 * A chunk of machine code.
 	 */

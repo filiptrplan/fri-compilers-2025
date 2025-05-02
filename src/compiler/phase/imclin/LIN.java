@@ -9,6 +9,11 @@ public class LIN {
 	public static abstract class Chunk {
 	}
 
+	public enum DataChunkType {
+		GlobalVar,
+		StringConst
+	}
+
 	/**
 	 * A chuck of data.
 	 */
@@ -23,10 +28,13 @@ public class LIN {
 		/** The initial value. */
 		public final String init;
 
-		public DataChunk(MEM.AbsAccess absAccess) {
+		public final DataChunkType type;
+
+		public DataChunk(MEM.AbsAccess absAccess, DataChunkType type) {
 			this.label = absAccess.label;
 			this.size = absAccess.size;
 			this.init = absAccess.init;
+			this.type = type;
 		}
 
 	}
