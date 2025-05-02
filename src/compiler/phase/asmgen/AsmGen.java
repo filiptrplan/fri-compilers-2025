@@ -38,7 +38,7 @@ public class AsmGen extends Phase {
 	public void printAsm() {
 		for (ASM.CodeInstrChunk chunk : codeChunks) {
 			Report.info(" ------- " + chunk.frame.label.name + " (FP=" + chunk.frame.FP + ", RV=" + chunk.frame.RV
-					+ ") ------- ");
+					+ ", entry=" + chunk.entryLabel.name + ", exit=" + chunk.exitLabel.name + ") ------- ");
 			for (ASM.Instr instr : chunk.instructions) {
 				Report.info(instr.toString());
 			}
