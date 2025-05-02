@@ -14,6 +14,10 @@ public class Tiles {
 
 	// --- Helper Methods ---
 
+	private static boolean isLabel(String s) {
+		return s.startsWith("L") || s.startsWith("_");
+	}
+
 	private static boolean isConstant(String s) {
 		if (s == null || s.isEmpty()) {
 			return false;
@@ -640,7 +644,11 @@ public class Tiles {
 						.add(new ASM.Oper("sd #1, " + call.offs.get(i) + "(#2)", null, doubleOp(args.get(i), "SP")));
 			}
 
-			instructions.add(new ASM.Oper("jal $1, #1, 0", singleOp(temp), singleOp(func)));
+			if (isLabel(func)) {
+				instructions.add(new ASM.Oper("jal $1, " + func, singleOp(temp), null));
+			} else {
+				instructions.add(new ASM.Oper("jalr $1, #1, 0", singleOp(temp), singleOp(func)));
+			}
 			// The result is stored on the stack, we denote this with RV
 			return "RV";
 		}
