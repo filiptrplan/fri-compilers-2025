@@ -78,8 +78,8 @@ public class ASM {
 		/**
 		 * Constructs a new code chunk.
 		 * 
-		 * @param codeChunk    The code chunk from the ImcLin phase this is based on
-		 * @param instructions The machine code instructions of the function body
+		 * @param codeChunk The code chunk from the ImcLin phase this is based on
+		 * @param instrs    The machine code instructions of the function body
 		 */
 		public CodeInstrChunk(LIN.CodeChunk codeChunk, Vector<ASM.Instr> instrs) {
 			this.frame = codeChunk.frame;
