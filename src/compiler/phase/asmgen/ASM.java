@@ -54,7 +54,7 @@ public class ASM {
 		public String toString() {
 			String s = "";
 			s += this.label + ":\n"; // Start the label
-			s += "\t.string \"" + this.init + "\"\n\n"; // Assembler automatically adds null terminator
+			s += "\t.asciz \"" + this.init + "\"\n\n"; // Assembler automatically adds null terminator
 			return s;
 		}
 	}
