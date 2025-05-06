@@ -2,6 +2,7 @@ bin/
 *.html
 *.xml
 *.zip
+*.txt
 src/compiler/phase/lexan/Prev25Lexer*
 !src/compiler/phase/lexan/Prev25Lexer.g4
 src/compiler/phase/synan/Prev25Parser*
