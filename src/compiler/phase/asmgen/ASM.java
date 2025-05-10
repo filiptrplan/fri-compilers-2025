@@ -89,6 +89,8 @@ public class ASM {
 		}
 	}
 
+	private static int instrCounter = 0;
+
 	static public abstract class Instr {
 	}
 
@@ -135,10 +137,39 @@ public class ASM {
 		 */
 		public final String opcode;
 
+		private final int instrId;
+
+		/** Whether an instruction is an unconditional jump */
+		public final boolean isJump;
+		/** Whether the instruction is a conditional jump */
+		public final boolean isCjump;
+
 		public Oper(String opcode, Vector<String> defOps, Vector<String> useOps) {
 			this.opcode = opcode;
 			this.defOps = defOps;
 			this.useOps = useOps;
+			this.instrId = ASM.instrCounter;
+
+			// If the opcode starts with a RISC-V unconditional jump
+			this.isJump = opcode.startsWith("j ") || opcode.startsWith("jal ");
+			this.isCjump = opcode.startsWith("beq ") ||
+					opcode.startsWith("bne ") ||
+					opcode.startsWith("blt ") ||
+					opcode.startsWith("bge ") ||
+					opcode.startsWith("bltu ") ||
+					opcode.startsWith("bgeu ");
+
+			ASM.instrCounter += 1;
+		}
+
+		@Override
+		public int hashCode() {
+			return this.instrId;
+		}
+
+		@Override
+		public boolean equals(final Object other) {
+			return this.hashCode() == other.hashCode();
 		}
 
 		@Override
