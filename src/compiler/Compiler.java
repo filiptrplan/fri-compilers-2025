@@ -7,6 +7,7 @@ import java.util.*;
 
 import compiler.common.report.*;
 import compiler.phase.lexan.*;
+import compiler.phase.livean.LiveAn;
 import compiler.phase.asmgen.*;
 import compiler.phase.synan.*;
 import compiler.phase.abstr.*;
@@ -234,6 +235,10 @@ public class Compiler {
 				try (AsmGen asmGen = new AsmGen()) {
 					asmGen.generateAsm();
 					asmGen.printAsm();
+				}
+
+				for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
+					LiveAn.calculateInterferenceGraph(codeInstrChunk);
 				}
 				if (cmdLineOptValues.get("--target-phase").equals("imclin"))
 					break;

@@ -1,4 +1,5 @@
 bin/
+prg/*.md
 *.html
 *.xml
 *.zip

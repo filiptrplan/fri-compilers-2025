@@ -9,12 +9,13 @@ import compiler.phase.asmgen.ASM;
 import compiler.phase.livean.DataFlowGraph.Node;
 
 public class LiveAn {
-	public IntGraph calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
+	public static IntGraph calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
 		DataFlowGraph dfg = calculateLiveVariables(instrChunk.instructions);
+		dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		return null;
 	}
 
-	private DataFlowGraph constructDfg(Vector<ASM.Instr> instructions) {
+	private static DataFlowGraph constructDfg(Vector<ASM.Instr> instructions) {
 		DataFlowGraph dfg = new DataFlowGraph();
 
 		// Construct initial graph
@@ -53,7 +54,9 @@ public class LiveAn {
 				Node currNode = dfg.getNode(instr);
 				if (oper.isJump || oper.isCjump) {
 					Node jumpTo = labelMap.get(oper.jumpTarget);
-					currNode.addEdge(jumpTo);
+					if (jumpTo != null) {
+						currNode.addEdge(jumpTo);
+					}
 				}
 				// Add a back connection if the previous instruction wasn't an unconditional
 				// jump
@@ -68,7 +71,7 @@ public class LiveAn {
 		return dfg;
 	}
 
-	private DataFlowGraph calculateLiveVariables(Vector<ASM.Instr> instructions) {
+	private static DataFlowGraph calculateLiveVariables(Vector<ASM.Instr> instructions) {
 		DataFlowGraph dfg = constructDfg(instructions);
 		return dfg;
 	}
