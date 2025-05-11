@@ -157,6 +157,7 @@ public class ASM {
 					opcode.startsWith("blt ") ||
 					opcode.startsWith("bge ") ||
 					opcode.startsWith("bltu ") ||
+					opcode.startsWith("bnez ") ||
 					opcode.startsWith("bgeu ");
 
 			// If the opcode starts with a RISC-V unconditional jump
