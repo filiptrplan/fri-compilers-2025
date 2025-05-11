@@ -152,31 +152,73 @@ public class ASM {
 			this.useOps = useOps;
 			this.instrId = ASM.instrCounter;
 
-			this.isCjump = opcode.startsWith("beq ") ||
-					opcode.startsWith("bne ") ||
-					opcode.startsWith("blt ") ||
-					opcode.startsWith("bge ") ||
-					opcode.startsWith("bltu ") ||
-					opcode.startsWith("bnez ") ||
-					opcode.startsWith("bgeu ");
-
-			// If the opcode starts with a RISC-V unconditional jump
-			// Here we also assign the jump target dependending on the type of jump
+			// Determine if the instruction is a conditional jump and extract the jump target
+			String opcodePrefix = getOpcodePrefix(opcode);
+			this.isCjump = isConditionalJump(opcodePrefix);
+			
+			// Determine if it's an unconditional jump and get the jump target
 			if (opcode.startsWith("j ")) {
+				this.isJump = true;
 				this.jumpTarget = useOps.getFirst();
-				this.isJump = true;
 			} else if (opcode.startsWith("jal ")) {
-				this.jumpTarget = useOps.get(1);
 				this.isJump = true;
+				this.jumpTarget = useOps.get(1);
 			} else if (this.isCjump) {
-				this.jumpTarget = useOps.get(2);
 				this.isJump = false;
+				this.jumpTarget = useOps.get(useOps.size() - 1); // Last operand is always the target
 			} else {
 				this.isJump = false;
 				this.jumpTarget = null;
 			}
 
 			ASM.instrCounter += 1;
+		}
+		
+		/**
+		 * Extracts the opcode prefix (the instruction mnemonic) from the full opcode string.
+		 * 
+		 * @param opcode The full opcode string
+		 * @return The opcode prefix (instruction mnemonic)
+		 */
+		private String getOpcodePrefix(String opcode) {
+			int spaceIndex = opcode.indexOf(' ');
+			return spaceIndex > 0 ? opcode.substring(0, spaceIndex) : opcode;
+		}
+		
+		/**
+		 * Determines if the given opcode prefix represents a conditional jump instruction.
+		 * 
+		 * @param opcodePrefix The opcode prefix to check
+		 * @return True if it's a conditional jump, false otherwise
+		 */
+		private boolean isConditionalJump(String opcodePrefix) {
+			// Standard RISC-V branch instructions
+			switch (opcodePrefix) {
+				// Standard RISC-V branch instructions
+				case "beq":
+				case "bne":
+				case "blt":
+				case "bge":
+				case "bltu":
+				case "bgeu":
+				
+				// Pseudo-instructions with zero
+				case "beqz":  // beq rs, x0, offset
+				case "bnez":  // bne rs, x0, offset
+				case "blez":  // bge x0, rs, offset
+				case "bgez":  // bge rs, x0, offset
+				case "bltz":  // blt rs, x0, offset
+				case "bgtz":  // blt x0, rs, offset
+				
+				// Pseudo-instructions with two registers
+				case "bgt":   // blt rt, rs, offset
+				case "ble":   // bge rt, rs, offset
+				case "bgtu":  // bltu rt, rs, offset
+				case "bleu":  // bgeu rt, rs, offset
+					return true;
+				default:
+					return false;
+			}
 		}
 
 		@Override
