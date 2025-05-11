@@ -143,6 +143,8 @@ public class ASM {
 		public final boolean isJump;
 		/** Whether the instruction is a conditional jump */
 		public final boolean isCjump;
+		/** Jump target label */
+		public final String jumpTarget;
 
 		public Oper(String opcode, Vector<String> defOps, Vector<String> useOps) {
 			this.opcode = opcode;
@@ -150,14 +152,28 @@ public class ASM {
 			this.useOps = useOps;
 			this.instrId = ASM.instrCounter;
 
-			// If the opcode starts with a RISC-V unconditional jump
-			this.isJump = opcode.startsWith("j ") || opcode.startsWith("jal ");
 			this.isCjump = opcode.startsWith("beq ") ||
 					opcode.startsWith("bne ") ||
 					opcode.startsWith("blt ") ||
 					opcode.startsWith("bge ") ||
 					opcode.startsWith("bltu ") ||
 					opcode.startsWith("bgeu ");
+
+			// If the opcode starts with a RISC-V unconditional jump
+			// Here we also assign the jump target dependending on the type of jump
+			if (opcode.startsWith("j ")) {
+				this.jumpTarget = useOps.getFirst();
+				this.isJump = true;
+			} else if (opcode.startsWith("jal ")) {
+				this.jumpTarget = useOps.get(1);
+				this.isJump = true;
+			} else if (this.isCjump) {
+				this.jumpTarget = useOps.get(2);
+				this.isJump = false;
+			} else {
+				this.isJump = false;
+				this.jumpTarget = null;
+			}
 
 			ASM.instrCounter += 1;
 		}
