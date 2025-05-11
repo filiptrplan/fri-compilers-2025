@@ -76,7 +76,7 @@ public class DataFlowGraph {
 
 		nodes.remove(node.hashCode());
 	}
-	
+
 	/**
 	 * Prints the graph as a mermaid diagram to a file.
 	 * 
@@ -86,34 +86,35 @@ public class DataFlowGraph {
 		try (FileWriter writer = new FileWriter(filename)) {
 			writer.write("```mermaid\n");
 			writer.write("flowchart TD\n");
-			
+
 			// Define all nodes
 			for (Node node : nodes.values()) {
 				String nodeId = "node" + node.hashCode();
-				String shape = (node.instr instanceof ASM.Oper && 
-						(((ASM.Oper) node.instr).isJump || ((ASM.Oper) node.instr).isCjump)) 
-						? "diamond" : "box";
-				
+				String shape = (node.instr instanceof ASM.Oper &&
+						(((ASM.Oper) node.instr).isJump || ((ASM.Oper) node.instr).isCjump))
+								? "diamond"
+								: "box";
+
 				// Clean the instruction string for mermaid compatibility
 				String instrText = node.instr.toString()
 						.replace("\"", "'")
 						.replace("\n", "<br>")
 						.replace("\t", "  ");
-				
-				writer.write("    " + nodeId + "[\"" + instrText + "\"]" + 
-						(shape.equals("diamond") ? "{{" : "") + "\n");
+				String leftDelim = shape.equals("diamond") ? "{" : "[";
+				String rightDelim = shape.equals("diamond") ? "}" : "]";
+				writer.write("    " + nodeId + leftDelim + "\"" + instrText + "\"" + rightDelim + "\n");
 			}
-			
+
 			// Define all edges
 			for (Node node : nodes.values()) {
 				String nodeId = "node" + node.hashCode();
-				
+
 				for (Node outNode : node.outNodes()) {
 					String outNodeId = "node" + outNode.hashCode();
 					writer.write("    " + nodeId + " --> " + outNodeId + "\n");
 				}
 			}
-			
+
 			writer.write("```\n");
 		} catch (IOException e) {
 			Report.warning("Failed to write mermaid diagram to file: " + e.getMessage());

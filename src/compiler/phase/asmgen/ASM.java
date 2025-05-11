@@ -152,10 +152,11 @@ public class ASM {
 			this.useOps = useOps;
 			this.instrId = ASM.instrCounter;
 
-			// Determine if the instruction is a conditional jump and extract the jump target
+			// Determine if the instruction is a conditional jump and extract the jump
+			// target
 			String opcodePrefix = getOpcodePrefix(opcode);
 			this.isCjump = isConditionalJump(opcodePrefix);
-			
+
 			// Determine if it's an unconditional jump and get the jump target
 			if (opcode.startsWith("j ")) {
 				this.isJump = true;
@@ -173,48 +174,38 @@ public class ASM {
 
 			ASM.instrCounter += 1;
 		}
-		
+
 		/**
-		 * Extracts the opcode prefix (the instruction mnemonic) from the full opcode string.
-		 * 
-		 * @param opcode The full opcode string
-		 * @return The opcode prefix (instruction mnemonic)
+		 * Extracts the opcode prefix (the instruction mnemonic) from the full opcode
+		 * string.
 		 */
 		private String getOpcodePrefix(String opcode) {
 			int spaceIndex = opcode.indexOf(' ');
 			return spaceIndex > 0 ? opcode.substring(0, spaceIndex) : opcode;
 		}
-		
+
 		/**
-		 * Determines if the given opcode prefix represents a conditional jump instruction.
-		 * 
-		 * @param opcodePrefix The opcode prefix to check
-		 * @return True if it's a conditional jump, false otherwise
+		 * Determines if the given opcode prefix represents a conditional jump
+		 * instruction.
 		 */
 		private boolean isConditionalJump(String opcodePrefix) {
-			// Standard RISC-V branch instructions
 			switch (opcodePrefix) {
-				// Standard RISC-V branch instructions
 				case "beq":
 				case "bne":
 				case "blt":
 				case "bge":
 				case "bltu":
 				case "bgeu":
-				
-				// Pseudo-instructions with zero
-				case "beqz":  // beq rs, x0, offset
-				case "bnez":  // bne rs, x0, offset
-				case "blez":  // bge x0, rs, offset
-				case "bgez":  // bge rs, x0, offset
-				case "bltz":  // blt rs, x0, offset
-				case "bgtz":  // blt x0, rs, offset
-				
-				// Pseudo-instructions with two registers
-				case "bgt":   // blt rt, rs, offset
-				case "ble":   // bge rt, rs, offset
-				case "bgtu":  // bltu rt, rs, offset
-				case "bleu":  // bgeu rt, rs, offset
+				case "beqz":
+				case "bnez":
+				case "blez":
+				case "bgez":
+				case "bltz":
+				case "bgtz":
+				case "bgt":
+				case "ble":
+				case "bgtu":
+				case "bleu":
 					return true;
 				default:
 					return false;
