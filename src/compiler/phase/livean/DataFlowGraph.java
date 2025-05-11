@@ -1,11 +1,14 @@
 package compiler.phase.livean;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import compiler.common.report.Report;
 import compiler.phase.asmgen.ASM;
 
 /** The representation for the dataflow graph */
@@ -73,5 +76,47 @@ public class DataFlowGraph {
 
 		nodes.remove(node.hashCode());
 	}
-
+	
+	/**
+	 * Prints the graph as a mermaid diagram to a file.
+	 * 
+	 * @param filename The name of the file to write the diagram to.
+	 */
+	public void printToMermaidFile(String filename) {
+		try (FileWriter writer = new FileWriter(filename)) {
+			writer.write("```mermaid\n");
+			writer.write("flowchart TD\n");
+			
+			// Define all nodes
+			for (Node node : nodes.values()) {
+				String nodeId = "node" + node.hashCode();
+				String shape = (node.instr instanceof ASM.Oper && 
+						(((ASM.Oper) node.instr).isJump || ((ASM.Oper) node.instr).isCjump)) 
+						? "diamond" : "box";
+				
+				// Clean the instruction string for mermaid compatibility
+				String instrText = node.instr.toString()
+						.replace("\"", "'")
+						.replace("\n", "<br>")
+						.replace("\t", "  ");
+				
+				writer.write("    " + nodeId + "[\"" + instrText + "\"]" + 
+						(shape.equals("diamond") ? "{{" : "") + "\n");
+			}
+			
+			// Define all edges
+			for (Node node : nodes.values()) {
+				String nodeId = "node" + node.hashCode();
+				
+				for (Node outNode : node.outNodes()) {
+					String outNodeId = "node" + outNode.hashCode();
+					writer.write("    " + nodeId + " --> " + outNodeId + "\n");
+				}
+			}
+			
+			writer.write("```\n");
+		} catch (IOException e) {
+			Report.warning("Failed to write mermaid diagram to file: " + e.getMessage());
+		}
+	}
 }
