@@ -165,7 +165,18 @@ public class DataFlowGraph {
 
 				for (Node outNode : node.outNodes()) {
 					String outNodeId = "node" + outNode.hashCode();
-					writer.write("    " + nodeId + " --> " + outNodeId + "\n");
+					
+					// Create edge labels with inTemp and outTemp information
+					Set<String> edgeTemps = new HashSet<>(node.outTemp);
+					edgeTemps.retainAll(outNode.inTemp); // Get intersection
+					
+					if (!edgeTemps.isEmpty()) {
+						// Format the temp variables for display
+						String tempList = String.join(",", edgeTemps);
+						writer.write("    " + nodeId + " -->|\"" + tempList + "\"| " + outNodeId + "\n");
+					} else {
+						writer.write("    " + nodeId + " --> " + outNodeId + "\n");
+					}
 				}
 			}
 
