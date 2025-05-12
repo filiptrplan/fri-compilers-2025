@@ -59,7 +59,7 @@ public class DataFlowGraph {
 		public Set<String> useTemp = new HashSet<>();
 		public Set<String> defTemp = new HashSet<>();
 
-		private final ASM.Oper instr;
+		public final ASM.Oper instr;
 
 		@Override
 		public int hashCode() {
@@ -145,6 +145,10 @@ public class DataFlowGraph {
 		}
 
 		nodes.remove(node.hashCode());
+	}
+
+	public List<Node> getNodes() {
+		return new ArrayList<>(nodes.values());
 	}
 
 	/**

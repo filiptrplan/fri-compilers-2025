@@ -13,14 +13,38 @@ import compiler.phase.livean.DataFlowGraph.Node;
 
 public class LiveAn {
 	public static IntGraph calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
-		Report.info("Calculating interference graph");
 		DataFlowGraph dfg = calculateLiveVariables(instrChunk.instructions);
+
+		IntGraph ig = new IntGraph();
+		for (Node node : dfg.getNodes()) {
+			Set<String> defTemp = node.defTemp;
+			Set<String> liveOutTemp = node.outTemp;
+			boolean isMove = node.instr instanceof ASM.Move;
+
+			if (!isMove) {
+				// For non-moves we the out variables interfere with the defined variables
+				for (String def : defTemp) {
+					for (String liveOut : liveOutTemp) {
+						ig.addEdge(def, liveOut);
+					}
+				}
+			} else {
+				String def = node.instr.defOps.getFirst();
+				String use = node.instr.useOps.getFirst();
+				for (String liveOut : liveOutTemp) {
+					// For moves we don't add an extra edge between the used and defined variables
+					if (!liveOut.equals(use)) {
+						ig.addEdge(def, liveOut);
+					}
+				}
+			}
+		}
+
 		dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		return null;
 	}
 
 	private static DataFlowGraph constructDfg(Vector<ASM.Instr> instructions) {
-		Report.info("Constructing dataflow graph");
 		DataFlowGraph dfg = new DataFlowGraph();
 
 		// Construct initial graph
