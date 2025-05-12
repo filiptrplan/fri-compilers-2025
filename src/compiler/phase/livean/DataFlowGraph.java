@@ -18,8 +18,11 @@ public class DataFlowGraph {
 	// The key is the hashCode of the instruction
 	private HashMap<Integer, Node> nodes = new HashMap<>();
 
-	/** Returns a list on quasi-topological order (as the graph is not acyclic) */
-	public ArrayList<Node> quasiTopoSortNodes(ASM.Instr first) {
+	/**
+	 * Returns a list on quasi-topological order (as the graph is not acyclic)
+	 * The list is reversed
+	 */
+	public List<Node> quasiTopoSortNodes(ASM.Instr first) {
 		ArrayList<Node> sorted = new ArrayList<>();
 		Stack<Node> stack = new Stack<>();
 		if (!nodes.containsKey(first.hashCode())) {
@@ -38,7 +41,7 @@ public class DataFlowGraph {
 			}
 			sorted.add(top);
 		}
-		return sorted;
+		return sorted.reversed();
 	}
 
 	class Node {
@@ -50,15 +53,24 @@ public class DataFlowGraph {
 		/** Set of temp variables that are active upon exiting the node */
 		public Set<String> outTemp = new HashSet<>();
 
-		private final ASM.Instr instr;
+		public Set<String> useTemp = new HashSet<>();
+		public Set<String> defTemp = new HashSet<>();
+
+		private final ASM.Oper instr;
 
 		@Override
 		public int hashCode() {
 			return instr.hashCode();
 		}
 
-		public Node(ASM.Instr instr) {
+		public Node(ASM.Oper instr) {
 			this.instr = instr;
+			if (instr.useOps != null) {
+				this.useTemp.addAll(instr.useOps);
+			}
+			if (instr.defOps != null) {
+				this.defTemp.addAll(instr.defOps);
+			}
 		}
 
 		/** Add edge from this node to `to` */
@@ -79,9 +91,27 @@ public class DataFlowGraph {
 		public List<Node> inNodes() {
 			return new ArrayList<>(inEdges);
 		}
+
+		/** Returns a unique hash representing the inTemp and outTemp sets */
+		public int inOutHash() {
+			final int prime = 31;
+			int hash = 17;
+
+			for (String element : inTemp) {
+				hash = hash * prime + (element == null ? 0 : element.hashCode());
+			}
+
+			hash = hash * prime + 42;
+
+			for (String element : outTemp) {
+				hash = hash * prime + (element == null ? 0 : element.hashCode());
+			}
+
+			return hash;
+		}
 	}
 
-	public void addNode(ASM.Instr instr) {
+	public void addNode(ASM.Oper instr) {
 		nodes.put(instr.hashCode(), new Node(instr));
 	}
 

@@ -2,7 +2,9 @@ package compiler.phase.livean;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 
 import compiler.common.report.Report;
@@ -22,8 +24,8 @@ public class LiveAn {
 		// Construct initial graph
 		for (ASM.Instr instr : instructions) {
 			// We only care about operation instructions
-			if (instr instanceof ASM.Oper) {
-				dfg.addNode(instr);
+			if (instr instanceof ASM.Oper oper) {
+				dfg.addNode(oper);
 			}
 		}
 
@@ -72,8 +74,65 @@ public class LiveAn {
 		return dfg;
 	}
 
+	private static Set<String> diff(Set<String> a, Set<String> b) {
+		Set<String> result = new HashSet<>();
+		for (String s : a) {
+			if (!b.contains(s)) {
+				result.add(s);
+			}
+		}
+		return result;
+	}
+
 	private static DataFlowGraph calculateLiveVariables(Vector<ASM.Instr> instructions) {
 		DataFlowGraph dfg = constructDfg(instructions);
+		// Get first non-label instruction
+		ASM.Instr first = null;
+		for (ASM.Instr instr : instructions) {
+			if (instr instanceof ASM.Label) {
+				continue;
+			}
+			first = instr;
+			break;
+		}
+		List<Node> sorted = dfg.quasiTopoSortNodes(first);
+		List<Integer> oldHashes = new ArrayList<>();
+		List<Integer> newHashes = new ArrayList<>();
+
+		for (Node node : sorted) {
+			oldHashes.add(node.inOutHash());
+			newHashes.add(123);
+		}
+
+		while (true) {
+			for (int i = 0; i < sorted.size(); i++) {
+				Node node = sorted.get(i);
+				node.inTemp.clear();
+
+				if (node.useTemp != null) {
+					node.inTemp.addAll(node.useTemp);
+				}
+
+				if (node.defTemp != null) {
+					node.inTemp.addAll(diff(node.outTemp, node.defTemp));
+				} else {
+					node.inTemp.addAll(node.outTemp);
+				}
+
+				node.outTemp.clear();
+				for (Node succ : node.outNodes()) {
+					node.outTemp.addAll(succ.inTemp);
+				}
+				newHashes.set(i, node.inOutHash());
+			}
+			if (oldHashes.equals(newHashes)) {
+				break;
+			}
+			List<Integer> tmp = oldHashes;
+			oldHashes = newHashes;
+			newHashes = tmp;
+		}
+
 		return dfg;
 	}
 }
