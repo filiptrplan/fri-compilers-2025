@@ -66,10 +66,19 @@ public class DataFlowGraph {
 		public Node(ASM.Oper instr) {
 			this.instr = instr;
 			if (instr.useOps != null) {
-				this.useTemp.addAll(instr.useOps);
+				for (String useOp : instr.useOps) {
+					// Add only the temp variables, not labels
+					if (useOp.startsWith("T")) {
+						this.useTemp.add(useOp);
+					}
+				}
 			}
 			if (instr.defOps != null) {
-				this.defTemp.addAll(instr.defOps);
+				for (String defOp : instr.defOps) {
+					if (defOp.startsWith("T")) {
+						this.defTemp.add(defOp);
+					}
+				}
 			}
 		}
 
@@ -165,18 +174,15 @@ public class DataFlowGraph {
 
 				for (Node outNode : node.outNodes()) {
 					String outNodeId = "node" + outNode.hashCode();
-					
-					// Create edge labels with inTemp and outTemp information
-					Set<String> edgeTemps = new HashSet<>(node.outTemp);
-					edgeTemps.retainAll(outNode.inTemp); // Get intersection
-					
-					if (!edgeTemps.isEmpty()) {
-						// Format the temp variables for display
-						String tempList = String.join(",", edgeTemps);
-						writer.write("    " + nodeId + " -->|\"" + tempList + "\"| " + outNodeId + "\n");
-					} else {
-						writer.write("    " + nodeId + " --> " + outNodeId + "\n");
-					}
+
+					// Format the temp variables for display
+					String tempList = String.join(",", node.outTemp);
+					String tempListIn = String.join(",", outNode.inTemp);
+					String outString = tempList.isEmpty() ? "" : "out: " + tempList;
+					String inString = tempListIn.isEmpty() ? "" : "in: " + tempListIn;
+					writer.write(
+							"    " + nodeId + " -->|\"" + outString + " " + inString + "\"|" + outNodeId
+									+ "\n");
 				}
 			}
 
