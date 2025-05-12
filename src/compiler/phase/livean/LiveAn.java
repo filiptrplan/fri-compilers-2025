@@ -55,11 +55,8 @@ public class LiveAn {
 				Node currNode = dfg.getNode(instr);
 				if (oper.isJump || oper.isCjump) {
 					Node jumpTo = labelMap.get(oper.jumpTarget);
-					Report.info(Integer.toString(currNode.hashCode()) + " - " + oper.jumpTarget);
 					if (jumpTo != null) {
 						currNode.addEdge(jumpTo);
-					} else {
-						Report.info("Label " + oper.jumpTarget + " not found in function.");
 					}
 				}
 				// Add a back connection if the previous instruction wasn't an unconditional

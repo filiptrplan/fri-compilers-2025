@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import compiler.common.report.Report;
 import compiler.phase.asmgen.ASM;
@@ -16,6 +17,29 @@ public class DataFlowGraph {
 	/** Nodes are represented as instructions, edges are directional */
 	// The key is the hashCode of the instruction
 	private HashMap<Integer, Node> nodes = new HashMap<>();
+
+	/** Returns a list on quasi-topological order (as the graph is not acyclic) */
+	public ArrayList<Node> quasiTopoSortNodes(ASM.Instr first) {
+		ArrayList<Node> sorted = new ArrayList<>();
+		Stack<Node> stack = new Stack<>();
+		if (!nodes.containsKey(first.hashCode())) {
+			throw new Report.InternalError();
+		}
+		stack.push(this.getNode(first));
+		HashSet<Integer> visited = new HashSet<>();
+
+		while (!stack.isEmpty()) {
+			Node top = stack.pop();
+			if (visited.contains(top.hashCode())) {
+				continue;
+			}
+			for (Node out : top.outNodes()) {
+				stack.push(out);
+			}
+			sorted.add(top);
+		}
+		return sorted;
+	}
 
 	class Node {
 		private Set<Node> outEdges = new HashSet<>();
