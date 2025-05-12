@@ -40,6 +40,11 @@ public class LiveAn {
 			}
 		}
 
+		// Add the physical register constraints
+		ig.addEdge("x10", instrChunk.frame.RV.toString());
+		ig.addEdge("x2", "SP");
+		ig.addEdge("x3", instrChunk.frame.FP.toString());
+
 		dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		return null;
 	}

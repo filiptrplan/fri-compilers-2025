@@ -90,4 +90,6 @@ Some notes on the register allocation:
 - The `RV` register is used for the return value of a function during the liveness analysis. But in the final
   register allocation we use the stack to store the return value of a function. This is implemented by the
   epilogue of the function, the function body uses the `x10` physical register for the return value.
-- The `SP` register is used for the stack pointer. It is allocated to the physical RISC-V register `x2`.
+- The `SP` register is used for the stack pointer. It is allocated to the physical RISC-V register `x2`. It is
+  calculated by the prologue of a function.
+- The `FP` register is used for the frame pointer. It is allocated to the physical RISC-V register `x3`.

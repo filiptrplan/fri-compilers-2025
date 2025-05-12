@@ -11,6 +11,15 @@ public class IntGraph {
 	/** Nodes are represented as strings, edges are bidirectional */
 	private HashMap<String, Set<String>> edges = new HashMap<>();
 
+	public IntGraph() {
+		// Add all the physical registers to the graph
+		for (int i = 0; i < 32; i++) {
+			for (int j = i + 1; j < 32; j++) {
+				addEdge("x" + i, "x" + j);
+			}
+		}
+	}
+
 	/** Adds an edge between nodes t1 and t2 */
 	public void addEdge(String t1, String t2) {
 		Set<String> e1 = edges.get(t1);
