@@ -37,9 +37,12 @@ public class DataFlowGraph {
 				continue;
 			}
 			for (Node out : top.outNodes()) {
-				stack.push(out);
+				if (!visited.contains(out.hashCode())) {
+					stack.push(out);
+				}
 			}
 			sorted.add(top);
+			visited.add(top.hashCode());
 		}
 		return sorted.reversed();
 	}
@@ -106,13 +109,17 @@ public class DataFlowGraph {
 			final int prime = 31;
 			int hash = 17;
 
-			for (String element : inTemp) {
+			List<String> sortedInTemp = new ArrayList<>(inTemp);
+			sortedInTemp.sort(String::compareTo);
+			for (String element : sortedInTemp) {
 				hash = hash * prime + (element == null ? 0 : element.hashCode());
 			}
 
 			hash = hash * prime + 42;
 
-			for (String element : outTemp) {
+			List<String> sortedOutTemp = new ArrayList<>(outTemp);
+			sortedOutTemp.sort(String::compareTo);
+			for (String element : sortedOutTemp) {
 				hash = hash * prime + (element == null ? 0 : element.hashCode());
 			}
 

@@ -79,3 +79,15 @@ After generating the IMC we perform linearization in this gives us certain guran
 is structured in later phases. The most important one is that arguments of the `IMC.CALL` instructions
 are guranteed to be `IMC.TEMP`s and nothing else. The linearization generator makes sure that all the arguments
 are calculated in the right order to preserve how side-effects influence one another.
+
+### Instruction selection
+
+The assembly generated is for the RISC-V RV64M instruction set. The external system calls are implemented by the
+Ripes RISC-V emulator, as such the code targets only that emulator.
+
+Some notes on the register allocation:
+
+- The `RV` register is used for the return value of a function during the liveness analysis. But in the final
+  register allocation we use the stack to store the return value of a function. This is implemented by the
+  epilogue of the function, the function body uses the `x10` physical register for the return value.
+- The `SP` register is used for the stack pointer. It is allocated to the physical RISC-V register `x2`.

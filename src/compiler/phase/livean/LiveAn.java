@@ -13,12 +13,14 @@ import compiler.phase.livean.DataFlowGraph.Node;
 
 public class LiveAn {
 	public static IntGraph calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
+		Report.info("Calculating interference graph");
 		DataFlowGraph dfg = calculateLiveVariables(instrChunk.instructions);
 		dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		return null;
 	}
 
 	private static DataFlowGraph constructDfg(Vector<ASM.Instr> instructions) {
+		Report.info("Constructing dataflow graph");
 		DataFlowGraph dfg = new DataFlowGraph();
 
 		// Construct initial graph
