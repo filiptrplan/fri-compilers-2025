@@ -49,4 +49,37 @@ public class IntGraph {
 
 		return e1.remove(t2) && e2.remove(t1);
 	}
+	
+	/**
+	 * Generates a Mermaid graph representation of the interference graph.
+	 * Nodes are represented as circles.
+	 * 
+	 * @return A string containing the Mermaid graph definition
+	 */
+	public String printToMermaid() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("graph TD\n");
+		
+		// Define all nodes as circles
+		for (String node : edges.keySet()) {
+			sb.append("    ").append(node).append("((").append(node).append("))\n");
+		}
+		
+		// Define all edges with no duplicates
+		Set<String> processedEdges = new HashSet<>();
+		for (String node : edges.keySet()) {
+			for (String neighbor : edges.get(node)) {
+				// Create a unique edge identifier to avoid duplicates
+				String edgeId = node.compareTo(neighbor) < 0 ? 
+						node + "-" + neighbor : neighbor + "-" + node;
+				
+				if (!processedEdges.contains(edgeId)) {
+					sb.append("    ").append(node).append(" --- ").append(neighbor).append("\n");
+					processedEdges.add(edgeId);
+				}
+			}
+		}
+		
+		return sb.toString();
+	}
 }
