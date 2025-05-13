@@ -202,4 +202,26 @@ public class DataFlowGraph {
 			Report.warning("Failed to write mermaid diagram to file: " + e.getMessage());
 		}
 	}
+	
+	/**
+	 * Prints assembly instructions with their corresponding outTemp sets
+	 * for instructions that exist in the dataflow graph.
+	 * 
+	 * @param codeChunk The code instruction chunk containing the instructions to print
+	 */
+	public void printAsmWithDfg(ASM.CodeInstrChunk codeChunk) {
+		System.out.println(codeChunk.frame.label.name + ":");
+		
+		for (ASM.Instr instr : codeChunk.instructions) {
+			System.out.println(instr.toString());
+			
+			if (instr instanceof ASM.Oper) {
+				Node node = getNode(instr);
+				if (node != null && !node.outTemp.isEmpty()) {
+					System.out.println("\t\t// out: " + String.join(", ", node.outTemp));
+				}
+			}
+		}
+		System.out.println();
+	}
 }
