@@ -52,7 +52,7 @@ public class IntGraph {
 	
 	/**
 	 * Generates a Mermaid graph representation of the interference graph.
-	 * Nodes are represented as circles.
+	 * Nodes are represented as circles, with physical registers (x0-x31) having double borders.
 	 * 
 	 * @return A string containing the Mermaid graph definition
 	 */
@@ -60,9 +60,15 @@ public class IntGraph {
 		StringBuilder sb = new StringBuilder();
 		sb.append("graph TD\n");
 		
-		// Define all nodes as circles
+		// Define all nodes as circles, with physical registers having a different style
 		for (String node : edges.keySet()) {
-			sb.append("    ").append(node).append("((").append(node).append("))\n");
+			if (isPhysicalRegister(node)) {
+				// Physical registers with double border
+				sb.append("    ").append(node).append>("((").append(node).append("))\"\"]\n");
+			} else {
+				// Regular nodes as simple circles
+				sb.append("    ").append(node).append("((").append(node).append("))\n");
+			}
 		}
 		
 		// Define all edges with no duplicates
@@ -81,5 +87,24 @@ public class IntGraph {
 		}
 		
 		return sb.toString();
+	}
+	
+	/**
+	 * Checks if a node name represents a physical register (x0-x31)
+	 * 
+	 * @param nodeName The name of the node to check
+	 * @return true if the node is a physical register, false otherwise
+	 */
+	private boolean isPhysicalRegister(String nodeName) {
+		if (nodeName.length() < 2 || nodeName.charAt(0) != 'x') {
+			return false;
+		}
+		
+		try {
+			int regNum = Integer.parseInt(nodeName.substring(1));
+			return regNum >= 0 && regNum <= 31;
+		} catch (NumberFormatException e) {
+			return false;
+		}
 	}
 }
