@@ -1,10 +1,14 @@
 package compiler.phase.livean;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import compiler.common.report.Report;
 
 /** The representation for the interference graph */
 public class IntGraph {
@@ -12,10 +16,14 @@ public class IntGraph {
 	private HashMap<String, Set<String>> edges = new HashMap<>();
 
 	public IntGraph() {
-		// Add all the physical registers to the graph
-		for (int i = 0; i < 32; i++) {
-			for (int j = i + 1; j < 32; j++) {
-				addEdge("x" + i, "x" + j);
+		// Add all physical registers to the graph. Only the ones that are used in the
+		// constraints.
+		List<String> physicalRegisters = List.of("x2", "x3", "x10");
+		for (String reg : physicalRegisters) {
+			for (String reg2 : physicalRegisters) {
+				if (!reg.equals(reg2)) {
+					addEdge(reg, reg2);
+				}
 			}
 		}
 	}
@@ -49,62 +57,49 @@ public class IntGraph {
 
 		return e1.remove(t2) && e2.remove(t1);
 	}
-	
+
 	/**
 	 * Generates a Mermaid graph representation of the interference graph.
-	 * Nodes are represented as circles, with physical registers (x0-x31) having double borders.
-	 * 
-	 * @return A string containing the Mermaid graph definition
+	 * Nodes are represented as circles, with physical registers (x0-x31) having
+	 * double borders.
 	 */
-	public String printToMermaid() {
+	public void printToMermaidFile(String filename) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("graph TD\n");
-		
-		// Define all nodes as circles, with physical registers having a different style
+
 		for (String node : edges.keySet()) {
 			if (isPhysicalRegister(node)) {
-				// Physical registers with double border
-				sb.append("    ").append(node).append>("((").append(node).append("))\"\"]\n");
+				sb.append("    ").append(node).append("(((").append(node).append(")))\n");
 			} else {
-				// Regular nodes as simple circles
 				sb.append("    ").append(node).append("((").append(node).append("))\n");
 			}
 		}
-		
-		// Define all edges with no duplicates
+
 		Set<String> processedEdges = new HashSet<>();
 		for (String node : edges.keySet()) {
 			for (String neighbor : edges.get(node)) {
-				// Create a unique edge identifier to avoid duplicates
-				String edgeId = node.compareTo(neighbor) < 0 ? 
-						node + "-" + neighbor : neighbor + "-" + node;
-				
+				String edgeId = node.compareTo(neighbor) < 0 ? node + "-" + neighbor : neighbor + "-" + node;
+
 				if (!processedEdges.contains(edgeId)) {
 					sb.append("    ").append(node).append(" --- ").append(neighbor).append("\n");
 					processedEdges.add(edgeId);
 				}
 			}
 		}
-		
-		return sb.toString();
+
+		try (FileWriter writer = new FileWriter(filename)) {
+			writer.write("```mermaid\n");
+			writer.write(sb.toString());
+			writer.write("```\n");
+		} catch (IOException e) {
+			Report.warning("Failed to write Mermaid graph to file: " + e.getMessage());
+		}
 	}
-	
+
 	/**
 	 * Checks if a node name represents a physical register (x0-x31)
-	 * 
-	 * @param nodeName The name of the node to check
-	 * @return true if the node is a physical register, false otherwise
 	 */
 	private boolean isPhysicalRegister(String nodeName) {
-		if (nodeName.length() < 2 || nodeName.charAt(0) != 'x') {
-			return false;
-		}
-		
-		try {
-			int regNum = Integer.parseInt(nodeName.substring(1));
-			return regNum >= 0 && regNum <= 31;
-		} catch (NumberFormatException e) {
-			return false;
-		}
+		return nodeName.startsWith("x");
 	}
 }

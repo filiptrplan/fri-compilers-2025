@@ -46,6 +46,8 @@ public class LiveAn {
 		ig.addEdge("x3", instrChunk.frame.FP.toString());
 
 		dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
+		ig.printToMermaidFile(instrChunk.frame.label.name + ".ig.md");
+		dfg.printAsmWithDfg(instrChunk);
 		return null;
 	}
 

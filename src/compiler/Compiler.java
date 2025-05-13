@@ -234,7 +234,6 @@ public class Compiler {
 
 				try (AsmGen asmGen = new AsmGen()) {
 					asmGen.generateAsm();
-					asmGen.printAsm();
 				}
 
 				for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
