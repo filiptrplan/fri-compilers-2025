@@ -13,6 +13,7 @@ import compiler.phase.synan.*;
 import compiler.phase.abstr.*;
 import compiler.phase.seman.*;
 import compiler.phase.memory.*;
+import compiler.phase.regall.RegAll;
 import compiler.phase.imcgen.*;
 import compiler.phase.imclin.*;
 
@@ -241,6 +242,11 @@ public class Compiler {
 						liveAn.calculateInterferenceGraph(codeInstrChunk);
 					}
 				}
+
+				try (RegAll regAll = new RegAll(32)) {
+
+				}
+
 				if (cmdLineOptValues.get("--target-phase").equals("imclin"))
 					break;
 
