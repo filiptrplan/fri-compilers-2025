@@ -24,6 +24,10 @@ public class IntGraph {
 	 */
 	private HashMap<String, Set<String>> moveEdges = new HashMap<>();
 
+	private HashMap<String, Integer> nodeDegrees = new HashMap<>();
+
+	private Set<String> removedNodes = new HashSet<>();
+
 	public IntGraph() {
 		// Add all physical registers to the graph. Only the ones that are used in the
 		// constraints.
@@ -33,6 +37,91 @@ public class IntGraph {
 				if (!reg.equals(reg2)) {
 					addEdge(reg, reg2, false);
 				}
+			}
+		}
+	}
+
+	/** Gets degree of a node */
+	public int degree(String node) {
+		return nodeDegrees.get(node);
+	}
+
+	public List<String> getNodes() {
+		Set<String> keySet = edges.keySet();
+		keySet.addAll(moveEdges.keySet());
+		keySet.removeAll(removedNodes);
+		return new ArrayList<>(keySet);
+	}
+
+	/** Gets all neighbors of a node */
+	public List<String> getNeighbors(String node) {
+		Set<String> neighbors = edges.get(node);
+		Set<String> moveNeighbors = moveEdges.get(node);
+		Set<String> allNeighbors = new HashSet<>();
+		if (neighbors == null && moveNeighbors == null) {
+			return new ArrayList<>();
+		}
+
+		if (neighbors != null) {
+			allNeighbors.addAll(neighbors);
+		}
+		if (moveNeighbors != null) {
+			allNeighbors.addAll(moveNeighbors);
+		}
+
+		return new ArrayList<>(allNeighbors);
+	}
+
+	/** Whether the graph contains any temp variables */
+	public boolean isTempEmpty() {
+		return getTempNodes().isEmpty();
+	}
+
+	/** Whether the graph contains any physical registers or temp variables */
+	public boolean isEmpty() {
+		return getNodes().isEmpty();
+	}
+
+	/** Gets all nodes that are not physical registers */
+	public List<String> getTempNodes() {
+		Set<String> keySet = edges.keySet();
+		keySet.addAll(moveEdges.keySet());
+		keySet.removeAll(removedNodes);
+		List<String> tempNodes = new ArrayList<>(keySet);
+		keySet.removeIf(n -> !n.startsWith("T"));
+		return tempNodes;
+	}
+
+	public void markRemoved(String node) {
+		removedNodes.add(node);
+		// Update degrees for neighbors
+		Set<String> neighbors = edges.get(node);
+		if (neighbors != null) {
+			for (String n : neighbors) {
+				nodeDegrees.put(n, nodeDegrees.get(n) - 1);
+			}
+		}
+		Set<String> moveNeighbors = moveEdges.get(node);
+		if (moveNeighbors != null) {
+			for (String n : moveNeighbors) {
+				nodeDegrees.put(n, nodeDegrees.get(n) - 1);
+			}
+		}
+	}
+
+	public void unmarkRemoved(String node) {
+		removedNodes.remove(node);
+		// Update degrees for neighbors
+		Set<String> neighbors = edges.get(node);
+		if (neighbors != null) {
+			for (String n : neighbors) {
+				nodeDegrees.put(n, nodeDegrees.get(n) + 1);
+			}
+		}
+		Set<String> moveNeighbors = moveEdges.get(node);
+		if (moveNeighbors != null) {
+			for (String n : moveNeighbors) {
+				nodeDegrees.put(n, nodeDegrees.get(n) + 1);
 			}
 		}
 	}
