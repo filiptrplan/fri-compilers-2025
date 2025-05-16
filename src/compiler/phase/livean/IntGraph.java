@@ -12,8 +12,17 @@ import compiler.common.report.Report;
 
 /** The representation for the interference graph */
 public class IntGraph {
-	/** Nodes are represented as strings, edges are bidirectional */
+	/**
+	 * Nodes are represented as strings, edges are bidirectional.
+	 * This hashmap represents any non-move edges.
+	 */
 	private HashMap<String, Set<String>> edges = new HashMap<>();
+
+	/**
+	 * Nodes are represented as strings, edges are bidirectional.
+	 * This hashmap represents move edges.
+	 */
+	private HashMap<String, Set<String>> moveEdges = new HashMap<>();
 
 	public IntGraph() {
 		// Add all physical registers to the graph. Only the ones that are used in the
@@ -22,32 +31,34 @@ public class IntGraph {
 		for (String reg : physicalRegisters) {
 			for (String reg2 : physicalRegisters) {
 				if (!reg.equals(reg2)) {
-					addEdge(reg, reg2);
+					addEdge(reg, reg2, false);
 				}
 			}
 		}
 	}
 
 	/** Adds an edge between nodes t1 and t2 */
-	public void addEdge(String t1, String t2) {
-		Set<String> e1 = edges.get(t1);
-		Set<String> e2 = edges.get(t2);
+	public void addEdge(String t1, String t2, boolean isMove) {
+		HashMap<String, Set<String>> edgesToUse = isMove ? moveEdges : edges;
+		Set<String> e1 = edgesToUse.get(t1);
+		Set<String> e2 = edgesToUse.get(t2);
 		if (e1 == null) {
 			e1 = new HashSet<>();
-			edges.put(t1, e1);
+			edgesToUse.put(t1, e1);
 		}
 		if (e2 == null) {
 			e2 = new HashSet<>();
-			edges.put(t2, e2);
+			edgesToUse.put(t2, e2);
 		}
 		e1.add(t2);
 		e2.add(t1);
 	}
 
 	/** Removes edges between t1 and t2. Returns false if edge not found */
-	public boolean removeEdge(String t1, String t2) {
-		Set<String> e1 = edges.get(t1);
-		Set<String> e2 = edges.get(t2);
+	public boolean removeEdge(String t1, String t2, boolean isMove) {
+		HashMap<String, Set<String>> edgesToUse = isMove ? moveEdges : edges;
+		Set<String> e1 = edgesToUse.get(t1);
+		Set<String> e2 = edgesToUse.get(t2);
 		if (e1 == null) {
 			return false;
 		}

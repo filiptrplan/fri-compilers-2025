@@ -30,7 +30,7 @@ public class LiveAn extends Phase {
 				// For non-moves we the out variables interfere with the defined variables
 				for (String def : defTemp) {
 					for (String liveOut : liveOutTemp) {
-						ig.addEdge(def, liveOut);
+						ig.addEdge(def, liveOut, false);
 					}
 				}
 			} else {
@@ -39,16 +39,16 @@ public class LiveAn extends Phase {
 				for (String liveOut : liveOutTemp) {
 					// For moves we don't add an extra edge between the used and defined variables
 					if (!liveOut.equals(use)) {
-						ig.addEdge(def, liveOut);
+						ig.addEdge(def, liveOut, true);
 					}
 				}
 			}
 		}
 
 		// Add the physical register constraints
-		ig.addEdge("x10", instrChunk.frame.RV.toString());
-		ig.addEdge("x2", "SP");
-		ig.addEdge("x3", instrChunk.frame.FP.toString());
+		ig.addEdge("x10", instrChunk.frame.RV.toString(), false);
+		ig.addEdge("x2", "SP", false);
+		ig.addEdge("x3", instrChunk.frame.FP.toString(), false);
 
 		dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		ig.printToMermaidFile(instrChunk.frame.label.name + ".ig.md");
