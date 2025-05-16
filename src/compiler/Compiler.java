@@ -236,8 +236,10 @@ public class Compiler {
 					asmGen.generateAsm();
 				}
 
-				for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
-					LiveAn.calculateInterferenceGraph(codeInstrChunk);
+				try (LiveAn liveAn = new LiveAn()) {
+					for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
+						liveAn.calculateInterferenceGraph(codeInstrChunk);
+					}
 				}
 				if (cmdLineOptValues.get("--target-phase").equals("imclin"))
 					break;

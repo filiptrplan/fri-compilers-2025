@@ -8,11 +8,16 @@ import java.util.Set;
 import java.util.Vector;
 
 import compiler.common.report.Report;
+import compiler.phase.Phase;
 import compiler.phase.asmgen.ASM;
 import compiler.phase.livean.DataFlowGraph.Node;
 
-public class LiveAn {
-	public static IntGraph calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
+public class LiveAn extends Phase {
+	public LiveAn() {
+		super("livean");
+	}
+
+	public IntGraph calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
 		DataFlowGraph dfg = calculateLiveVariables(instrChunk.instructions);
 
 		IntGraph ig = new IntGraph();
@@ -51,7 +56,7 @@ public class LiveAn {
 		return null;
 	}
 
-	private static DataFlowGraph constructDfg(Vector<ASM.Instr> instructions) {
+	private DataFlowGraph constructDfg(Vector<ASM.Instr> instructions) {
 		DataFlowGraph dfg = new DataFlowGraph();
 
 		// Construct initial graph
@@ -107,7 +112,7 @@ public class LiveAn {
 		return dfg;
 	}
 
-	private static Set<String> diff(Set<String> a, Set<String> b) {
+	private Set<String> diff(Set<String> a, Set<String> b) {
 		Set<String> result = new HashSet<>();
 		for (String s : a) {
 			if (!b.contains(s)) {
@@ -117,7 +122,7 @@ public class LiveAn {
 		return result;
 	}
 
-	private static DataFlowGraph calculateLiveVariables(Vector<ASM.Instr> instructions) {
+	private DataFlowGraph calculateLiveVariables(Vector<ASM.Instr> instructions) {
 		DataFlowGraph dfg = constructDfg(instructions);
 		// Get first non-label instruction
 		ASM.Instr first = null;
