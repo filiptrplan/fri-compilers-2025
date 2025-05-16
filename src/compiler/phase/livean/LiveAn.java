@@ -17,7 +17,9 @@ public class LiveAn extends Phase {
 		super("livean");
 	}
 
-	public IntGraph calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
+	public static HashMap<ASM.CodeInstrChunk, IntGraph> intGraphs = new HashMap<>();
+
+	public void calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
 		DataFlowGraph dfg = calculateLiveVariables(instrChunk.instructions);
 
 		IntGraph ig = new IntGraph();
@@ -53,7 +55,8 @@ public class LiveAn extends Phase {
 		dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		ig.printToMermaidFile(instrChunk.frame.label.name + ".ig.md");
 		dfg.printAsmWithDfg(instrChunk);
-		return null;
+
+		intGraphs.put(instrChunk, ig);
 	}
 
 	private DataFlowGraph constructDfg(Vector<ASM.Instr> instructions) {
