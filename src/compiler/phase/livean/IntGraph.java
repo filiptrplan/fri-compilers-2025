@@ -49,6 +49,7 @@ public class IntGraph {
 		}
 		nodeDegrees.put(node, 0);
 		edges.put(node, new HashSet<>());
+		moveEdges.put(node, new HashSet<>());
 	}
 
 	/** Gets degree of a node */
@@ -156,15 +157,19 @@ public class IntGraph {
 		HashMap<String, Set<String>> edgesToUse = isMove ? moveEdges : edges;
 		Set<String> e1 = edgesToUse.get(t1);
 		Set<String> e2 = edgesToUse.get(t2);
+		if (!nodeDegrees.containsKey(t1)) {
+			nodeDegrees.put(t1, 0);
+		}
 		if (e1 == null) {
 			e1 = new HashSet<>();
 			edgesToUse.put(t1, e1);
-			nodeDegrees.put(t1, 0);
+		}
+		if (!nodeDegrees.containsKey(t2)) {
+			nodeDegrees.put(t2, 0);
 		}
 		if (e2 == null) {
 			e2 = new HashSet<>();
 			edgesToUse.put(t2, e2);
-			nodeDegrees.put(t2, 0);
 		}
 		e1.add(t2);
 		e2.add(t1);
