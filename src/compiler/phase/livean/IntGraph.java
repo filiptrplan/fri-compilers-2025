@@ -44,7 +44,7 @@ public class IntGraph {
 
 	/** Adds a node to the graph. If it already exists, does nothing */
 	public void addNode(String node) {
-		if (nodeDegrees.containsKey(node)) {
+		if (!Helper.isRegister(node) || nodeDegrees.containsKey(node)) {
 			return;
 		}
 		nodeDegrees.put(node, 0);
@@ -150,6 +150,9 @@ public class IntGraph {
 
 	/** Adds an edge between nodes t1 and t2 */
 	public void addEdge(String t1, String t2, boolean isMove) {
+		if (!Helper.isRegister(t1) || !Helper.isRegister(t2)) {
+			return;
+		}
 		HashMap<String, Set<String>> edgesToUse = isMove ? moveEdges : edges;
 		Set<String> e1 = edgesToUse.get(t1);
 		Set<String> e2 = edgesToUse.get(t2);

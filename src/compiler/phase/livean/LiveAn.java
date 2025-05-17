@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import compiler.common.Helper;
 import compiler.phase.Phase;
 import compiler.phase.asmgen.ASM;
 import compiler.phase.livean.DataFlowGraph.Node;
