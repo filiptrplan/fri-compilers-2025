@@ -3,6 +3,7 @@ package compiler.phase.asmgen;
 import java.util.List;
 import java.util.Vector;
 
+import compiler.common.Helper;
 import compiler.common.report.Report;
 import compiler.phase.asmgen.ASM.Instr;
 import compiler.phase.imcgen.IMC;
@@ -13,18 +14,6 @@ import compiler.phase.memory.MEM;
 public class Tiles {
 
 	// --- Helper Methods ---
-
-	public static boolean isLabel(String s) {
-		return s.startsWith("L") || s.startsWith("_");
-	}
-
-	public static boolean isConstant(String s) {
-		if (s == null || s.isEmpty()) {
-			return false;
-		}
-		// Simple check for integer literal (allows negative numbers)
-		return s.matches("-?\\d+");
-	}
 
 	private static String loadConstant(String constant, Vector<ASM.Instr> instructions) {
 		String tempReg = newTemp();
@@ -363,8 +352,8 @@ public class Tiles {
 			String r2Str = binop.sndExpr.accept(generator, instructions);
 			String rd = newTemp();
 
-			boolean r1IsConst = isConstant(r1Str);
-			boolean r2IsConst = isConstant(r2Str);
+			boolean r1IsConst = Helper.isConstant(r1Str);
+			boolean r2IsConst = Helper.isConstant(r2Str);
 
 			// Handle constants
 			if (r1IsConst && r2IsConst) {
@@ -590,7 +579,7 @@ public class Tiles {
 			IMC.UNOP unop = (IMC.UNOP) instr;
 			String r1 = unop.subExpr.accept(generator, instructions);
 			String rd = newTemp();
-			boolean isR1Const = isConstant(r1);
+			boolean isR1Const = Helper.isConstant(r1);
 
 			switch (unop.oper) {
 				case NEG:
@@ -644,7 +633,7 @@ public class Tiles {
 						.add(new ASM.Oper("sd #1, " + call.offs.get(i) + "(#2)", null, doubleOp(args.get(i), "SP")));
 			}
 
-			if (isLabel(func)) {
+			if (Helper.isLabel(func)) {
 				instructions.add(new ASM.Oper("jal $1, " + func, singleOp(temp), null));
 			} else {
 				instructions.add(new ASM.Oper("jalr $1, #1, 0", singleOp(temp), singleOp(func)));
@@ -737,7 +726,7 @@ public class Tiles {
 			String r2 = move.src.accept(generator, null);
 			String r1 = move.dst.accept(generator, null);
 
-			if (isConstant(r2)) {
+			if (Helper.isConstant(r2)) {
 				instructions.add(new ASM.Oper("li $1, #1", singleOp(r1), singleOp(r2)));
 			} else {
 				instructions.add(new ASM.Oper("mv $1, #1", singleOp(r1), singleOp(r2)));

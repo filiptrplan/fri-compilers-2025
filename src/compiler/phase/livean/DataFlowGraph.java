@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
+import compiler.common.Helper;
 import compiler.common.report.Report;
 import compiler.phase.asmgen.ASM;
 import compiler.phase.asmgen.Tiles;
@@ -72,14 +73,14 @@ public class DataFlowGraph {
 			if (instr.useOps != null) {
 				for (String useOp : instr.useOps) {
 					// Add only the temp variables, not labels
-					if (!Tiles.isLabel(useOp)) {
+					if (!Helper.isLabel(useOp)) {
 						this.useTemp.add(useOp);
 					}
 				}
 			}
 			if (instr.defOps != null) {
 				for (String defOp : instr.defOps) {
-					if (!Tiles.isLabel(defOp)) {
+					if (!Helper.isLabel(defOp)) {
 						this.defTemp.add(defOp);
 					}
 				}

@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import compiler.common.Helper;
 import compiler.common.report.Report;
 
 /** The representation for the interference graph */
@@ -105,7 +106,7 @@ public class IntGraph {
 		keySet.addAll(moveEdges.keySet());
 		keySet.removeAll(removedNodes);
 		List<String> tempNodes = new ArrayList<>(keySet);
-		keySet.removeIf(n -> !n.startsWith("T"));
+		keySet.removeIf(n -> !Helper.isTemp(n));
 		return tempNodes;
 	}
 
@@ -196,7 +197,7 @@ public class IntGraph {
 		sb.append("graph TD\n");
 
 		for (String node : edges.keySet()) {
-			if (isPhysicalRegister(node)) {
+			if (Helper.isPhysicalRegister(node)) {
 				sb.append("    ").append(node).append("(((").append(node).append(")))\n");
 			} else {
 				sb.append("    ").append(node).append("((").append(node).append("))\n");
@@ -222,12 +223,5 @@ public class IntGraph {
 		} catch (IOException e) {
 			Report.warning("Failed to write Mermaid graph to file: " + e.getMessage());
 		}
-	}
-
-	/**
-	 * Checks if a node name represents a physical register (x0-x31)
-	 */
-	private boolean isPhysicalRegister(String nodeName) {
-		return nodeName.startsWith("x");
 	}
 }
