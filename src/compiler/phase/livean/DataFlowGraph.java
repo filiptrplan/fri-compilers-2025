@@ -11,6 +11,7 @@ import java.util.Stack;
 
 import compiler.common.report.Report;
 import compiler.phase.asmgen.ASM;
+import compiler.phase.asmgen.Tiles;
 
 /** The representation for the dataflow graph */
 public class DataFlowGraph {
@@ -71,14 +72,14 @@ public class DataFlowGraph {
 			if (instr.useOps != null) {
 				for (String useOp : instr.useOps) {
 					// Add only the temp variables, not labels
-					if (useOp.startsWith("T")) {
+					if (!Tiles.isLabel(useOp)) {
 						this.useTemp.add(useOp);
 					}
 				}
 			}
 			if (instr.defOps != null) {
 				for (String defOp : instr.defOps) {
-					if (defOp.startsWith("T")) {
+					if (!Tiles.isLabel(defOp)) {
 						this.defTemp.add(defOp);
 					}
 				}

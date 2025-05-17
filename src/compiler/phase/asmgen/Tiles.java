@@ -14,11 +14,11 @@ public class Tiles {
 
 	// --- Helper Methods ---
 
-	private static boolean isLabel(String s) {
+	public static boolean isLabel(String s) {
 		return s.startsWith("L") || s.startsWith("_");
 	}
 
-	private static boolean isConstant(String s) {
+	public static boolean isConstant(String s) {
 		if (s == null || s.isEmpty()) {
 			return false;
 		}

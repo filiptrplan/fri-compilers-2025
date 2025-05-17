@@ -41,13 +41,26 @@ public class IntGraph {
 		}
 	}
 
+	/** Adds a node to the graph. If it already exists, does nothing */
+	public void addNode(String node) {
+		if (nodeDegrees.containsKey(node)) {
+			return;
+		}
+		nodeDegrees.put(node, 0);
+		edges.put(node, new HashSet<>());
+	}
+
 	/** Gets degree of a node */
 	public int degree(String node) {
+		if (!nodeDegrees.containsKey(node)) {
+			Report.info("Cannot retrieve: " + node);
+			throw new Report.InternalError();
+		}
 		return nodeDegrees.get(node);
 	}
 
 	public List<String> getNodes() {
-		Set<String> keySet = edges.keySet();
+		Set<String> keySet = new HashSet<>(edges.keySet());
 		keySet.addAll(moveEdges.keySet());
 		keySet.removeAll(removedNodes);
 		return new ArrayList<>(keySet);
@@ -55,6 +68,10 @@ public class IntGraph {
 
 	/** Gets all neighbors of a node */
 	public List<String> getNeighbors(String node) {
+		if (!nodeDegrees.containsKey(node)) {
+			Report.info("Cannot retrieve: " + node);
+			throw new Report.InternalError();
+		}
 		Set<String> neighbors = edges.get(node);
 		Set<String> moveNeighbors = moveEdges.get(node);
 		Set<String> allNeighbors = new HashSet<>();
@@ -84,7 +101,7 @@ public class IntGraph {
 
 	/** Gets all nodes that are not physical registers */
 	public List<String> getTempNodes() {
-		Set<String> keySet = edges.keySet();
+		Set<String> keySet = new HashSet<>(edges.keySet());
 		keySet.addAll(moveEdges.keySet());
 		keySet.removeAll(removedNodes);
 		List<String> tempNodes = new ArrayList<>(keySet);
@@ -93,6 +110,10 @@ public class IntGraph {
 	}
 
 	public void markRemoved(String node) {
+		if (!nodeDegrees.containsKey(node)) {
+			Report.info("Cannot retrieve: " + node);
+			throw new Report.InternalError();
+		}
 		removedNodes.add(node);
 		// Update degrees for neighbors
 		Set<String> neighbors = edges.get(node);
@@ -134,13 +155,17 @@ public class IntGraph {
 		if (e1 == null) {
 			e1 = new HashSet<>();
 			edgesToUse.put(t1, e1);
+			nodeDegrees.put(t1, 0);
 		}
 		if (e2 == null) {
 			e2 = new HashSet<>();
 			edgesToUse.put(t2, e2);
+			nodeDegrees.put(t2, 0);
 		}
 		e1.add(t2);
 		e2.add(t1);
+		nodeDegrees.put(t1, nodeDegrees.get(t1) + 1);
+		nodeDegrees.put(t2, nodeDegrees.get(t2) + 1);
 	}
 
 	/** Removes edges between t1 and t2. Returns false if edge not found */
@@ -154,6 +179,9 @@ public class IntGraph {
 		if (e2 == null) {
 			return false;
 		}
+
+		nodeDegrees.put(t1, nodeDegrees.get(t1) - 1);
+		nodeDegrees.put(t2, nodeDegrees.get(t2) - 1);
 
 		return e1.remove(t2) && e2.remove(t1);
 	}

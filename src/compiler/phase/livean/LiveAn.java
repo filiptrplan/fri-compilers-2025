@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import compiler.common.report.Report;
 import compiler.phase.Phase;
 import compiler.phase.asmgen.ASM;
 import compiler.phase.livean.DataFlowGraph.Node;
@@ -19,7 +18,7 @@ public class LiveAn extends Phase {
 
 	public static HashMap<ASM.CodeInstrChunk, IntGraph> intGraphs = new HashMap<>();
 
-	public void calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
+	public static void calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
 		DataFlowGraph dfg = calculateLiveVariables(instrChunk.instructions);
 
 		IntGraph ig = new IntGraph();
@@ -47,19 +46,35 @@ public class LiveAn extends Phase {
 			}
 		}
 
+		// Add all the rest of the nodes that don't have any incoming edges
+		for (Node node : dfg.getNodes()) {
+			Set<String> defTemp = node.defTemp;
+			Set<String> useTemp = node.useTemp;
+			if (defTemp != null) {
+				for (String def : defTemp) {
+					ig.addNode(def);
+				}
+			}
+			if (useTemp != null) {
+				for (String use : useTemp) {
+					ig.addNode(use);
+				}
+			}
+		}
+
 		// Add the physical register constraints
 		ig.addEdge("x10", instrChunk.frame.RV.toString(), false);
 		ig.addEdge("x2", "SP", false);
 		ig.addEdge("x3", instrChunk.frame.FP.toString(), false);
 
-		dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
-		ig.printToMermaidFile(instrChunk.frame.label.name + ".ig.md");
-		dfg.printAsmWithDfg(instrChunk);
+		// dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
+		// ig.printToMermaidFile(instrChunk.frame.label.name + ".ig.md");
+		// dfg.printAsmWithDfg(instrChunk);
 
 		intGraphs.put(instrChunk, ig);
 	}
 
-	private DataFlowGraph constructDfg(Vector<ASM.Instr> instructions) {
+	private static DataFlowGraph constructDfg(Vector<ASM.Instr> instructions) {
 		DataFlowGraph dfg = new DataFlowGraph();
 
 		// Construct initial graph
@@ -115,7 +130,7 @@ public class LiveAn extends Phase {
 		return dfg;
 	}
 
-	private Set<String> diff(Set<String> a, Set<String> b) {
+	private static Set<String> diff(Set<String> a, Set<String> b) {
 		Set<String> result = new HashSet<>();
 		for (String s : a) {
 			if (!b.contains(s)) {
@@ -125,7 +140,7 @@ public class LiveAn extends Phase {
 		return result;
 	}
 
-	private DataFlowGraph calculateLiveVariables(Vector<ASM.Instr> instructions) {
+	private static DataFlowGraph calculateLiveVariables(Vector<ASM.Instr> instructions) {
 		DataFlowGraph dfg = constructDfg(instructions);
 		// Get first non-label instruction
 		ASM.Instr first = null;
