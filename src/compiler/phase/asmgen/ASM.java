@@ -67,7 +67,7 @@ public class ASM {
 		/** A frame of a function. */
 		public final MEM.Frame frame;
 		/** The instructions of a function body. */
-		public final Vector<ASM.Instr> instructions;
+		public Vector<ASM.Instr> instructions;
 		/** The function's body entry label, i.e., the label the prologue jumps to. */
 		public final MEM.Label entryLabel;
 		/**
@@ -87,6 +87,7 @@ public class ASM {
 			this.entryLabel = codeChunk.entryLabel;
 			this.exitLabel = codeChunk.exitLabel;
 		}
+
 	}
 
 	private static int instrCounter = 0;
