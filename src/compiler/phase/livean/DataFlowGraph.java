@@ -73,14 +73,14 @@ public class DataFlowGraph {
 			if (instr.useOps != null) {
 				for (String useOp : instr.useOps) {
 					// Add only the temp variables, not labels
-					if (!Helper.isLabel(useOp)) {
+					if (Helper.isRegister(useOp)) {
 						this.useTemp.add(useOp);
 					}
 				}
 			}
 			if (instr.defOps != null) {
 				for (String defOp : instr.defOps) {
-					if (!Helper.isLabel(defOp)) {
+					if (Helper.isRegister(defOp)) {
 						this.defTemp.add(defOp);
 					}
 				}

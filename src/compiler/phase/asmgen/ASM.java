@@ -76,6 +76,12 @@ public class ASM {
 		public final MEM.Label exitLabel;
 
 		/**
+		 * The size of the stack frame that is allocated for temporary variables
+		 * Used for calculating the SP offset in the prologue
+		 */
+		public long tempSize = 0;
+
+		/**
 		 * Constructs a new code chunk.
 		 * 
 		 * @param codeChunk The code chunk from the ImcLin phase this is based on

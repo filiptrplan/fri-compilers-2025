@@ -239,13 +239,21 @@ public class Compiler {
 
 				try (LiveAn liveAn = new LiveAn()) {
 					for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
-						liveAn.calculateInterferenceGraph(codeInstrChunk);
+						LiveAn.calculateInterferenceGraph(codeInstrChunk);
 					}
 				}
 
-				try (RegAll regAll = new RegAll(32)) {
+				Report.info("=== Printing generated assembly === ");
+				AsmGen.printAsm();
 
+				try (RegAll regAll = new RegAll(4)) {
+					for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
+						RegAll.assignRegisters(codeInstrChunk, null);
+					}
 				}
+
+				Report.info("=== Printing generated assembly after register allocation === ");
+				AsmGen.printAsm();
 
 				if (cmdLineOptValues.get("--target-phase").equals("imclin"))
 					break;

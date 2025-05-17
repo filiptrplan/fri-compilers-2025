@@ -22,7 +22,7 @@ public class LiveAn extends Phase {
 	public static void calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
 		DataFlowGraph dfg = calculateLiveVariables(instrChunk.instructions);
 
-		IntGraph ig = new IntGraph();
+		IntGraph ig = new IntGraph(instrChunk.frame);
 		for (Node node : dfg.getNodes()) {
 			Set<String> defTemp = node.defTemp;
 			Set<String> liveOutTemp = node.outTemp;

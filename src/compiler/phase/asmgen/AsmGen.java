@@ -47,7 +47,7 @@ public class AsmGen extends Phase {
 	}
 
 	/** Prints the generated assembly */
-	public void printAsm() {
+	public static void printAsm() {
 		// String const section
 		Report.info(".rodata");
 		for (ASM.StringConstChunk chunk : constChunks) {

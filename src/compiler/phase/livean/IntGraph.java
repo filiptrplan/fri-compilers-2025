@@ -10,6 +10,7 @@ import java.util.Set;
 
 import compiler.common.Helper;
 import compiler.common.report.Report;
+import compiler.phase.memory.MEM;
 
 /** The representation for the interference graph */
 public class IntGraph {
@@ -29,7 +30,9 @@ public class IntGraph {
 
 	private Set<String> removedNodes = new HashSet<>();
 
-	public IntGraph() {
+	private MEM.Frame frame;
+
+	public IntGraph(MEM.Frame frame) {
 		// Add all physical registers to the graph. Only the ones that are used in the
 		// constraints.
 		List<String> physicalRegisters = List.of("x2", "x3", "x10");
@@ -40,6 +43,8 @@ public class IntGraph {
 				}
 			}
 		}
+
+		this.frame = frame;
 	}
 
 	/** Adds a node to the graph. If it already exists, does nothing */
@@ -101,13 +106,13 @@ public class IntGraph {
 		return getNodes().isEmpty();
 	}
 
-	/** Gets all nodes that are not physical registers */
+	/** Gets all nodes that are not physical registers or FP/RV */
 	public List<String> getTempNodes() {
 		Set<String> keySet = new HashSet<>(edges.keySet());
 		keySet.addAll(moveEdges.keySet());
 		keySet.removeAll(removedNodes);
 		List<String> tempNodes = new ArrayList<>(keySet);
-		keySet.removeIf(n -> !Helper.isTemp(n));
+		tempNodes.removeIf(n -> !Helper.isTemp(n) || n.equals(frame.FP.toString()) || n.equals(frame.RV.toString()));
 		return tempNodes;
 	}
 
