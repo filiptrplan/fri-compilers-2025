@@ -31,7 +31,7 @@ public class Compiler {
 
 	/** Names of command line options. */
 	private static final HashSet<String> cmdLineOptNames = new HashSet<String>(Arrays.asList("--src-file-name",
-			"--dst-file-name", "--target-phase", "--logged-phase", "--xml", "--xsl", "--dev-mode"));
+			"--dst-file-name", "--target-phase", "--logged-phase", "--xml", "--xsl", "--dev-mode", "--num-regs"));
 
 	/** Values of command line options indexed by their command line option name. */
 	private static final HashMap<String, String> cmdLineOptValues = new HashMap<String, String>();
@@ -245,6 +245,12 @@ public class Compiler {
 
 				Report.info("=== Printing generated assembly === ");
 				AsmGen.printAsm();
+
+				int regCount = 32;
+				if (cmdLineOptValues.get("--num-regs") != null) {
+					regCount = Integer.parseInt(cmdLineOptValues.get("--num-regs"));
+					Report.info("Using " + regCount + " registers");
+				}
 
 				try (RegAll regAll = new RegAll(4)) {
 					for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
