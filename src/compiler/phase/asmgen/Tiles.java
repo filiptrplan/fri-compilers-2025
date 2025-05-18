@@ -639,7 +639,7 @@ public class Tiles {
 				instructions.add(new ASM.Oper("jalr $1, #1, 0", singleOp(temp), singleOp(func)));
 			}
 			// The result is stored on the stack, we denote this with RV
-			return "RV";
+			return generator.callFrame.RV.toString();
 		}
 	}
 
@@ -729,7 +729,7 @@ public class Tiles {
 			if (Helper.isConstant(r2)) {
 				instructions.add(new ASM.Oper("li $1, #1", singleOp(r1), singleOp(r2)));
 			} else {
-				instructions.add(new ASM.Oper("mv $1, #1", singleOp(r1), singleOp(r2)));
+				instructions.add(new ASM.Move("mv $1, #1", singleOp(r1), singleOp(r2)));
 			}
 			return null;
 		}
