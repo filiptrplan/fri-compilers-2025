@@ -51,6 +51,7 @@ public class RegisterAllocator {
 		if (previouslySpilled != null) {
 			this.previouslySpilled = previouslySpilled;
 		}
+		tempVariableSize = codeChunk.tempSize;
 	}
 
 	/**
