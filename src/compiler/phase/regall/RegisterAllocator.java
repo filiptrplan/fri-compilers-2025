@@ -43,7 +43,7 @@ public class RegisterAllocator {
 	 **/
 	public RegisterAllocator(int K, ASM.CodeInstrChunk codeChunk, Set<String> previouslySpilled) {
 		this.K = K;
-		if (K > physicalRegistersNotReserved.size() + physicalRegistersReserved.size()) {
+		if (K > physicalRegistersNotReserved.size()) {
 			throw new Report.InternalError();
 		}
 		this.codeChunk = codeChunk;
@@ -82,15 +82,6 @@ public class RegisterAllocator {
 			RegAll.assignRegisters(codeChunk, actualSpillSet);
 		} else {
 			String[] regs = new String[K];
-			// First we assign the physical registers to the color map
-			for (String reg : physicalRegistersReserved) {
-				if (!colorMap.containsKey(reg)) {
-					Report.warning("Cannot find: " + reg);
-					throw new Report.InternalError();
-				}
-				regs[colorMap.get(reg)] = reg;
-			}
-
 			// Then we assign the rest of the registers
 			int j = 0;
 			for (int i = 0; i < K; i++) {
@@ -109,24 +100,34 @@ public class RegisterAllocator {
 					for (String def : oper.defOps) {
 						if (!Helper.isRegister(def)) {
 							continue;
-						}
-						if (!colorMap.containsKey(def)) {
+						} else if (def.equals(codeChunk.frame.RV.toString())) {
+							oper.defOps.set(oper.defOps.indexOf(def), "x10");
+						} else if (colorMap.containsKey(def)) {
+							oper.defOps.set(oper.defOps.indexOf(def), regs[colorMap.get(def)]);
+						} else {
+
 							Report.warning("Cannot find: " + def);
 							throw new Report.InternalError();
 						}
-						oper.defOps.set(oper.defOps.indexOf(def), regs[colorMap.get(def)]);
 					}
 				}
 				if (oper.useOps != null) {
 					for (String use : oper.useOps) {
-						if (!Helper.isRegister(use)) {
+						if (!Helper.isRegister(use) || use.startsWith("x")) {
 							continue;
 						}
-						if (!colorMap.containsKey(use)) {
+						if (use.equals(codeChunk.frame.RV.toString())) {
+							oper.useOps.set(oper.useOps.indexOf(use), "x10");
+						} else if (use.equals(codeChunk.frame.FP.toString())) {
+							oper.useOps.set(oper.useOps.indexOf(use), "x3");
+						} else if (use.equals("SP")) {
+							oper.useOps.set(oper.useOps.indexOf(use), "x2");
+						} else if (colorMap.containsKey(use)) {
+							oper.useOps.set(oper.useOps.indexOf(use), regs[colorMap.get(use)]);
+						} else {
 							Report.warning("Cannot find: " + use);
 							throw new Report.InternalError();
 						}
-						oper.useOps.set(oper.useOps.indexOf(use), regs[colorMap.get(use)]);
 					}
 				}
 			}

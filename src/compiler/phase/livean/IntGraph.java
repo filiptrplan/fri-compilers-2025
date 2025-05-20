@@ -33,17 +33,6 @@ public class IntGraph {
 	private MEM.Frame frame;
 
 	public IntGraph(MEM.Frame frame) {
-		// Add all physical registers to the graph. Only the ones that are used in the
-		// constraints.
-		List<String> physicalRegisters = List.of("x2", "x3", "x10");
-		for (String reg : physicalRegisters) {
-			for (String reg2 : physicalRegisters) {
-				if (!reg.equals(reg2)) {
-					addEdge(reg, reg2, false);
-				}
-			}
-		}
-
 		this.frame = frame;
 	}
 
