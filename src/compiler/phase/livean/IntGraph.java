@@ -107,8 +107,9 @@ public class IntGraph {
 
 	public void markRemoved(String node) {
 		if (!nodeDegrees.containsKey(node)) {
-			Report.info("Cannot retrieve: " + node);
-			throw new Report.InternalError();
+			// Report.info("Cannot retrieve (maybe not used in graph?): " + node);
+			// throw new Report.InternalError();
+			return;
 		}
 		removedNodes.add(node);
 		// Update degrees for neighbors
