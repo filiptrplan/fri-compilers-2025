@@ -777,7 +777,7 @@ public class Tiles {
 		public String emit(AsmGenerator generator, Vector<ASM.Instr> instructions, IMC.Instr instr) {
 			IMC.MOVE move = (IMC.MOVE) instr;
 			String r1 = move.dst.accept(generator, null);
-			String name = move.src.accept(generator, null);
+			String name = ((IMC.NAME) move.src).label.name;
 
 			instructions.add(new ASM.Oper("la $1, #1", singleOp(r1), singleOp(name)));
 			return null;
