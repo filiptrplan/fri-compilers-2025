@@ -46,29 +46,47 @@ public class AsmGen extends Phase {
 		}
 	}
 
-	/** Prints the generated assembly */
-	public static void printAsm() {
-		// String const section
-		Report.info(".rodata");
-		for (ASM.StringConstChunk chunk : constChunks) {
-			Report.info(chunk.toString());
-		}
-
+	private static String asmString() {
+		StringBuilder sb = new StringBuilder();
 		// Data section
-		Report.info(".data");
-		for (ASM.GlobalVarChunk chunk : varChunks) {
-			Report.info(chunk.toString());
+		// We create it only if we have something to put into it
+		if (constChunks.size() + varChunks.size() > 0) {
+			sb.append(".data\n");
+			for (ASM.StringConstChunk chunk : constChunks) {
+				sb.append(chunk.toString()).append("\n");
+			}
+			for (ASM.GlobalVarChunk chunk : varChunks) {
+				sb.append(chunk.toString()).append("\n");
+			}
 		}
 
 		// Code section
-		Report.info(".text");
+		sb.append(".text\n");
 		for (ASM.CodeInstrChunk chunk : codeChunks) {
-			Report.info("#------- " + chunk.frame.label.name + " (FP=" + chunk.frame.FP + ", RV=" + chunk.frame.RV
-					+ ", body=" + chunk.entryLabel.name + ", exit=" + chunk.exitLabel.name + ") ------- ");
+			sb.append("#------- ").append(chunk.frame.label.name)
+					.append(" (FP=").append(chunk.frame.FP)
+					.append(", RV=").append(chunk.frame.RV)
+					.append(", body=").append(chunk.entryLabel.name)
+					.append(", exit=").append(chunk.exitLabel.name)
+					.append(") ------- \n");
 			for (ASM.Instr instr : chunk.instructions) {
-				Report.info(instr.toString());
+				sb.append(instr.toString()).append("\n");
 			}
-			Report.info("");
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
+
+	/** Prints the generated assembly */
+	public static void printAsm() {
+		Report.info(AsmGen.asmString());
+	}
+
+	public static void writeAsmToFile(String filename) {
+		try {
+			java.nio.file.Files.writeString(java.nio.file.Path.of(filename), asmString());
+		} catch (java.io.IOException e) {
+			throw new RuntimeException("Failed to write assembly to file: " + filename, e);
 		}
 	}
 

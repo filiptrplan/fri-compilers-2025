@@ -260,9 +260,7 @@ public class Compiler {
 
 				Report.info("=== Printing generated assembly after register allocation === ");
 				AsmGen.printAsm();
-
-				if (cmdLineOptValues.get("--target-phase").equals("imclin"))
-					break;
+				AsmGen.writeAsmToFile(cmdLineOptValues.get("--src-file-name") + ".asm");
 
 				// Do not loop... ever.
 				break;
