@@ -1,6 +1,12 @@
 package compiler.common;
 
+import compiler.phase.imcgen.IMC;
+
 public class Helper {
+	public static boolean isInstrConst(IMC.Instr instr) {
+		return instr instanceof IMC.CONST;
+	}
+
 	/**
 	 * Checks if a string represents a label
 	 */

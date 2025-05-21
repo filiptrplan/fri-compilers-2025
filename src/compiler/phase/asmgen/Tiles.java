@@ -27,6 +27,22 @@ public class Tiles {
 		return vec;
 	}
 
+	private static String getConstString(IMC.Instr instr) {
+		if (instr instanceof IMC.CONST constInstr) {
+			return String.valueOf(constInstr.value);
+		} else {
+			throw new Report.InternalError();
+		}
+	}
+
+	private static long getConstValue(IMC.Instr instr) {
+		if (instr instanceof IMC.CONST constInstr) {
+			return constInstr.value;
+		} else {
+			throw new Report.InternalError();
+		}
+	}
+
 	public static final List<Tile> availableTiles = List.of(
 			new MoveTempConstTile(),
 			new MoveTempTempTile(),
@@ -185,7 +201,10 @@ public class Tiles {
 
 		@Override
 		public String emit(AsmGenerator generator, Vector<ASM.Instr> instructions, IMC.Instr instr) {
-			return String.valueOf(((IMC.CONST) instr).value);
+			String value = getConstString(instr);
+			MEM.Temp temp = new MEM.Temp();
+			instructions.add(new ASM.Oper("li $1, " + value, singleOp(temp.toString()), null));
+			return temp.toString();
 		}
 	}
 
@@ -270,7 +289,7 @@ public class Tiles {
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.MEM1 mem1 = (IMC.MEM1) instr;
 			IMC.BINOP binop = (IMC.BINOP) mem1.addr;
-			String constant = binop.sndExpr.accept(generator, null);
+			String constant = getConstString(binop.sndExpr);
 			String reg = binop.fstExpr.accept(generator, null);
 			String temp = newTemp();
 
@@ -323,7 +342,7 @@ public class Tiles {
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.MEM8 mem8 = (IMC.MEM8) instr;
 			IMC.BINOP binop = (IMC.BINOP) mem8.addr;
-			String constant = binop.sndExpr.accept(generator, null);
+			String constant = getConstString(binop.sndExpr);
 			String reg = binop.fstExpr.accept(generator, null);
 			String temp = newTemp();
 
@@ -348,17 +367,15 @@ public class Tiles {
 		@Override
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.BINOP binop = (IMC.BINOP) instr;
-			String r1Str = binop.fstExpr.accept(generator, instructions);
-			String r2Str = binop.sndExpr.accept(generator, instructions);
 			String rd = newTemp();
 
-			boolean r1IsConst = Helper.isConstant(r1Str);
-			boolean r2IsConst = Helper.isConstant(r2Str);
+			boolean r1IsConst = Helper.isInstrConst(binop.fstExpr);
+			boolean r2IsConst = Helper.isInstrConst(binop.sndExpr);
 
 			// Handle constants
 			if (r1IsConst && r2IsConst) {
-				long val1 = Long.parseLong(r1Str);
-				long val2 = Long.parseLong(r2Str);
+				long val1 = getConstValue(binop.fstExpr);
+				long val2 = getConstValue(binop.sndExpr);
 				long result;
 				switch (binop.oper) {
 					case ADD:
@@ -411,10 +428,10 @@ public class Tiles {
 				return rd;
 			}
 
-			String r1Reg = r1IsConst ? null : r1Str;
-			String r2Reg = r2IsConst ? null : r2Str;
-			String r1Const = r1IsConst ? r1Str : null;
-			String r2Const = r2IsConst ? r2Str : null;
+			String r1Reg = r1IsConst ? null : binop.fstExpr.accept(generator, instructions);
+			String r2Reg = r2IsConst ? null : binop.sndExpr.accept(generator, instructions);
+			String r1Const = r1IsConst ? getConstString(binop.fstExpr) : null;
+			String r2Const = r2IsConst ? getConstString(binop.sndExpr) : null;
 
 			switch (binop.oper) {
 				case ADD:
@@ -577,15 +594,18 @@ public class Tiles {
 		@Override
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.UNOP unop = (IMC.UNOP) instr;
-			String r1 = unop.subExpr.accept(generator, instructions);
 			String rd = newTemp();
-			boolean isR1Const = Helper.isConstant(r1);
+			boolean isR1Const = Helper.isInstrConst(unop.subExpr);
+			String r1 = null;
+			if (!isR1Const) {
+				r1 = unop.subExpr.accept(generator, instructions);
+			}
 
 			switch (unop.oper) {
 				case NEG:
 					if (isR1Const) {
 						// Constant folding
-						return String.valueOf(-Long.parseLong(r1));
+						return String.valueOf(-getConstValue(unop.subExpr));
 					}
 					// rd = 0 - r1
 					instructions.add(new ASM.Oper("sub $1, x0, #1", singleOp(rd), singleOp(r1)));
@@ -593,7 +613,7 @@ public class Tiles {
 				case NOT:
 					if (isR1Const) {
 						// Constant folding
-						return String.valueOf(Long.parseLong(r1) == 0 ? 1 : 0);
+						return String.valueOf(getConstValue(unop.subExpr) == 0 ? 1 : 0);
 					}
 					// rd = (r1 == 0) ? 1 : 0
 					instructions.add(new ASM.Oper("seqz $1, #1", singleOp(rd), singleOp(r1)));
@@ -666,7 +686,7 @@ public class Tiles {
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.MOVE move = (IMC.MOVE) instr;
 			String r1 = move.dst.accept(generator, null);
-			String constant = move.src.accept(generator, null);
+			String constant = getConstString(move.src);
 
 			instructions.add(new ASM.Oper("li $1, #1", singleOp(r1), singleOp(constant)));
 			return null;
@@ -723,12 +743,13 @@ public class Tiles {
 		@Override
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.MOVE move = (IMC.MOVE) instr;
-			String r2 = move.src.accept(generator, null);
 			String r1 = move.dst.accept(generator, null);
 
-			if (Helper.isConstant(r2)) {
+			if (Helper.isInstrConst(move.src)) {
+				String r2 = getConstString(move.src);
 				instructions.add(new ASM.Oper("li $1, #1", singleOp(r1), singleOp(r2)));
 			} else {
+				String r2 = move.src.accept(generator, null);
 				instructions.add(new ASM.Move("mv $1, #1", singleOp(r1), singleOp(r2)));
 			}
 			return null;
@@ -822,7 +843,7 @@ public class Tiles {
 			IMC.BINOP binop = (IMC.BINOP) dstMem.addr;
 
 			String r1 = binop.fstExpr.accept(generator, null);
-			String imm = binop.sndExpr.accept(generator, null);
+			String imm = getConstString(binop.sndExpr);
 			String r2 = move.src.accept(generator, instructions);
 
 			Vector<String> useVec = new Vector<>();
@@ -893,7 +914,7 @@ public class Tiles {
 			IMC.BINOP binop = (IMC.BINOP) dstMem.addr;
 
 			String r1 = binop.fstExpr.accept(generator, null);
-			String imm = binop.sndExpr.accept(generator, null);
+			String imm = getConstString(binop.sndExpr);
 			String r2 = move.src.accept(generator, instructions);
 
 			Vector<String> useVec = new Vector<>();
