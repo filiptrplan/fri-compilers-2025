@@ -33,7 +33,7 @@ public class ASM {
 			s += "\t.globl " + this.label + "\n";
 			s += "\t.align 3\n"; // For now we always align to 8 bytes
 			s += this.label + ":\n"; // Start the label
-			s += "\t.space " + Long.toString(size) + "\n\n"; // We always have uninitialized values
+			s += "\t.zero " + Long.toString(size) + "\n\n"; // We always have uninitialized values
 			return s;
 		}
 	}
