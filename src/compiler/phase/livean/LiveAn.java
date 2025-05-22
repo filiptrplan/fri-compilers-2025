@@ -68,6 +68,7 @@ public class LiveAn extends Phase {
 		ig.markRemoved(instrChunk.frame.RV.toString());
 		ig.markRemoved("SP");
 		ig.markRemoved(instrChunk.frame.FP.toString());
+		ig.markRemoved("x1");
 		// ig.addEdge("x10", instrChunk.frame.RV.toString(), false);
 		// ig.addEdge("x2", "SP", false);
 		// ig.addEdge("x3", instrChunk.frame.FP.toString(), false);

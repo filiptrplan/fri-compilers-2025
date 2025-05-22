@@ -93,3 +93,4 @@ Some notes on the register allocation:
 - The `SP` register is used for the stack pointer. It is allocated to the physical RISC-V register `x2`. It is
   calculated by the prologue of a function.
 - The `FP` register is used for the frame pointer. It is allocated to the physical RISC-V register `x3`.
+- The return address is always saved in the `x1` register.

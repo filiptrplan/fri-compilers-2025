@@ -639,7 +639,7 @@ public class Tiles {
 		@Override
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.CALL call = (IMC.CALL) instr;
-			String temp = newTemp();
+			String returnAddr = "x1";
 			String func = call.addr.accept(generator, instructions);
 			Vector<String> args = new Vector<>();
 			for (IMC.Expr arg : call.args) {
@@ -654,9 +654,9 @@ public class Tiles {
 			}
 
 			if (Helper.isLabel(func)) {
-				instructions.add(new ASM.Oper("jal $1, " + func, singleOp(temp), null));
+				instructions.add(new ASM.Oper("jal $1, " + func, singleOp(returnAddr), null));
 			} else {
-				instructions.add(new ASM.Oper("jalr $1, #1, 0", singleOp(temp), singleOp(func)));
+				instructions.add(new ASM.Oper("jalr $1, #1, 0", singleOp(returnAddr), singleOp(func)));
 			}
 			// The result is stored on the stack, we denote this with RV
 			return generator.callFrame.RV.toString();

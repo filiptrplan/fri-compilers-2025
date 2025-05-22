@@ -246,7 +246,7 @@ public class Compiler {
 				// Report.info("=== Printing generated assembly === ");
 				// AsmGen.printAsm();
 
-				int regCount = 32 - 4; // -FP, -RV, -SP, -x0
+				int regCount = 32 - 5; // -FP, -RV, -SP, -x0, -RA
 				if (cmdLineOptValues.get("--num-regs") != null) {
 					regCount = Integer.parseInt(cmdLineOptValues.get("--num-regs"));
 					Report.info("Using " + regCount + " registers");
@@ -258,7 +258,6 @@ public class Compiler {
 					}
 				}
 
-				Report.info("=== Printing generated assembly after register allocation === ");
 				AsmGen.printAsm();
 				AsmGen.writeAsmToFile(cmdLineOptValues.get("--src-file-name") + ".asm");
 
