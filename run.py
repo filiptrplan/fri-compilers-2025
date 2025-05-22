@@ -63,6 +63,11 @@ Examples:
     parser.add_argument(
         "--attach", action="store_true", help="Run with remote debugging enabled"
     )
+    parser.add_argument(
+        "--run",
+        action="store_true",
+        help="Run the compiled assembly in Ripes simulator",
+    )
 
     args = parser.parse_args()
 
@@ -170,6 +175,26 @@ Examples:
 
                 if result.returncode != 0:
                     sys.exit(result.returncode)
+
+                # If --run flag is set and compilation was successful, run in Ripes
+                if args.run:
+                    print("\nRunning in Ripes simulator...")
+                    ripes_cmd = [
+                        "Ripes",
+                        "--mode",
+                        "cli",
+                        "--src",
+                        f"prg/{args.testname}.prev25.asm",
+                        "--t",
+                        "asm",
+                        "--proc",
+                        "RV64_5S",
+                        "--isaexts",
+                        "M",
+                        "--reginit",
+                        "gpr:2=0x7ffffff0",
+                    ]
+                    subprocess.run(ripes_cmd)
         else:
             print("No test specified. Build completed successfully.")
 
