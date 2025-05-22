@@ -243,8 +243,8 @@ public class Compiler {
 					}
 				}
 
-				Report.info("=== Printing generated assembly === ");
-				AsmGen.printAsm();
+				// Report.info("=== Printing generated assembly === ");
+				// AsmGen.printAsm();
 
 				int regCount = 32 - 4; // -FP, -RV, -SP, -x0
 				if (cmdLineOptValues.get("--num-regs") != null) {
