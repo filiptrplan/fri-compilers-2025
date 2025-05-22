@@ -73,6 +73,13 @@ Some notes on this memory layout and calling convention:
 - We use a static link (`SL`) for nested functions and we always pass it as an "extra" argument
   to a function on the offset 0.
 
+When emulating with Ripes, we also follow some rules:
+
+- Stack starts at address `0x7ffffff0` and grows downwards.
+- We use the address `0x80000000` as the seed for the random number generator.
+- `.text` starts at `0x0`.
+- `.data` starts at `0x10000000`.
+
 ### IMC Linearization
 
 After generating the IMC we perform linearization in this gives us certain gurantees on how the IMC

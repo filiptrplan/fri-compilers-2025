@@ -105,6 +105,12 @@ public class AsmGen extends Phase {
 			}
 			sb.append("\n");
 		}
+
+		// Syscall wrappers
+		for (SyscallWrappers.Wrapper wrapper : SyscallWrappers.getSyscallWrappers()) {
+			sb.append(wrapper.toString());
+		}
+
 		return sb.toString();
 	}
 

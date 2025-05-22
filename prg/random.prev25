@@ -1,0 +1,10 @@
+fun random(lb: int, ub: int): int
+fun seed(s: int): void
+fun putint(n: int): void
+
+fun main(): int =
+    seed(31),
+    putint(random(0, 100)),
+    putint(random(0, 100)),
+    putint(random(0, 100)),
+    return 0
