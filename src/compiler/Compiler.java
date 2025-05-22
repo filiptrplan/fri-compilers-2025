@@ -13,7 +13,8 @@ import compiler.phase.synan.*;
 import compiler.phase.abstr.*;
 import compiler.phase.seman.*;
 import compiler.phase.memory.*;
-import compiler.phase.regall.RegAll;
+import compiler.phase.regall.*;
+import compiler.phase.initfun.*;
 import compiler.phase.imcgen.*;
 import compiler.phase.imclin.*;
 
@@ -258,7 +259,13 @@ public class Compiler {
 					}
 				}
 
-				AsmGen.printAsm();
+				try (InitFun initFun = new InitFun()) {
+					for (ASM.CodeInstrChunk chunk : AsmGen.codeChunks) {
+						InitFun.addPrologueAndEpilogue(chunk);
+					}
+				}
+
+				// AsmGen.printAsm();
 				AsmGen.writeAsmToFile(cmdLineOptValues.get("--src-file-name") + ".asm");
 
 				// Do not loop... ever.

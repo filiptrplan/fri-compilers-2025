@@ -13,6 +13,23 @@ public class AsmGen extends Phase {
 	public static final Vector<ASM.StringConstChunk> constChunks = new Vector<>();
 	public static final Vector<ASM.GlobalVarChunk> varChunks = new Vector<>();
 
+	/**
+	 * Function at the start of every program which sets up the main function.
+	 * We assume the x2 register aka the stack pointer is already set up for us
+	 * by the emulator.
+	 */
+	private static final String initFunction = """
+			# Start of program
+			jal x1, _main
+			# The exit2 syscall in ripes
+			li a7, 93
+			# load return code from main function
+			ld a0, 0(x2)
+			ecall
+			""";
+
+	public final String globalEndLabel = "__end__:\nnop";
+
 	public AsmGen() {
 		super("asmgen");
 	}
@@ -62,6 +79,7 @@ public class AsmGen extends Phase {
 
 		// Code section
 		sb.append(".text\n");
+		sb.append(AsmGen.initFunction);
 		for (ASM.CodeInstrChunk chunk : codeChunks) {
 			sb.append("#------- ").append(chunk.frame.label.name)
 					.append(" (FP=").append(chunk.frame.FP)
@@ -69,8 +87,21 @@ public class AsmGen extends Phase {
 					.append(", body=").append(chunk.entryLabel.name)
 					.append(", exit=").append(chunk.exitLabel.name)
 					.append(") ------- \n");
+			if (chunk.prologueInstructions != null) {
+				sb.append("# ----------- Prologue ----------------\n");
+				for (ASM.Instr instr : chunk.prologueInstructions) {
+					sb.append(instr.toString()).append("\n");
+				}
+			}
+			sb.append("# ----------- Body ----------------\n");
 			for (ASM.Instr instr : chunk.instructions) {
 				sb.append(instr.toString()).append("\n");
+			}
+			if (chunk.prologueInstructions != null) {
+				sb.append("# ----------- Epilogue ----------------\n");
+				for (ASM.Instr instr : chunk.epilogueInstructions) {
+					sb.append(instr.toString()).append("\n");
+				}
 			}
 			sb.append("\n");
 		}

@@ -76,10 +76,14 @@ public class ASM {
 		public final MEM.Label exitLabel;
 
 		/**
-		 * The size of the stack frame that is allocated for temporary variables
+		 * The size of the stack frame that is allocated for temporary variables.
+		 *
 		 * Used for calculating the SP offset in the prologue
 		 */
 		public long tempSize = 0;
+
+		public Vector<ASM.Instr> prologueInstructions;
+		public Vector<ASM.Instr> epilogueInstructions;
 
 		/**
 		 * Constructs a new code chunk.

@@ -21,7 +21,7 @@ public class Tiles {
 		return tempReg;
 	}
 
-	private static Vector<String> singleOp(String op) {
+	public static Vector<String> singleOp(String op) {
 		Vector<String> vec = new Vector<>();
 		vec.add(op);
 		return vec;
@@ -177,7 +177,7 @@ public class Tiles {
 		}
 	}
 
-	private static Vector<String> doubleOp(String op1, String op2) {
+	public static Vector<String> doubleOp(String op1, String op2) {
 		Vector<String> vec = new Vector<>();
 		vec.add(op1);
 		vec.add(op2);
@@ -659,6 +659,8 @@ public class Tiles {
 				instructions.add(new ASM.Oper("jalr $1, #1, 0", singleOp(returnAddr), singleOp(func)));
 			}
 			// The result is stored on the stack, we denote this with RV
+			// We first load the result to RV
+			instructions.add(new ASM.Oper("ld $1, 0(#1)", singleOp(generator.callFrame.RV.toString()), singleOp("SP")));
 			return generator.callFrame.RV.toString();
 		}
 	}
