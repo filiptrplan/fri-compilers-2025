@@ -68,6 +68,11 @@ Examples:
         action="store_true",
         help="Run the compiled assembly in Ripes simulator",
     )
+    parser.add_argument(
+        "--copy",
+        action="store_true",
+        help="Copy the generated assembly to clipboard",
+    )
 
     args = parser.parse_args()
 
@@ -195,6 +200,24 @@ Examples:
                         "gpr:2=0x7ffffff0",
                     ]
                     subprocess.run(ripes_cmd)
+
+                # If --copy flag is set and compilation was successful, copy assembly to clipboard
+                if args.copy:
+                    asm_file = f"prg/{args.testname}.prev25.asm"
+                    if os.path.exists(asm_file):
+                        try:
+                            with open(asm_file, "r") as f:
+                                asm_content = f.read()
+                            import pyclip
+
+                            pyclip.copy(asm_content)
+                            print(
+                                f"\nAssembly code copied to clipboard from: {asm_file}"
+                            )
+                        except Exception as e:
+                            print(f"\nError copying to clipboard: {e}")
+                    else:
+                        print(f"\nAssembly file not found: {asm_file}")
         else:
             print("No test specified. Build completed successfully.")
 
