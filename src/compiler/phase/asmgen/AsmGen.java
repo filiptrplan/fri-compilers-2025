@@ -19,6 +19,11 @@ public class AsmGen extends Phase {
 	 * by the emulator.
 	 */
 	private static final String initFunction = """
+			# Setup heap pointer
+			li x1, 0x20000000
+			li x3, 0x20000000
+			addi x3, x3, 8
+			sd x3, 0(x1)
 			# Start of program
 			jal x1, _main
 			# The exit2 syscall in ripes

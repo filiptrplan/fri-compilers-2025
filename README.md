@@ -77,6 +77,9 @@ When emulating with Ripes, we also follow some rules:
 
 - Stack starts at address `0x7ffffff0` and grows downwards.
 - We use the address `0x80000000` as the seed for the random number generator.
+- We use the address `0x20000000` as the heap.
+  - The heap pointer is stored at `0x20000000`.
+  - The heap grows upwards.
 - `.text` starts at `0x0`.
 - `.data` starts at `0x10000000`.
 

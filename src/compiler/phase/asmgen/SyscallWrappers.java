@@ -18,17 +18,18 @@ public class SyscallWrappers {
 		/** Registers to save and restore after the syscall */
 		private final List<String> saveRegisters;
 
-		public Wrapper(String wrappedFunctionName, String body, List<String> saveRegisters) {
+		public Wrapper(String wrappedFunctionName, String body, String... registers) {
 			this.wrapperName = wrappedFunctionName;
 			this.body = body;
-			if (saveRegisters.contains("x2") || saveRegisters.contains("x1")) {
-				throw new Report.InternalError();
+			this.saveRegisters = new ArrayList<>();
+
+			for (String reg : registers) {
+				if ("x2".equals(reg) || "x1".equals(reg)) {
+					throw new Report.InternalError();
+				}
+				this.saveRegisters.add(reg);
 			}
-			if (saveRegisters == null) {
-				this.saveRegisters = new ArrayList<>();
-			} else {
-				this.saveRegisters = saveRegisters;
-			}
+
 			if (!this.saveRegisters.contains("a7")) {
 				this.saveRegisters.add("a7");
 			}
@@ -72,7 +73,7 @@ public class SyscallWrappers {
 				li a7, 4
 				ecall
 				""";
-		wrappers.add(new Wrapper("puts", body, List.of("a0", "a7")));
+		wrappers.add(new Wrapper("puts", body, "a0", "a7"));
 
 		// fun putint(x: int): void
 		body = """
@@ -80,7 +81,7 @@ public class SyscallWrappers {
 				li a7, 1
 				ecall
 				""";
-		wrappers.add(new Wrapper("putint", body, List.of("a0", "a7")));
+		wrappers.add(new Wrapper("putint", body, "a0", "a7"));
 
 		// fun putchar(c: char): void
 		body = """
@@ -90,14 +91,46 @@ public class SyscallWrappers {
 				""";
 		wrappers.add(new Wrapper("putchar", body, "a0", "a7"));
 
-		// fun exit(): void or fun exit(code: int): void
+		// fun getchar(): char
 		body = """
-				# Load exit code (default to 0 if no argument)
-				ld a0, 8(x2)        # Load potential exit code
-				li a7, 10           # Exit syscall
+				addi x2, x2, -1
+				li a0, 0
+				mv a1, x2
+				li a2, 1
+				li a7, 63
 				ecall
+				lb t0, 0(x2)
+				addi x2, x2, 1
+				sd t0, 0(x2)
 				""";
-		wrappers.add(new Wrapper("exit", body, "a0", "a7"));
+		wrappers.add(new Wrapper("getchar", body, "a0", "a1", "a2", "a7", "t0"));
+
+		// fun new(size: int): ^any
+		body = """
+				# Simple heap allocation using our custom heap pointer at 0x20000000
+				li t0, 0x20000000
+				ld t3, 0(t0)
+				# Increase heap by requested size
+				ld t1, 8(x2)        # load size argument
+				add t3, t3, t1      # new break = current + size
+
+				# Align the heap pointer to 8-byte boundary
+				addi t3, t3, 7      # Add 7 to the address
+				andi t3, t3, -8     # Mask off lower 3 bits (AND with ...11111000)
+
+				sd t3, 0(t0)        # store new heap pointer
+				# Check if allocation overlaps with the stack
+				addi t2, x2, -8
+				blt t2, t3, alloc_fail
+				sd t3, 0(x2)        # store old heap pointer as result
+				j alloc_done
+				alloc_fail:
+				li t0, 0            # return null on failure
+				sd t0, 0(x2)
+				alloc_done:
+				nop
+								""";
+		wrappers.add(new Wrapper("new", body, "a0", "a7", "t0", "t1", "t2", "t3"));
 
 		// fun getint(): int
 		body = """
@@ -159,54 +192,26 @@ public class SyscallWrappers {
 				""";
 		wrappers.add(new Wrapper("getint", body, "a0", "a1", "a2", "a7", "t0", "t1", "t2", "t3", "t4", "t5"));
 
-		// fun getchar(): char
-		body = """
-				addi x2, x2, -1
-				li a0, 0
-				mv a1, x2
-				li a2, 1
-				li a7, 63
-				ecall
-				lb t0, 0(x2)
-				addi x2, x2, 1
-				sd t0, 0(x2)
-				""";
-		wrappers.add(new Wrapper("getchar", body, "a0", "a1", "a2", "a7", "t0"));
-
-		// fun new(size: int): ^any
-		body = """
-				# Simple heap allocation using brk syscall
-				# First get current brk
-				li a0, 0            # brk(0) returns current break
-				li a7, 214          # brk syscall
-				ecall
-				mv t0, a0           # save current heap pointer
-
-				# Increase heap by requested size
-				ld t1, 8(x2)        # load size argument
-				add a0, t0, t1      # new break = current + size
-				li a7, 214          # brk syscall
-				ecall
-
-				# Check if allocation succeeded (a0 should be 0)
-				bnez a0, alloc_fail
-				sd t0, 0(x2)        # store old heap pointer as result
-				j alloc_done
-
-				alloc_fail:
-				li t0, 0            # return null on failure
-				sd t0, 0(x2)
-
-				alloc_done:
-				""";
-		wrappers.add(new Wrapper("new", body, "a0", "a7", "t0", "t1"));
-
 		// fun del(ptr: ^any): void (no-op for simplicity)
 		body = """
 				# Deallocation is a no-op in this simple implementation
 				# In a real system, this would track allocated blocks
 				""";
 		wrappers.add(new Wrapper("del", body));
+
+		// fun at(ptr: ^any, idx: int, size_of_any: int): ^any
+		body = """
+				ld t0, 8(x2)        # ptr
+				ld t1, 16(x2)       # idx
+				ld t2, 24(x2)       # size
+
+				# Calculate address: ptr + idx * size
+				mul t1, t1, t2      # idx * size
+				add t0, t0, t1      # ptr + (idx * size)
+
+				sd t0, 0(x2)        # store result
+				""";
+		wrappers.add(new Wrapper("at_sys", body, "t0", "t1", "t2"));
 
 		// fun printf(s: ^char, ...): void
 		// This is complex, so we'll implement a simplified version that handles basic
@@ -276,18 +281,16 @@ public class SyscallWrappers {
 
 		// fun random(lower, upper): int
 		body = """
-
-					# Simple linear congruential generator: next = (a * seed + c) mod m
-					# Using constants: a=1664525, c=1013904223, m=2^32
+				# Simple linear congruential generator: next = (a * seed + c) mod m
+				# Using constants: a=1664525, c=1013904223, m=2^32
 				# use the address 0x80000000 as the seed
 				li t0, 0x080000000
 				ld t0, 0(t0)
-					li t1, 1664525
-					li t2, 1013904223
-					mul t0, t0, t1
-					add t0, t0, t2
+				li t1, 1664525
+				li t2, 1013904223
+				mul t0, t0, t1
+				add t0, t0, t2
 
-				store_random:
 				# Store updated seed back to memory
 				li t4, 0x080000000
 				sd t0, 0(t4)
@@ -301,32 +304,18 @@ public class SyscallWrappers {
 				remu t0, t0, t3     # t0 = random % range
 				add t0, t0, t5      # t0 = (random % range) + lower_bound
 
-					sd t0, 0(x2)        # store result
-					""";
-		wrappers.add(new Wrapper("random", body, "t0", "t1", "t2", "t3", "t4", "t5", "t6"));
-
-		// fun at(ptr: ^any, idx: int, size_of_any: int): ^any
-		body = """
-				ld t0, 8(x2)        # ptr
-				ld t1, 16(x2)       # idx
-				ld t2, 24(x2)       # size
-
-				# Calculate address: ptr + idx * size
-				mul t1, t1, t2      # idx * size
-				add t0, t0, t1      # ptr + (idx * size)
-
 				sd t0, 0(x2)        # store result
 				""";
-		wrappers.add(new Wrapper("at_sys", body, "t0", "t1", "t2"));
+		wrappers.add(new Wrapper("random", body, "t0", "t1", "t2", "t3", "t4", "t5", "t6"));
 
 		// fun seed(seed: int): void
 		body = """
-					# Store seed in a known memory location for random() to use
+				# Store seed in a known memory location for random() to use
 				# use the address 0x80000000 as the seed
 				ld a0, 8(x2)
 				li t0, 0x080000000
 				sd a0, 0(t0)
-					""";
+				""";
 		wrappers.add(new Wrapper("seed", body, "a0", "t0"));
 
 		return wrappers;

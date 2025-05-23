@@ -1,0 +1,6 @@
+fun new(size: int): ^int
+fun putint(x: int): void
+
+fun main(): int =
+    putint({new(4) : int}),
+    return 0
