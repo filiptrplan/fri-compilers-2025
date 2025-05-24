@@ -260,7 +260,7 @@ public class Tiles {
 		public String emit(AsmGenerator generator, Vector<Instr> instructions, IMC.Instr instr) {
 			IMC.MEM1 mem1 = (IMC.MEM1) instr;
 			String temp = newTemp();
-			String register = mem1.accept(generator, null);
+			String register = mem1.addr.accept(generator, null);
 			instructions.add(new ASM.Oper("lb $1, 0(#1)", singleOp(temp), singleOp(register)));
 			return temp;
 		}
