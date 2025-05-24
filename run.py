@@ -73,6 +73,11 @@ Examples:
         action="store_true",
         help="Copy the generated assembly to clipboard",
     )
+    parser.add_argument(
+        "--no-compile",
+        action="store_true",
+        help="Skip compiling the compiler with javac, only run the test case",
+    )
 
     args = parser.parse_args()
 
@@ -88,23 +93,27 @@ Examples:
         # Change to the root directory
         os.chdir(root_dir)
 
-        # Run make clean if requested
-        if args.clean:
-            print("Running make clean...")
-            subprocess.run(["make", "clean"], check=True)
+        # Only run make if --no-compile is not set
+        if not args.no_compile:
+            # Run make clean if requested
+            if args.clean:
+                print("Running make clean...")
+                subprocess.run(["make", "clean"], check=True)
 
-        # Run make in the root directory
-        print("Building project...")
-        result = subprocess.run(["make"], capture_output=True, text=True)
+            # Run make in the root directory
+            print("Building project...")
+            result = subprocess.run(["make"], capture_output=True, text=True)
 
-        # Check if make command was successful
-        if result.returncode != 0:
-            print("Build failed. Error output:")
-            print(result.stdout)
-            print(result.stderr)
-            sys.exit(result.returncode)
+            # Check if make command was successful
+            if result.returncode != 0:
+                print("Build failed. Error output:")
+                print(result.stdout)
+                print(result.stderr)
+                sys.exit(result.returncode)
+            else:
+                print("Build completed successfully.")
         else:
-            print("Build completed successfully.")
+            print("Skipping compiler build (--no-compile flag is set)")
 
         # Run the test
         if args.testname:
