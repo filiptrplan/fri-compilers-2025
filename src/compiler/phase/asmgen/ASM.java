@@ -54,7 +54,10 @@ public class ASM {
 		public String toString() {
 			String s = "";
 			s += this.label + ":\n"; // Start the label
-			s += "\t.asciz \"" + this.init + "\"\n\n"; // Assembler automatically adds null terminator
+			for (int i = 0; i < this.init.length(); i++) {
+				s += "\t.byte 0x" + Integer.toHexString(this.init.charAt(i)) + "\n";
+			}
+			s += "\t.byte 0x0\n\n";
 			return s;
 		}
 	}

@@ -1,0 +1,7 @@
+fun printf(s: ^char, n: int): void
+fun putchar(c: char): void
+fun puts(s: ^char): void
+
+fun main() : int = 
+    puts("Hello World\0x0AHello"),
+    return 0
