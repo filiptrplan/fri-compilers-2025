@@ -1,9 +1,10 @@
-fun new(size: int): ^Node
-fun del(ptr: ^Node): void
+# Copyright (c) 2025 Prev25 Wizards
+fun malloc(size: int): ^Node
+fun free(ptr: ^Node): void
 
 fun putchar(c: char): void
+fun putint(i: int): void
 fun puts(s: ^char): void
-fun printf(s: ^char, n: int): void
 
 typ Node = <
     key: int,
@@ -15,7 +16,7 @@ fun new_node(item: int): ^Node =
     let
         var tmp: ^Node
     in
-        tmp = new(sizeof Node),
+        tmp = malloc(sizeof Node),
         tmp^.key = item,
         tmp^.left = null,
         tmp^.right = null,
@@ -42,13 +43,15 @@ fun insert(node: ^Node, key: int): ^Node =
 fun inorder(root: ^Node): void =
     if (root != null) then
         inorder(root^.left),
-        printf("%d ", root^.key),
+        putint(root^.key),
+        putchar(' '),
         inorder(root^.right)
     end
 
 fun preorder(root: ^Node): void =
     if (root != null) then
-        printf("%d ", root^.key),
+        putint(root^.key),
+        putchar(' '),
         preorder(root^.left),
         preorder(root^.right)
     end
@@ -57,7 +60,8 @@ fun postorder(root: ^Node): void =
     if (root != null) then
         postorder(root^.left),
         postorder(root^.right),
-        printf("%d ", root^.key)
+        putint(root^.key),
+        putchar(' ')
     end
 
 fun search(root: ^Node, key: int): ^Node =
@@ -99,7 +103,7 @@ fun del_node(root: ^Node, key: int): ^Node =
     if root^.left == null then
         let var tmp: ^Node in
             tmp = root^.right,
-            del(root),
+            free(root),
             return tmp
         end
     end,
@@ -107,14 +111,14 @@ fun del_node(root: ^Node, key: int): ^Node =
     if root^.right == null then
         let var tmp: ^Node in
             tmp = root^.left,
-            del(root),
+            free(root),
             return tmp
         end
     end,
 
     let var succ: ^Node in
         succ = get_successor(root),
-        root^.key = succ^.key, 
+        root^.key = succ^.key,
         root^.right = del_node(root^.right, succ^.key)
     end,
 
@@ -122,6 +126,11 @@ fun del_node(root: ^Node, key: int): ^Node =
 
 fun main(): int =
     let
+        typ Node = <
+            key: int,
+            left: ^Node,
+            right: ^Node
+        >
         var root: ^Node
         var found_node: ^Node
     in

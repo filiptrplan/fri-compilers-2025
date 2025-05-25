@@ -15,6 +15,9 @@ public class SyscallWrappers {
 		/** The body of the syscall */
 		private final String body;
 
+		/** The alias of the function wrapped */
+		public String alias;
+
 		/** Registers to save and restore after the syscall */
 		private final List<String> saveRegisters;
 
@@ -39,6 +42,11 @@ public class SyscallWrappers {
 		public String toString() {
 			String output = "";
 			output += "_" + wrapperName + ":\n";
+			if (alias != null) {
+				// Add a nop to make sure both the main name and the alias are in the same place
+				output += "\tnop\n";
+				output += "_" + alias + ":\n";
+			}
 
 			if (saveRegisters != null) {
 				long offset = 8;

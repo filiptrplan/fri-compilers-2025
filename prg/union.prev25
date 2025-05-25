@@ -1,4 +1,89 @@
-fun printf(s: ^char, v1: int, v2: int): void
+# Copyright (c) 2025 Prev25 Wizards
+fun putint(x: int): void
+fun putint_bin(x: int): void
+fun putint_hex(x: int): void
+fun putuint(x: int): void
+fun putchar(c: char): void
+fun puts(s: ^char): void
+
+fun strlen(str: ^char): int =
+    let var i: int in
+        i = 0,
+        while str^ != '\0x00' do
+            i = i + 1,
+            str = {{str: int} + 1: ^char}
+        end,
+        return i
+    end
+
+fun printf(str: ^char): void =
+    let
+        var arg_ptr: ^^char
+        var i: int
+        var found: int
+        var len: int
+        var pos: ^char
+        var prev: char
+
+        fun find(str: ^char, c: char): int =
+            let var i: int in
+                i = 0,
+                while str^ != '\0x00' do
+                    if str^ == c then
+                        return i
+                    end,
+                    i = i + 1,
+                    str = {{str: int} + 1: ^char}
+                end
+            end,
+            return -1
+        
+        fun handle(fmt: char, arg: ^^char): bool =
+            if fmt == '%' then putchar('%'), return true end,
+            if fmt == 'd' then putint({arg: ^int}^), return true end,
+            if fmt == 'c' then putchar({arg: ^char}^), return true end,
+            if fmt == 's' then puts(arg^), return true end,
+            if fmt == 'x' then putint_hex({arg: ^int}^), return true end,
+            if fmt == 'b' then putint_bin({arg: ^int}^), return true end,
+            if fmt == 'u' then putuint({arg: ^int}^), return true end,
+            if fmt == 'z' then
+                if {arg: ^bool}^ then putchar('1') else putchar('0') end,
+                return true
+            end,
+            if fmt == 'Z' then
+                if {arg: ^bool}^ then puts("true") else puts("false") end,
+                return true
+            end,
+            if fmt == 'p' then putchar('@'), putint_hex({arg^: int}), return true end,
+            return false
+    in
+        arg_ptr = {{^str: int} + 8: ^^char},
+        i = 0,
+        len = strlen(str),
+        found = find(str, '%'),
+        while (found != -1) & (i < len) do
+            if found != 0 then
+                pos = {{str: int} + found: ^char},
+                prev = pos^,
+                pos^ = '\0x00',
+                puts(str),
+                pos^ = prev,
+                str = {{pos: int} + 1: ^char}
+            end,
+            i = i + found,
+            if handle(str^, arg_ptr) then
+                i = i + 1,
+                if str^ != '%' then
+                    arg_ptr = {{arg_ptr: int} + 8: ^^char}
+                end,
+                str = {{str: int} + 1: ^char}
+            end,
+            found = find(str, '%')
+        end,
+        if i < len then
+            puts(str)
+        end
+    end
 
 typ Point = {
     a: [2]int,
@@ -15,13 +100,13 @@ fun main(): int =
     p2.b.x = 2,
     p2.b.y = 3,
 
-    printf("p1.a = [%d, %d]\0x0A", p1.a[0], p1.a[1]),
-    printf("p1.b = <x: %d, y: %d>\0x0A", p1.b.x, p1.b.y),
-    {printf: (^char, bool, bool):void}("p1.c = <b1: %b, b2: %b>\0x0A", p1.c.b1, p1.c.b2),
-    {printf: (^char, bool, bool):void}("p1.c = <b1: %B, b2: %B>\0x0A", p1.c.b1, p1.c.b2),
+    {printf: (^char, int, int):void}("p1.a = [%d, %d]\0x0A", p1.a[0], p1.a[1]),
+    {printf: (^char, int, int):void}("p1.b = <x: %d, y: %d>\0x0A", p1.b.x, p1.b.y),
+    {printf: (^char, bool, bool):void}("p1.c = <b1: %z, b2: %z>\0x0A", p1.c.b1, p1.c.b2),
+    {printf: (^char, bool, bool):void}("p1.c = <b1: %Z, b2: %Z>\0x0A", p1.c.b1, p1.c.b2),
 
-    printf("p2.a = [%d, %d]\0x0A", p2.a[0], p2.a[1]),
-    printf("p2.b = <x: %d, y: %d>\0x0A", p2.b.x, p2.b.y),
-    {printf: (^char, bool, bool):void}("p2.c = <b1: %b, b2: %b>\0x0A", p2.c.b1, p2.c.b2),
-    {printf: (^char, bool, bool):void}("p2.c = <b1: %B, b2: %B>\0x0A", p2.c.b1, p2.c.b2),
+    {printf: (^char, int, int):void}("p2.a = [%d, %d]\0x0A", p2.a[0], p2.a[1]),
+    {printf: (^char, int, int):void}("p2.b = <x: %d, y: %d>\0x0A", p2.b.x, p2.b.y),
+    {printf: (^char, bool, bool):void}("p2.c = <b1: %z, b2: %z>\0x0A", p2.c.b1, p2.c.b2),
+    {printf: (^char, bool, bool):void}("p2.c = <b1: %Z, b2: %Z>\0x0A", p2.c.b1, p2.c.b2),
     return 0

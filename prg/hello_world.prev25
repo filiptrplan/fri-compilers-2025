@@ -1,5 +1,6 @@
+# Copyright (c) 2025 Prev25 Wizards
 fun puts(str: ^char): void
 
 fun main(): int =
-    puts("Hello World\0x0A"),
+    puts("Hello World!"),
     return 0

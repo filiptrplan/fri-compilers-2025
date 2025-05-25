@@ -1,3 +1,4 @@
+# Copyright (c) 2025 Prev25 Wizards
 fun putchar(c: char): void
 fun puts(str: ^char): void
 fun putint(x: int): void
@@ -93,7 +94,7 @@ fun main(): int =
     let
         var solutions: int
     in
-        solutions = solve(^tab, 8, 0),
+        solutions = solve(^tab, 5, 0),
         printInt("Number of solutions: ", solutions)
     end,
     return 0

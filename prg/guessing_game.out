@@ -1,0 +1,9 @@
+Guess the number!
+Please input your guess: You guessed: 10
+Too small!
+Please input your guess: You guessed: 50
+Too big!
+Please input your guess: You guessed: 42
+You win!
+
+Program exited with code: 0

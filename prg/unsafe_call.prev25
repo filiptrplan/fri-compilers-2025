@@ -1,5 +1,7 @@
+# Copyright (c) 2025 Prev25 Wizards
 fun putint(n: int): void
 fun putchar(c: char): void
+fun puts(s: ^char): void
 
 var x: int
 var w: int
@@ -30,12 +32,6 @@ fun main(): int =
         printb("y == ^w: ", y == ^w)
     end,
     return 0
-
-fun puts(s: ^char): void =
-    while s^ != {0: char} do
-        putchar(s^),
-        s = {{s: int} + 1: ^char}
-    end
 
 fun print(msg: ^char, x: int): void =
     puts(msg),

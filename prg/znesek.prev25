@@ -1,3 +1,4 @@
+# Copyright (c) 2025 Prev25 Wizards
 fun putint(x: int): void
 fun puts(str: ^char): void
 fun putchar(c: char): void

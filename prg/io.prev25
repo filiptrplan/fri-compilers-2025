@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Prev25 Wizards
+fun putchar(c: char): void
+fun getchar(): char
+fun putint(c: int): void
+fun getint(): int
+fun puts(s: ^char): void
+fun gets(buf: ^char, size: int): int
+
+var buffer: [255] char
+
+fun main(): int =
+    putchar(getchar()),
+    putchar('\0x0A'),
+    putint(getint()),
+    putchar('\0x0A'),
+    putint(getint()),
+    putchar('\0x0A'),
+    putint(getint()),
+    putchar('\0x0A'),
+    putint(gets(^buffer[0], 255)),
+    putchar('\0x0A'),
+    puts(^buffer[0]),
+    return 0

@@ -1,9 +1,8 @@
+# Copyright (c) 2025 Prev25 Wizards
 fun puts(s: ^char): void
 fun putchar(c: char): void
-fun putint(c: char): void
+fun putint(i: int): void
 fun getint(): int
-fun random(l: int, u: int): int
-fun printf(s: ^char, x: int): void
 
 var secret_number: int
 var guess: int
@@ -11,13 +10,15 @@ var equal: bool
 
 fun main(): int =
     puts("Guess the number!\0x0A"),
-    secret_number = random(1, 101),
+    secret_number = 42,
 
     equal = false,
     while !equal do
-        puts("Please input your guess.\0x0A"),
+        puts("Please input your guess: "),
         guess = getint(),
-        printf("You guessed: %d\0x0A", guess),
+        puts("You guessed: "),
+        putint(guess),
+        putchar('\0x0A'),
 
         if guess < secret_number then
             puts("Too small!\0x0A")

@@ -1,4 +1,7 @@
-fun printf(s: ^char, c: int): void
+# Copyright (c) 2025 Prev25 Wizards
+fun putint(n: int): void
+fun putchar(c: char): void
+fun puts(s: ^char): void
 
 fun f1(a: int): int =
     return a * 2
@@ -13,7 +16,11 @@ fun main(): int =
     in
         var_fun1 = f1,
         var_fun2 = f2,
-        printf("var F1: %d\0x0A", var_fun1(f1(5))),
-        printf("var F2: %d\0x0A", var_fun2(5, 5))
+        puts("var F1: "),
+        putint(var_fun1(f1(5))),
+        putchar('\0x0A'),
+        puts("var F2: "),
+        putint(var_fun2(5, 5)),
+        putchar('\0x0A')
     end,
     return 0

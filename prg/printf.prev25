@@ -1,7 +1,94 @@
-fun printf(s: ^char, n: int): void
+fun putint(x: int): void
+fun putint_bin(x: int): void
+fun putint_hex(x: int): void
+fun putuint(x: int): void
 fun putchar(c: char): void
 fun puts(s: ^char): void
 
-fun main() : int = 
-    puts("Hello World\0x0AHello"),
+fun main(): int =
+    let var i: char in
+    i = 'B',
+    {printf: (^char, int, char, ^char, int, int, int, bool, bool, ^char): void}
+    ("fmt:\0x0A d: %d\0x0A c: %c\0x0A s: %s\0x0A x: %x\0x0A b: %b\0x0A u: %u\0x0A z: %z\0x0A Z: %Z\0x0A p: %p\0x0A",
+                    5,        'a',    "Hello",      31,         7,        -1,       true,      true,       ^i)
+    end,
     return 0
+
+fun strlen(str: ^char): int =
+    let var i: int in
+        i = 0,
+        while str^ != '\0x00' do
+            i = i + 1,
+            str = {{str: int} + 1: ^char}
+        end,
+        return i
+    end
+
+fun printf(str: ^char): void =
+    let
+        var arg_ptr: ^^char
+        var i: int
+        var found: int
+        var len: int
+        var pos: ^char
+        var prev: char
+
+        fun find(str: ^char, c: char): int =
+            let var i: int in
+                i = 0,
+                while str^ != '\0x00' do
+                    if str^ == c then
+                        return i
+                    end,
+                    i = i + 1,
+                    str = {{str: int} + 1: ^char}
+                end
+            end,
+            return -1
+        
+        fun handle(fmt: char, arg: ^^char): bool =
+            if fmt == '%' then putchar('%'), return true end,
+            if fmt == 'd' then putint({arg: ^int}^), return true end,
+            if fmt == 'c' then putchar({arg: ^char}^), return true end,
+            if fmt == 's' then puts(arg^), return true end,
+            if fmt == 'x' then putint_hex({arg: ^int}^), return true end,
+            if fmt == 'b' then putint_bin({arg: ^int}^), return true end,
+            if fmt == 'u' then putuint({arg: ^int}^), return true end,
+            if fmt == 'z' then
+                if {arg: ^bool}^ then putchar('1') else putchar('0') end,
+                return true
+            end,
+            if fmt == 'Z' then
+                if {arg: ^bool}^ then puts("true") else puts("false") end,
+                return true
+            end,
+            if fmt == 'p' then putchar('@'), putint_hex({arg^: int}), return true end,
+            return false
+    in
+        arg_ptr = {{^str: int} + 8: ^^char},
+        i = 0,
+        len = strlen(str),
+        found = find(str, '%'),
+        while (found != -1) & (i < len) do
+            if found != 0 then
+                pos = {{str: int} + found: ^char},
+                prev = pos^,
+                pos^ = '\0x00',
+                puts(str),
+                pos^ = prev,
+                str = {{pos: int} + 1: ^char}
+            end,
+            i = i + found,
+            if handle(str^, arg_ptr) then
+                i = i + 1,
+                if str^ != '%' then
+                    arg_ptr = {{arg_ptr: int} + 8: ^^char}
+                end,
+                str = {{str: int} + 1: ^char}
+            end,
+            found = find(str, '%')
+        end,
+        if i < len then
+            puts(str)
+        end
+    end

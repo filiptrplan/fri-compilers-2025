@@ -1,17 +1,14 @@
+# Copyright (c) 2025 Prev25 Wizards
 fun putint(n: int): void
 fun putchar(c: char): void
 fun puts(s: ^char): void
-fun new(size: int): ^int
-
-fun random(lb: int, ub: int): int
-fun seed(s: int): void
+fun malloc(size: int): ^int
 
 var N: int
 fun main(): int =
     N = 42,
-    seed(42),
     let var arr: ^int in
-        arr = new(N * sizeof int),
+        arr = malloc(N * sizeof int),
 
         set_array(arr, N),
         print_array(arr, N),
@@ -53,11 +50,30 @@ fun print_array(arr: ^int, len: int): void =
     putchar('\0x0A')
 
 fun set_array(arr: ^int, len: int): void =
-    let var i: int in
+    let
+        var i: int
+        var tmp: int
+        var j: int
+    in
+        # Step 1: Fill the array
         i = 0,
         while i < len do
-            at(arr, i)^ = random(0, 100),
+            at(arr, i)^ = i,
             i = i + 1
+        end,
+
+        # Step 2: Shuffle it in a pseudo-random way
+        i = len - 1,
+        while i > 0 do
+            # Deterministic pseudo-random index: (i * 7 + 3) mod (i + 1)
+            j = (i * 7 + 3) % len,
+
+            # Swap arr[i] and arr[j]
+            tmp = at(arr, i)^,
+            at(arr, i)^ = at(arr, j)^,
+            at(arr, j)^ = tmp,
+
+            i = i - 1
         end
     end
 

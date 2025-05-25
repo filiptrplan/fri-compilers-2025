@@ -1,16 +1,23 @@
-fun printf(s: ^char, n: int): void
+# Copyright (c) 2025 Prev25 Wizards
+fun puts(s: ^char): void
+fun putchar(c: char): void
+fun putint(i: int): void
 
 var x: int
 
 fun main(): int =
     x = f4(1 + 1, 1, f3(f1(), 1)),
-    printf("%d\0x0A",x),
+    putint(x),
+    putchar('\0x0A'),
     x = f4(f1(), f2(f3(1,1)), 1),
-    printf("%d\0x0A",x),
+    putint(x),
+    putchar('\0x0A'),
     x = f3(1, 2) + 5,
-    {printf: (^char, int): void}("%d\0x0A",x),
+    putint(x),
+    putchar('\0x0A'),
     x = 1 + 2 + 3,
-    printf("%d\0x0A",x),
+    putint(x),
+    putchar('\0x0A'),
     return 1
 
 fun f1(): int =
