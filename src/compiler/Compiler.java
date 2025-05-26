@@ -231,6 +231,7 @@ public class Compiler {
 					if (false) {
 						Interpreter interpreter = new Interpreter(ImcLin.dataChunks(), ImcLin.codeChunks());
 						System.out.println("EXIT CODE: " + interpreter.run("_main"));
+						break;
 					}
 				}
 
