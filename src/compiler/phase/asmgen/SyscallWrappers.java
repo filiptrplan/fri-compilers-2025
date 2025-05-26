@@ -94,6 +94,8 @@ public class SyscallWrappers {
 		// fun putchar(c: char): void
 		body = """
 				ld a0, 8(x2)
+				# zero out everything but the last byte
+				andi a0, a0, 0x0FF
 				li a7, 11
 				ecall
 				""";
@@ -103,6 +105,7 @@ public class SyscallWrappers {
 		body = """
 				li a0, 0
 				mv a1, x2
+				   sd x0, 0(a1) # zero out buf
 				li a2, 1
 				li a7, 63
 				ecall
@@ -113,9 +116,30 @@ public class SyscallWrappers {
 		body = """
 				ld a1, 8(x2)        # buffer pointer
 				ld a2, 16(x2)       # size
+				add a2, a2, a2      # size * 2 because reasons?
 				li a0, 0            # stdin file descriptor
 				li a7, 63           # read syscall
 				ecall
+
+				# Null-terminate the string if we read something
+				 beqz a0, gets_done  # if read returned 0, skip null termination
+				ld t0, 8(x2)        # reload buffer pointer
+				add t1, t0, a0      # calculate position after last read character
+
+				# Check if last character is newline and replace with null
+				addi t2, t1, -1     # position of last character
+				lb t3, 0(t2)        # load last character
+				li t4, 10           # newline character
+				bne t3, t4, add_null
+				sb zero, 0(t2)      # replace newline with null
+				addi a0, a0, -1     # decrement count since we replaced newline
+				j gets_done
+
+				add_null:
+				sb zero, 0(t1)      # add null terminator after last character
+
+				gets_done:
+				sd a0, 0(x2)        # store number of characters read (return value)
 				""";
 		wrappers.add(new Wrapper("gets", body, "a0", "a1", "a2", "a7", "t0", "t1", "t2", "t3", "t4"));
 
@@ -150,70 +174,76 @@ public class SyscallWrappers {
 
 		// fun getint(): int
 		body = """
-				# Allocate space on stack for input buffer (64 bytes)
-				addi x2, x2, -64
+				mv t2, x0           # result = 0
+				mv t3, x0           # sign flag (0=positive, 1=negative)
 
-				# Read from stdin (fd=0)
-				li a0, 0            # stdin file descriptor
-				mv a1, x2           # buffer address
-				li a2, 63           # max bytes to read
+				maybe_read_empty:
 				li a7, 63           # read syscall
+				li a0, 0            # stdin
+				mv a1, x2           # buffer is at stack pointer
+				sd x0, 0(a1)        # zero out buffer
+				li a2, 1            # read 1 character
 				ecall
 
-				# Null-terminate the string
-				add t0, x2, a0
-				sb zero, 0(t0)
+				blt a0, x0, EOF     # if read failed, go to EOF
+				lb t0, 0(x2)        # load character
 
-				# Parse integer
-				mv t0, x2           # buffer start
-				li t1, 0            # result
-				li t2, 10           # base 10
-				li t5, 0            # sign flag (0=positive, 1=negative)
+				parse_empty:
+				li t1, 32           # space
+				beq t0, t1, maybe_read_empty
+				li t1, 13           # carriage return
+				beq t0, t1, maybe_read_empty
+				li t1, 10           # newline
+				beq t0, t1, maybe_read_empty
+				li t1, 9            # tab
+				beq t0, t1, maybe_read_empty
 
-				# Check for negative sign
-				lb t3, 0(t0)
-				li t4, 45           # '-'
-				bne t3, t4, parse_loop
-				li t5, 1            # set negative flag
-				addi t0, t0, 1      # skip '-'
+				parse_sign:
+				# Check for + or -
+				addi t1, t0, -45    # check for '-'
+				seqz t3, t1         # set sign flag if '-'
+				beqz t1, read       # if '-', go read next char
+				addi t1, t0, -43    # check for '+'
+				bnez t1, parse_int  # if not '+', start parsing
 
-				parse_loop:
-				lb t3, 0(t0)
-				beqz t3, parse_done
-				li t4, 10
-				beq t3, t4, parse_done
-				li t4, 32
-				beq t3, t4, parse_done
-				li t4, 48           # '0'
-				blt t3, t4, parse_next
-				li t4, 57           # '9'
-				bgt t3, t4, parse_next
+				read:
+				li a7, 63           # read syscall
+				li a0, 0            # stdin
+				mv a1, x2           # buffer
+				sd x0, 0(a1)        # zero out buffer
+				li a2, 1            # read 1 character
+				ecall
+				blt a0, x0, EOF     # if read failed, go to EOF
+				lb t0, 0(x2)        # load character
 
-				mul t1, t1, t2
-				addi t3, t3, -48
-				add t1, t1, t3
+				parse_int:
+				slti t1, t0, 48     # if char < '0'
+				bnez t1, EOF        # not a digit, finish
+				slti t1, t0, 58     # if char <= '9'
+				beqz t1, EOF        # not a digit, finish
+				addi t0, t0, -48    # convert char to digit
+				li t1, 10
+				mul t2, t2, t1      # result *= 10
+				add t2, t2, t0      # result += digit
+				j read              # read next character
 
-				parse_next:
-				addi t0, t0, 1
-				j parse_loop
+				EOF:
+				beqz t3, STORE      # if positive, store result
+				neg t2, t2          # if negative, negate result
 
-				parse_done:
-				# Apply sign
-				beqz t5, store_result
-				neg t1, t1
-
-				store_result:
-				addi x2, x2, 64     # restore stack
-				sd t1, 0(x2)        # store result
+				STORE:
+				sd t2, 0(x2)        # store result
 				""";
-		wrappers.add(new Wrapper("getint", body, "a0", "a1", "a2", "a7", "t0", "t1", "t2", "t3", "t4", "t5"));
+		wrappers.add(new Wrapper("getint", body, "a0", "a1", "a2", "a7", "t0", "t1", "t2", "t3"));
 
 		// fun del(ptr: ^any): void (no-op for simplicity)
 		body = """
 				# Deallocation is a no-op in this simple implementation
 				# In a real system, this would track allocated blocks
 				""";
-		wrappers.add(new Wrapper("del", body));
+		Wrapper delWrapper = new Wrapper("del", body);
+		delWrapper.alias = "free";
+		wrappers.add(delWrapper);
 
 		// fun at(ptr: ^any, idx: int, size_of_any: int): ^any
 		body = """
