@@ -12,3 +12,4 @@ src/compiler/phase/synan/Prev25Parser*
 doc/
 prev25/
 .aider*
+*.AppImage
