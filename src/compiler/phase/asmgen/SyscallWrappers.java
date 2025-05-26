@@ -101,17 +101,23 @@ public class SyscallWrappers {
 
 		// fun getchar(): char
 		body = """
-				addi x2, x2, -1
 				li a0, 0
 				mv a1, x2
 				li a2, 1
 				li a7, 63
 				ecall
-				lb t0, 0(x2)
-				addi x2, x2, 1
-				sd t0, 0(x2)
 				""";
 		wrappers.add(new Wrapper("getchar", body, "a0", "a1", "a2", "a7", "t0"));
+
+		// fun gets(buf: ^char, size: int): int
+		body = """
+				ld a1, 8(x2)        # buffer pointer
+				ld a2, 16(x2)       # size
+				li a0, 0            # stdin file descriptor
+				li a7, 63           # read syscall
+				ecall
+				""";
+		wrappers.add(new Wrapper("gets", body, "a0", "a1", "a2", "a7", "t0", "t1", "t2", "t3", "t4"));
 
 		// fun new(size: int): ^any
 		body = """

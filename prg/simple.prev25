@@ -1,3 +1,12 @@
+fun gets(buf: ^char, size: int) : int
+fun puts(s: ^char) : void
+fun new(size: int) : ^char
+
+var a : ^char
+
 fun main() : int =
-    "test",
-    return 1 + 2 * 3
+    a = new(100),
+    gets(a, 10),
+    puts(a),
+    puts("\0x0A"),
+    return 0

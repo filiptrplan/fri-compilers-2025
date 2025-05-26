@@ -193,6 +193,7 @@ Examples:
                 # If --run flag is set and compilation was successful, run in Ripes
                 if args.run:
                     print("\nRunning in Ripes simulator...")
+                    print("You can now interact with the program directly.")
                     ripes_cmd = [
                         "Ripes",
                         "--mode",
@@ -208,7 +209,7 @@ Examples:
                         "--reginit",
                         "gpr:2=0x7ffffff0",
                     ]
-                    subprocess.run(ripes_cmd)
+                    subprocess.run(ripes_cmd, input="Hello".encode())
 
                 # If --copy flag is set and compilation was successful, copy assembly to clipboard
                 if args.copy:

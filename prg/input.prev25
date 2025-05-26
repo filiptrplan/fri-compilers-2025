@@ -1,0 +1,13 @@
+fun putint(i: int): void
+fun getint(): int
+fun puts(s: ^char): void
+fun putchar(c: char): void
+
+var a: int
+
+fun main(): int =
+    puts("Guess the number!\0x0A"),
+    a = getint(),
+    putchar('\0x0A'),
+    putint(a),
+    return 0
