@@ -117,6 +117,9 @@ def extract_ripes_output(stdout, stderr, returncode):
 
     lines = combined_output.strip().split("\n")
 
+    # remove lines starting with qt
+    lines = [line for line in lines if not line.startswith("qt")]
+
     # Remove "Program exited with code: X" lines
     content_lines = []
     for line in lines:

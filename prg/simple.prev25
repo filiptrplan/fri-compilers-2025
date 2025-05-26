@@ -1,6 +1,23 @@
-fun getchar() : char
-fun putchar(c: char) : void
+fun puts(s: ^char): void
+fun putchar(c: char): void
+fun putint(i: int): void
 
-fun main() : int =
-    putchar(getchar()),
+var x: int
+
+fun main(): int =
+    x = f4(1,2,f3(f1(),1)),
+    putint(x),
     return 0
+
+
+fun f1(): int =
+    return 1
+
+fun f2(a: int): int =
+    return a + 1
+
+fun f3(a: int, b:int): int =
+    return a + b
+
+fun f4(a: int, b:int, c: int): int =
+    return a + b + c
