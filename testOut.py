@@ -26,8 +26,8 @@ INTERPRET: bool = False
 TIMEOUT: int = 2
 
 # Command to execute compiled program (command is run inside directory 'prg')
-CODE_RUN_COMMAND = "ripes"
-CODE_RUN_ARGS = "--mode cli -t asm --src {file}.asm --proc RV64_SS --isaexts M"
+CODE_RUN_COMMAND = "../Ripes.AppImage"
+CODE_RUN_ARGS = "--mode cli -t asm --src {file}.prev25.asm --proc RV64_SS --isaexts M"
 
 # Look for environment variables that convey the programs will be interpreted
 # None => check if exists
@@ -366,7 +366,7 @@ def test_files(test_files: list[tuple[str, bool]]) -> int:
     STDERR = colorize_text("STDERR", "red", ["bold", "italic"])
     RESULTS = colorize_text("RESULTS", "YELLOW", ["bold"])
 
-    print(f"{TESTING} {len(test_files)} {"test" if len(test_files) == 1 else "tests"}:")
+    print(f"{TESTING} {len(test_files)} {'test' if len(test_files) == 1 else 'tests'}:")
     test_outputs: dict[str, dict[str, str]] = run_tests_in_parallel(
         test_files,
         max_alignment,
@@ -419,11 +419,11 @@ def test_files(test_files: list[tuple[str, bool]]) -> int:
     print(f"=========== {RESULTS} ==========")
 
     print(
-        f"Successful: {len(test_files) - len(fails) - len(timeouts)}/{len(test_files)} {"test" if len(test_files) == 1 else "tests"}"
+        f"Successful: {len(test_files) - len(fails) - len(timeouts)}/{len(test_files)} {'test' if len(test_files) == 1 else 'tests'}"
     )
     if len(timeouts) != 0:
         print(
-            f"Timed out: {len(timeouts)}/{len(test_files)} {"test" if len(timeouts) == 1 else "tests"}"
+            f"Timed out: {len(timeouts)}/{len(test_files)} {'test' if len(timeouts) == 1 else 'tests'}"
         )
         DASH = colorize_text(" +", "WHITE", ["bold"])
         for to in timeouts:
@@ -431,7 +431,7 @@ def test_files(test_files: list[tuple[str, bool]]) -> int:
 
     if len(fails) != 0:
         print(
-            f"Failed: {len(fails)}/{len(test_files)} {"test" if len(fails) == 1 else "tests"}"
+            f"Failed: {len(fails)}/{len(test_files)} {'test' if len(fails) == 1 else 'tests'}"
         )
         DASH = colorize_text(" +", "WHITE", ["bold"])
         for fail in fails:
@@ -448,27 +448,26 @@ def main(fs: list[str]):
         case "prg":
             pass
         case d:
-            raise ValueError(f"Current directory is not prev25 or prg. Is {d}")
+            os.chdir("prg")
 
     #
     # ===================== SELECTED FILES =====================
     #
 
     if fs is not None:
-
         testing_files = []
         for file in fs:
             file_name, ext = os.path.splitext(file)
 
             if not os.path.exists(file_name + ".prev25"):
                 print(
-                    f"Skipping '{colorize_text(file_name, "WHITE")}' because '{file_name}.prev25' does not exist"
+                    f"Skipping '{colorize_text(file_name, 'WHITE')}' because '{file_name}.prev25' does not exist"
                 )
                 continue
 
             if not os.path.exists(file_name + ".out"):
                 print(
-                    f"Skipping '{colorize_text(file_name, "WHITE")}' because '{file_name}.out' does not exist"
+                    f"Skipping '{colorize_text(file_name, 'WHITE')}' because '{file_name}.out' does not exist"
                 )
                 continue
 
