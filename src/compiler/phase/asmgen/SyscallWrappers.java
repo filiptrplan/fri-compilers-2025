@@ -144,7 +144,9 @@ public class SyscallWrappers {
 				alloc_done:
 				nop
 								""";
-		wrappers.add(new Wrapper("new", body, "a0", "a7", "t0", "t1", "t2", "t3"));
+		Wrapper newWrapper = new Wrapper("new", body, "a0", "a7", "t0", "t1", "t2", "t3");
+		newWrapper.alias = "malloc";
+		wrappers.add(newWrapper);
 
 		// fun getint(): int
 		body = """
