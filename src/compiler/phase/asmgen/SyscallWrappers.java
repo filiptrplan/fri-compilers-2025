@@ -367,6 +367,30 @@ public class SyscallWrappers {
 				""";
 		wrappers.add(new Wrapper("seed", body, "a0", "t0"));
 
+		// fun putint_hex(x: int): void
+		body = """
+				ld a0, 8(x2)
+				li a7, 34
+				ecall
+				""";
+		wrappers.add(new Wrapper("putint_hex", body, "a0", "a7"));
+
+		// fun putuint(x: int): void
+		body = """
+				ld a0, 8(x2)
+				li a7, 36
+				ecall
+				""";
+		wrappers.add(new Wrapper("putuint", body, "a0", "a7"));
+
+		// fun putint_bin(x: int): void
+		body = """
+				ld a0, 8(x2)
+				li a7, 35
+				ecall
+				""";
+		wrappers.add(new Wrapper("putint_bin", body, "a0", "a7"));
+
 		return wrappers;
 	}
 
