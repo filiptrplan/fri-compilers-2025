@@ -422,7 +422,7 @@ public class Tiles {
 						result = (val1 >= val2) ? 1 : 0;
 						break;
 					default:
-						throw new Report.InternalError();
+						throw new Report.Error("Unknown operand");
 				}
 				instructions.add(new ASM.Oper("li $1, #1", singleOp(rd), singleOp(String.valueOf(result))));
 				return rd;
@@ -449,9 +449,9 @@ public class Tiles {
 								doubleOp(r1Reg, String.valueOf(negConst))));
 					} else if (r1IsConst) { // const - reg
 						String r1Loaded = loadConstant(r1Const, instructions);
-						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(rd), doubleOp(r1Loaded, r2Reg)));
+						instructions.add(new ASM.Oper("sub $1, #1, #2 # 1", singleOp(rd), doubleOp(r1Loaded, r2Reg)));
 					} else { // reg - reg
-						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
+						instructions.add(new ASM.Oper("sub $1, #1, #2 # 2", singleOp(rd), doubleOp(r1Reg, r2Reg)));
 					}
 					break;
 				case MUL:
@@ -506,10 +506,10 @@ public class Tiles {
 					} else if (r1IsConst) { // const == reg -> sub -> seqz
 						String r1Loaded = loadConstant(r1Const, instructions);
 						// t0 = const - r2
-						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1Loaded, r2Reg)));
+						instructions.add(new ASM.Oper("sub $1, #1, #2 # 3", singleOp(t0), doubleOp(r1Loaded, r2Reg)));
 					} else { // reg == reg -> sub -> seqz
 						// t0 = r1 - r2
-						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1Reg, r2Reg)));
+						instructions.add(new ASM.Oper("sub $1, #1, #2 # 4", singleOp(t0), doubleOp(r1Reg, r2Reg)));
 					}
 					instructions.add(new ASM.Oper("seqz $1, #1", singleOp(rd), singleOp(t0))); // rd = (t0 == 0)
 					break;
@@ -523,10 +523,10 @@ public class Tiles {
 					} else if (r1IsConst) { // const != reg -> sub -> snez
 						String r1Loaded = loadConstant(r1Const, instructions);
 						// t0 = const - r2
-						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1Loaded, r2Reg)));
+						instructions.add(new ASM.Oper("sub $1, #1, #2 # 5", singleOp(t0), doubleOp(r1Loaded, r2Reg)));
 					} else { // reg != reg -> sub -> snez
 						// t0 = r1 - r2
-						instructions.add(new ASM.Oper("sub $1, #1, #2", singleOp(t0), doubleOp(r1Reg, r2Reg)));
+						instructions.add(new ASM.Oper("sub $1, #1, #2 # 6", singleOp(t0), doubleOp(r1Reg, r2Reg)));
 					}
 					instructions.add(new ASM.Oper("snez $1, #1", singleOp(rd), singleOp(t0))); // rd = (t0 != 0)
 					break;
@@ -573,7 +573,7 @@ public class Tiles {
 					instructions.add(new ASM.Oper("xori $1, #1, 1", singleOp(rd), singleOp(rd))); // rd = !rd
 					break;
 				default:
-					throw new Report.InternalError();
+					throw new Report.Error("Unknown operand");
 			}
 
 			return rd;
@@ -604,8 +604,9 @@ public class Tiles {
 			switch (unop.oper) {
 				case NEG:
 					if (isR1Const) {
-						// Constant folding
-						return String.valueOf(-getConstValue(unop.subExpr));
+						instructions.add(new ASM.Oper("li $1, #1", singleOp(rd),
+								singleOp(String.valueOf(-getConstValue(unop.subExpr)))));
+						break;
 					}
 					// rd = 0 - r1
 					instructions.add(new ASM.Oper("sub $1, x0, #1", singleOp(rd), singleOp(r1)));
@@ -613,13 +614,15 @@ public class Tiles {
 				case NOT:
 					if (isR1Const) {
 						// Constant folding
-						return String.valueOf(getConstValue(unop.subExpr) == 0 ? 1 : 0);
+						instructions.add(new ASM.Oper("li $1, #1", singleOp(rd),
+								singleOp(String.valueOf(getConstValue(unop.subExpr) == 0 ? 1 : 0))));
+						break;
 					}
 					// rd = (r1 == 0) ? 1 : 0
 					instructions.add(new ASM.Oper("seqz $1, #1", singleOp(rd), singleOp(r1)));
 					break;
 				default:
-					throw new Report.InternalError();
+					throw new Report.Error("Unknown operand");
 			}
 			return rd;
 		}
