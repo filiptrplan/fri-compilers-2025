@@ -1,12 +1,6 @@
-fun gets(buf: ^char, size: int) : int
-fun puts(s: ^char) : void
-fun new(size: int) : ^char
-
-var a : ^char
+fun getchar() : char
+fun putchar(c: char) : void
 
 fun main() : int =
-    a = new(100),
-    gets(a, 10),
-    puts(a),
-    puts("\0x0A"),
+    putchar(getchar()),
     return 0

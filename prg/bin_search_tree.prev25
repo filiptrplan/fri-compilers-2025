@@ -126,11 +126,6 @@ fun del_node(root: ^Node, key: int): ^Node =
 
 fun main(): int =
     let
-        typ Node = <
-            key: int,
-            left: ^Node,
-            right: ^Node
-        >
         var root: ^Node
         var found_node: ^Node
     in

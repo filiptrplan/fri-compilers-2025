@@ -323,7 +323,10 @@ public class SyscallWrappers {
 
 				printf_done:
 				""";
-		wrappers.add(new Wrapper("printf", body, "a0", "a7", "t0", "t1", "t2", "t5", "t6"));
+		// NOTE: Temporarily disabled because it's implemented in prev25 as a native
+		// function
+		// wrappers.add(new Wrapper("printf", body, "a0", "a7", "t0", "t1", "t2", "t5",
+		// "t6"));
 
 		// fun random(lower, upper): int
 		body = """
