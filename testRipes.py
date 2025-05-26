@@ -12,27 +12,16 @@ def extract_expected_output(out_file_content):
     """Extract the expected output from a .out file"""
     lines = out_file_content.strip().split("\n")
 
-    # Find the start and end markers
-    start_idx = None
-    end_idx = None
-
-    for i, line in enumerate(lines):
-        if line.strip() == ":-) This is Prev25 compiler:":
-            start_idx = i
-        elif line.strip() == ":-) Done.":
-            end_idx = i
-            break
-
-    if start_idx is None or end_idx is None:
-        return None
-
-    # Extract content between markers
+    # New format: direct program output followed by "Program exited with code: X"
     content_lines = []
 
-    for i in range(start_idx + 1, end_idx):
-        line = lines[i].strip()
-        if line and not line.startswith("EXIT CODE:"):
-            content_lines.append(line)
+    for line in lines:
+        line_stripped = line.strip()
+        # Skip the "Program exited with code: X" line
+        if line_stripped.startswith("Program exited with code:"):
+            break
+        if line_stripped:  # Only include non-empty lines
+            content_lines.append(line_stripped)
 
     return {
         "output": "\n".join(content_lines),
@@ -74,7 +63,7 @@ def run_ripes(test_name):
     """Run the test using Ripes directly"""
     try:
         ripes_cmd = [
-            "Ripes",
+            "./Ripes.AppImage",
             "--mode",
             "cli",
             "--src",
@@ -89,7 +78,21 @@ def run_ripes(test_name):
             "gpr:2=0x7ffffff0",
         ]
 
-        result = subprocess.run(ripes_cmd, capture_output=True, text=True, timeout=300)
+        # Check if there's a corresponding .in file for stdin input
+        input_file = Path(f"prg/{test_name}.in")
+        stdin_input = None
+
+        if input_file.exists():
+            try:
+                with open(input_file, "r") as f:
+                    stdin_input = f.read()
+                print(f"    Using input file: {input_file}")
+            except Exception as e:
+                print(f"    Warning: Could not read input file {input_file}: {e}")
+
+        result = subprocess.run(
+            ripes_cmd, capture_output=True, text=True, timeout=300, input=stdin_input
+        )
 
         return result.stdout, result.stderr, result.returncode
 
