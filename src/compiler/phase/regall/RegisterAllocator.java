@@ -177,14 +177,15 @@ public class RegisterAllocator {
 						// If we haven't calculated the offset yet, do it now
 						if (!spillMap.containsKey(def)) {
 							// Caclulate the offset of the temp variable
-							long fpOffset = codeChunk.frame.locsSize + tempVariableSize;
+							// We add a +24 because the stack grows downwards and we saved FP and RA too
+							long fpOffset = codeChunk.frame.locsSize + tempVariableSize + 24;
 							// Increment the offset of the next temp variable
 							tempVariableSize += 8;
 							spillMap.put(def, fpOffset);
 						}
 						long fpOffset = spillMap.get(def);
 						// Save the temp variable to the location
-						String operStr = "sd #1, " + fpOffset + "(#2)";
+						String operStr = "sd #1, " + (-fpOffset) + "(#2)";
 						Vector<String> newUseOps = new Vector<>();
 						// First use op is the temp variable
 						newUseOps.add(def);
@@ -207,7 +208,7 @@ public class RegisterAllocator {
 
 						long fpOffset = spillMap.get(use);
 						// Retrieve the temp variable from the location
-						String operStr = "ld $1, " + fpOffset + "(#1)";
+						String operStr = "ld $1, " + (-fpOffset) + "(#1)";
 						Vector<String> newDefOps = new Vector<>();
 						Vector<String> newUseOps = new Vector<>();
 						// First def op is the temp variable

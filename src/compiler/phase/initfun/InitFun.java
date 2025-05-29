@@ -64,13 +64,11 @@ public class InitFun extends Phase {
 		// We are saving them relative to the SP (which is our new FP)
 
 		// The saved registers are saved after the temporary variables
-		// the FP and RA
+		// the FP(8) and RA(8). We add another 8 to the offset because the stack grows
+		// downwards
 		long offset = chunk.frame.locsSize + chunk.tempSize + 24;
 
 		for (String reg : getDefinedRegisters(chunk)) {
-			if (reg.equals("x3")) {
-				continue;
-			}
 			// The containing function's SP is our FP
 			prologue.add(storeRegAtOffset(reg, "x2", -offset));
 			// Increment offset for next register
@@ -115,15 +113,12 @@ public class InitFun extends Phase {
 		// Restore all registers except FP
 		long offset = chunk.frame.locsSize + chunk.tempSize + 24;
 		for (String reg : getDefinedRegisters(chunk)) {
-			if (reg.equals("x3")) {
-				continue;
-			}
 			epilogue.add(restoreRegFromOffset(reg, "x3", -offset));
 			offset += 8;
 		}
 
 		// Restore RA
-		epilogue.add(restoreRegFromOffset("x1", "x3", -(chunk.frame.locsSize + 16)));
+		epilogue.add(restoreRegFromOffset("x1", "x3", -chunk.frame.locsSize - 16));
 
 		// Restore FP last
 		epilogue.add(restoreRegFromOffset("x3", "x3", -chunk.frame.locsSize - 8));
