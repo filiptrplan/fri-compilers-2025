@@ -1,4 +1,5 @@
 bin/
+*.preall
 prg/*.md
 prg/*.asm
 *.html

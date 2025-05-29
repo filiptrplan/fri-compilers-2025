@@ -248,11 +248,14 @@ public class Compiler {
 				// Report.info("=== Printing generated assembly === ");
 				// AsmGen.printAsm();
 
-				int regCount = 32 - 5; // -FP, -RV, -SP, -x0, -RA
+				// int regCount = 32 - 5; // -FP, -RV, -SP, -x0, -RA
+				int regCount = 4;
 				if (cmdLineOptValues.get("--num-regs") != null) {
 					regCount = Integer.parseInt(cmdLineOptValues.get("--num-regs"));
 					Report.info("Using " + regCount + " registers");
 				}
+
+				AsmGen.writeAsmToFile(cmdLineOptValues.get("--src-file-name") + ".preall");
 
 				try (RegAll regAll = new RegAll(regCount)) {
 					for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
