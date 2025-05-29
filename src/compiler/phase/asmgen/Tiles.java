@@ -661,10 +661,10 @@ public class Tiles {
 			} else {
 				instructions.add(new ASM.Oper("jalr $1, #1, 0", singleOp(returnAddr), singleOp(func)));
 			}
-			// The result is stored on the stack, we denote this with RV
-			// We first load the result to RV
-			instructions.add(new ASM.Oper("ld $1, 0(#1)", singleOp(generator.callFrame.RV.toString()), singleOp("SP")));
-			return generator.callFrame.RV.toString();
+			// We load the result on the stack to a register
+			String temp = newTemp();
+			instructions.add(new ASM.Oper("ld $1, 0(#1)", singleOp(temp), singleOp("SP")));
+			return temp;
 		}
 	}
 
