@@ -31,7 +31,7 @@ public class ASM {
 		public String toString() {
 			String s = "";
 			s += "\t.globl " + this.label + "\n";
-			s += "\t.align 3\n"; // For now we always align to 8 bytes
+			s += "\t.align 8\n"; // For now we always align to 8 bytes
 			s += this.label + ":\n"; // Start the label
 			s += "\t.zero " + Long.toString(size) + "\n\n"; // We always have uninitialized values
 			return s;
