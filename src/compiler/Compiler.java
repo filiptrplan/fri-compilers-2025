@@ -258,7 +258,7 @@ public class Compiler {
 
 				AsmGen.writeAsmToFile(cmdLineOptValues.get("--src-file-name") + ".preall");
 
-				try (RegAll regAll = new RegAll(regCount)) {
+				try (RegAll regAll = new RegAll(regCount + 3)) {
 					for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
 						RegAll.assignRegisters(codeInstrChunk, null);
 					}

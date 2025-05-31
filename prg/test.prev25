@@ -1,0 +1,17 @@
+var a : int
+var b : int
+
+fun main() : int =
+let var c : int
+    in 
+    c = 13,
+
+   a = 20,
+   b = 10,
+   if a <= b then
+    return a - b
+    else
+    return a + b
+    end
+    end,
+    return 0

@@ -54,6 +54,8 @@ public class RegisterAllocator {
 		tempVariableSize = codeChunk.tempSize;
 	}
 
+	static int c = 0;
+
 	/**
 	 * Assigns registers to the code chunk. Saves the result in the code chunk.
 	 **/
@@ -64,12 +66,9 @@ public class RegisterAllocator {
 			spill();
 		}
 
-		// Then we push the physical registers to the stack
-		while (!intGraph.isEmpty()) {
-			String node = intGraph.getNodes().get(0);
-			stack.push(node);
-			intGraph.markRemoved(node);
-		}
+		// Then we pop the FP and SP
+		intGraph.markRemoved("SP");
+		intGraph.markRemoved(codeChunk.frame.FP.toString());
 
 		// Then we do the select phase
 		Map<String, Integer> colorMap = select();
@@ -78,6 +77,11 @@ public class RegisterAllocator {
 		if (!actualSpillSet.isEmpty()) {
 			codeChunk.instructions = handleActualSpills();
 			codeChunk.tempSize = tempVariableSize;
+
+			c += 1;
+			if (c > 10) {
+				throw new Report.InternalError();
+			}
 
 			LiveAn.calculateInterferenceGraph(codeChunk);
 			RegAll.assignRegisters(codeChunk, actualSpillSet);
@@ -160,6 +164,18 @@ public class RegisterAllocator {
 		// Spill map maps a spilled temp variable to its offset from the frame pointer
 		HashMap<String, Long> spillMap = new HashMap<>();
 
+		// We first define the offsets
+		for (var def : actualSpillSet) {
+			if (!spillMap.containsKey(def)) {
+				// Caclulate the offset of the temp variable
+				// We add a +24 because the stack grows downwards and we saved FP and RA too
+				long fpOffset = codeChunk.frame.locsSize + tempVariableSize + 24;
+				// Increment the offset of the next temp variable
+				tempVariableSize += 8;
+				spillMap.put(def, fpOffset);
+			}
+		}
+
 		// We create a new vector of instructions
 		Vector<ASM.Instr> newInstrs = new Vector<>();
 		// A temp variable to save the instructions that must come after the current one
@@ -174,15 +190,6 @@ public class RegisterAllocator {
 			if (oper.defOps != null) {
 				for (String def : oper.defOps) {
 					if (actualSpillSet.contains(def)) {
-						// If we haven't calculated the offset yet, do it now
-						if (!spillMap.containsKey(def)) {
-							// Caclulate the offset of the temp variable
-							// We add a +24 because the stack grows downwards and we saved FP and RA too
-							long fpOffset = codeChunk.frame.locsSize + tempVariableSize + 24;
-							// Increment the offset of the next temp variable
-							tempVariableSize += 8;
-							spillMap.put(def, fpOffset);
-						}
 						long fpOffset = spillMap.get(def);
 						// Save the temp variable to the location
 						String operStr = "sd #1, " + (-fpOffset) + "(#2)";
@@ -232,6 +239,8 @@ public class RegisterAllocator {
 	/**
 	 * The select phase of the coloring by simplifaction algorithm
 	 *
+	 * First it precolors all the physical registers
+	 *
 	 * Colors the graph of the code chunk by popping nodes from the stack and
 	 * assigning them a color.
 	 *
@@ -239,6 +248,17 @@ public class RegisterAllocator {
 	 **/
 	private Map<String, Integer> select() {
 		Map<String, Integer> colorMap = new HashMap<>();
+
+		int i = 0;
+		for (String reg : intGraph.getNodes()) {
+			if (!Helper.isPhysicalRegister(reg)) {
+				Report.warning(reg + " is not a physical register.");
+				Report.warning("At this point all the temp registers should be removed and only physical left");
+				throw new Report.InternalError();
+			}
+			colorMap.put(reg, i);
+			i += 1;
+		}
 
 		while (!stack.isEmpty()) {
 			String node = stack.pop();
@@ -310,9 +330,12 @@ public class RegisterAllocator {
 	 */
 	void spill() {
 		int maxDegree = 0;
+		// Maximum degree node of not spilled
 		String maxNode = null;
 		int maxDegreePrev = 0;
+		// Maximum degree node of already spilled
 		String maxNodePrev = null;
+
 		for (String node : intGraph.getTempNodes()) {
 			if (intGraph.degree(node) >= K) {
 				if (previouslySpilled.contains(node)) {

@@ -34,6 +34,9 @@ public class IntGraph {
 
 	public IntGraph(MEM.Frame frame, int K) {
 		this.frame = frame;
+		addNode(frame.FP.toString());
+		addNode(frame.RV.toString());
+		addNode("SP");
 		for (int i = 0; i < K; i++) {
 			addNode(Helper.physicalRegisters.get(i));
 		}
@@ -126,7 +129,7 @@ public class IntGraph {
 		keySet.addAll(moveEdges.keySet());
 		keySet.removeAll(removedNodes);
 		List<String> tempNodes = new ArrayList<>(keySet);
-		tempNodes.removeIf(n -> !Helper.isTemp(n));
+		tempNodes.removeIf(n -> !Helper.isTemp(n) || n.equals("SP") || n.equals(frame.FP.toString()));
 		return tempNodes;
 	}
 

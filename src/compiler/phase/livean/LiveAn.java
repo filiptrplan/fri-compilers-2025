@@ -84,7 +84,7 @@ public class LiveAn extends Phase {
 
 		// dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		// ig.printToMermaidFile(instrChunk.frame.label.name + ".ig.md");
-		dfg.printAsmWithDfg(instrChunk);
+		// dfg.printAsmWithDfg(instrChunk);
 
 		intGraphs.put(instrChunk, ig);
 	}
