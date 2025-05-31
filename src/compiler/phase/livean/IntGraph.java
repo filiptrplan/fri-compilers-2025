@@ -32,8 +32,16 @@ public class IntGraph {
 
 	private MEM.Frame frame;
 
-	public IntGraph(MEM.Frame frame) {
+	public IntGraph(MEM.Frame frame, int K) {
 		this.frame = frame;
+		for (int i = 0; i < K; i++) {
+			addNode(Helper.physicalRegisters.get(i));
+		}
+		for (int i = 0; i < K; i++) {
+			for (int j = i + 1; j < K; j++) {
+				addEdge(Helper.physicalRegisters.get(i), Helper.physicalRegisters.get(j), false);
+			}
+		}
 	}
 
 	/** Adds a node to the graph. If it already exists, does nothing */
