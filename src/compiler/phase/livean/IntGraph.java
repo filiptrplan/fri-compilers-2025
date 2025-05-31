@@ -32,8 +32,11 @@ public class IntGraph {
 
 	private MEM.Frame frame;
 
+	private int K;
+
 	public IntGraph(MEM.Frame frame, int K) {
 		this.frame = frame;
+		this.K = K;
 		addNode(frame.FP.toString());
 		addNode(frame.RV.toString());
 		addNode("SP");
@@ -56,7 +59,8 @@ public class IntGraph {
 			Report.warning(temp + " " + phys);
 			throw new Report.InternalError();
 		}
-		for (String other : Helper.physicalRegisters) {
+		for (int i = 0; i < K; i++) {
+			String other = Helper.physicalRegisters.get(i);
 			if (other.equals(phys)) {
 				continue;
 			}
@@ -174,7 +178,7 @@ public class IntGraph {
 
 	/** Adds an edge between nodes t1 and t2 */
 	public void addEdge(String t1, String t2, boolean isMove) {
-		if (!Helper.isRegister(t1) || !Helper.isRegister(t2)) {
+		if (!Helper.isRegister(t1) || !Helper.isRegister(t2) || t1.equals(t2)) {
 			return;
 		}
 		HashMap<String, Set<String>> edgesToUse = isMove ? moveEdges : edges;

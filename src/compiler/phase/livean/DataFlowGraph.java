@@ -50,8 +50,19 @@ public class DataFlowGraph {
 		return sorted.reversed();
 	}
 
+	/**
+	 * Sets the initial and final active registers. They are active before / after
+	 * the function body
+	 */
+	public void seedRegs(ASM.CodeInstrChunk chunk, List<String> initRegs, List<String> finalRegs) {
+		// IMPORTANT: Must be in this order so the final regs function can filter out
+		// non-defined registers
+		seedInitialRegs(chunk, initRegs);
+		seedFinalRegs(chunk, finalRegs);
+	}
+
 	/** Sets the initial active register before function start */
-	public void seedInitialRegs(ASM.CodeInstrChunk chunk, List<String> regs) {
+	private void seedInitialRegs(ASM.CodeInstrChunk chunk, List<String> regs) {
 		ASM.Instr first = null;
 		for (ASM.Instr instr : chunk.instructions) {
 			if (instr instanceof ASM.Label) {
@@ -65,15 +76,37 @@ public class DataFlowGraph {
 	}
 
 	/** Sets the final active registers after function end */
-	public void seedFinalRegs(ASM.CodeInstrChunk chunk, List<String> regs) {
+	private void seedFinalRegs(ASM.CodeInstrChunk chunk, List<String> regs) {
 		String funcEndLabel = chunk.exitLabel.name;
+		// We first check if the function actually defines the registers
+		// If we don't perform this check a register will be live for the whole function
+		// for no good reason
+		List<String> regsToAdd = new ArrayList<>();
+		for (String reg : regs) {
+			for (ASM.Instr instr : chunk.instructions) {
+				if (instr instanceof ASM.Oper oper) {
+					if (oper.defOps != null && oper.defOps.contains(reg)) {
+						regsToAdd.add(reg);
+						break;
+					}
+				}
+			}
+		}
+		// Or if we specified that they should be live at the start
+		for (ASM.Instr instr : chunk.instructions) {
+			if (instr instanceof ASM.Label) {
+				continue;
+			}
+			// This is the first instruction
+			regsToAdd.addAll(getNode(instr).initInTemp);
+			break;
+		}
 		for (ASM.Instr instr : chunk.instructions) {
 			if (instr instanceof ASM.Oper oper) {
 				// We set the out temp for all the jumps that jump to the epilogue
 				if ((oper.isJump || oper.isCjump) && oper.jumpTarget.equals(funcEndLabel)) {
 					Node node = getNode(oper);
-					node.initOutTemp.addAll(regs);
-					System.out.println(oper.toString());
+					node.initOutTemp.addAll(regsToAdd);
 				}
 			}
 		}

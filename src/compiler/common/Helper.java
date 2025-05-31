@@ -6,16 +6,16 @@ import compiler.phase.imcgen.IMC;
 
 public class Helper {
 	public static List<String> physicalRegisters = List.of(
-			"x1",
 			"x2",
 			"x3",
+			"x10",
+			"x1",
 			"x4",
 			"x5",
 			"x6",
 			"x7",
 			"x8",
 			"x9",
-			"x10",
 			"x11",
 			"x12",
 			"x13",

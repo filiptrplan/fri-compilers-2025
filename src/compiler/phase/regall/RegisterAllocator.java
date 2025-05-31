@@ -27,11 +27,6 @@ public class RegisterAllocator {
 	private IntGraph intGraph;
 	private ASM.CodeInstrChunk codeChunk;
 
-	private final List<String> physicalRegistersReserved = List.of("x1", "x2", "x3", "x10");
-	private final List<String> physicalRegistersNotReserved = List.of("x4", "x5", "x6", "x7", "x8", "x9",
-			"x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25",
-			"x26", "x27", "x28", "x29", "x30", "x31");
-
 	/** The size of the stack frame that is allocated for temporary variables */
 	private long tempVariableSize = 0;
 
@@ -43,7 +38,7 @@ public class RegisterAllocator {
 	 **/
 	public RegisterAllocator(int K, ASM.CodeInstrChunk codeChunk, Set<String> previouslySpilled) {
 		this.K = K;
-		if (K > physicalRegistersNotReserved.size()) {
+		if (K > Helper.physicalRegisters.size()) {
 			throw new Report.InternalError();
 		}
 		this.codeChunk = codeChunk;
@@ -53,8 +48,6 @@ public class RegisterAllocator {
 		}
 		tempVariableSize = codeChunk.tempSize;
 	}
-
-	static int c = 0;
 
 	/**
 	 * Assigns registers to the code chunk. Saves the result in the code chunk.
@@ -66,9 +59,12 @@ public class RegisterAllocator {
 			spill();
 		}
 
-		// Then we pop the FP and SP
+		// Then we remove the FP and SP
 		intGraph.markRemoved("SP");
 		intGraph.markRemoved(codeChunk.frame.FP.toString());
+		// We push them to the stack last to make sure they get colored first
+		stack.push("SP");
+		stack.push(codeChunk.frame.FP.toString());
 
 		// Then we do the select phase
 		Map<String, Integer> colorMap = select();
@@ -78,22 +74,14 @@ public class RegisterAllocator {
 			codeChunk.instructions = handleActualSpills();
 			codeChunk.tempSize = tempVariableSize;
 
-			c += 1;
-			if (c > 10) {
-				throw new Report.InternalError();
-			}
-
 			LiveAn.calculateInterferenceGraph(codeChunk);
 			RegAll.assignRegisters(codeChunk, actualSpillSet);
 		} else {
 			String[] regs = new String[K];
-			// Then we assign the rest of the registers
-			int j = 0;
+			// First we assign the registers to the physical ones
 			for (int i = 0; i < K; i++) {
-				if (regs[i] == null) {
-					regs[i] = physicalRegistersNotReserved.get(j);
-					j++;
-				}
+				int color = colorMap.get(Helper.physicalRegisters.get(i));
+				regs[color] = Helper.physicalRegisters.get(i);
 			}
 
 			// Finally we assign the registers to the code chunk
@@ -150,10 +138,6 @@ public class RegisterAllocator {
 
 			codeChunk.instructions = newInstrs;
 		}
-
-		// TODO: Transform instructions to use x2 as the SP register
-		// Ill probably do that in the prologue
-
 	}
 
 	/**
@@ -251,6 +235,11 @@ public class RegisterAllocator {
 
 		int i = 0;
 		for (String reg : intGraph.getNodes()) {
+			if (i >= K) {
+				Report.warning("Too many physical registers:");
+				Report.warning(intGraph.getNodes().toString());
+				throw new Report.InternalError();
+			}
 			if (!Helper.isPhysicalRegister(reg)) {
 				Report.warning(reg + " is not a physical register.");
 				Report.warning("At this point all the temp registers should be removed and only physical left");
@@ -337,19 +326,19 @@ public class RegisterAllocator {
 		String maxNodePrev = null;
 
 		for (String node : intGraph.getTempNodes()) {
-			if (intGraph.degree(node) >= K) {
-				if (previouslySpilled.contains(node)) {
-					if (intGraph.degree(node) > maxDegreePrev) {
-						maxDegreePrev = intGraph.degree(node);
-						maxNodePrev = node;
-					}
-				} else {
-					if (intGraph.degree(node) > maxDegree) {
-						maxDegree = intGraph.degree(node);
-						maxNode = node;
-					}
+			// if (intGraph.degree(node) >= K) {
+			if (previouslySpilled.contains(node)) {
+				if (intGraph.degree(node) > maxDegreePrev) {
+					maxDegreePrev = intGraph.degree(node);
+					maxNodePrev = node;
+				}
+			} else {
+				if (intGraph.degree(node) > maxDegree) {
+					maxDegree = intGraph.degree(node);
+					maxNode = node;
 				}
 			}
+			// }
 		}
 		if (maxNode != null) {
 			potentialSpillSet.add(maxNode);

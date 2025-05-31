@@ -168,8 +168,9 @@ public class LiveAn extends Phase {
 			List<String> finalLiveRegs) {
 		Vector<ASM.Instr> instructions = chunk.instructions;
 		DataFlowGraph dfg = constructDfg(instructions);
-		dfg.seedFinalRegs(chunk, finalLiveRegs);
-		dfg.seedInitialRegs(chunk, initialLiveRegs);
+
+		dfg.seedRegs(chunk, initialLiveRegs, finalLiveRegs);
+
 		// Get first non-label instruction
 		ASM.Instr first = null;
 		for (ASM.Instr instr : instructions) {

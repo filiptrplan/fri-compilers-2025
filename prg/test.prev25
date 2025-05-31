@@ -1,17 +1,12 @@
-var a : int
-var b : int
+# Copyright (c) 2025 Prev25 Wizards
+fun putint(x: int): void
+
+fun fib(n: int): int =
+    if n <= 1 then
+        return n
+    end,
+    return fib(n - 1) + fib(n - 2)
 
 fun main() : int =
-let var c : int
-    in 
-    c = 13,
-
-   a = 20,
-   b = 10,
-   if a <= b then
-    return a - b
-    else
-    return a + b
-    end
-    end,
+    putint(fib(2)),
     return 0
