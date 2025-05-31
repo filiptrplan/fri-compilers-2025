@@ -78,6 +78,6 @@ public class Helper {
 	 * Checks if a string represents a temporary variable
 	 */
 	public static boolean isTemp(String s) {
-		return s.startsWith("T");
+		return s.startsWith("T") || s.equals("SP");
 	}
 }

@@ -239,7 +239,13 @@ public class Compiler {
 					asmGen.generateAsm();
 				}
 
-				try (LiveAn liveAn = new LiveAn()) {
+				int regCount = 4;
+				if (cmdLineOptValues.get("--num-regs") != null) {
+					regCount = Integer.parseInt(cmdLineOptValues.get("--num-regs"));
+					Report.info("Using " + regCount + " registers");
+				}
+
+				try (LiveAn liveAn = new LiveAn(regCount + 3)) {
 					for (ASM.CodeInstrChunk codeInstrChunk : AsmGen.codeChunks) {
 						LiveAn.calculateInterferenceGraph(codeInstrChunk);
 					}
@@ -249,11 +255,6 @@ public class Compiler {
 				// AsmGen.printAsm();
 
 				// int regCount = 32 - 5; // -FP, -RV, -SP, -x0, -RA
-				int regCount = 4;
-				if (cmdLineOptValues.get("--num-regs") != null) {
-					regCount = Integer.parseInt(cmdLineOptValues.get("--num-regs"));
-					Report.info("Using " + regCount + " registers");
-				}
 
 				AsmGen.writeAsmToFile(cmdLineOptValues.get("--src-file-name") + ".preall");
 

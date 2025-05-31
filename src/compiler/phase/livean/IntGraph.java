@@ -50,6 +50,7 @@ public class IntGraph {
 	 */
 	public void addPhysicalConstraint(String temp, String phys) {
 		if (!Helper.isTemp(temp) || !Helper.isPhysicalRegister(phys)) {
+			Report.warning(temp + " " + phys);
 			throw new Report.InternalError();
 		}
 		for (String other : Helper.physicalRegisters) {

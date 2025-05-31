@@ -13,6 +13,7 @@ import compiler.common.Helper;
 import compiler.common.report.Report;
 import compiler.phase.asmgen.ASM;
 import compiler.phase.asmgen.Tiles;
+import compiler.phase.memory.MEM;
 
 /** The representation for the dataflow graph */
 public class DataFlowGraph {
@@ -49,6 +50,35 @@ public class DataFlowGraph {
 		return sorted.reversed();
 	}
 
+	/** Sets the initial active register before function start */
+	public void seedInitialRegs(ASM.CodeInstrChunk chunk, List<String> regs) {
+		ASM.Instr first = null;
+		for (ASM.Instr instr : chunk.instructions) {
+			if (instr instanceof ASM.Label) {
+				continue;
+			}
+			first = instr;
+			break;
+		}
+		Node firstNode = getNode(first);
+		firstNode.initInTemp.addAll(regs);
+	}
+
+	/** Sets the final active registers after function end */
+	public void seedFinalRegs(ASM.CodeInstrChunk chunk, List<String> regs) {
+		String funcEndLabel = chunk.exitLabel.name;
+		for (ASM.Instr instr : chunk.instructions) {
+			if (instr instanceof ASM.Oper oper) {
+				// We set the out temp for all the jumps that jump to the epilogue
+				if ((oper.isJump || oper.isCjump) && oper.jumpTarget.equals(funcEndLabel)) {
+					Node node = getNode(oper);
+					node.initOutTemp.addAll(regs);
+					System.out.println(oper.toString());
+				}
+			}
+		}
+	}
+
 	class Node {
 		private Set<Node> outEdges = new HashSet<>();
 		private Set<Node> inEdges = new HashSet<>();
@@ -57,6 +87,23 @@ public class DataFlowGraph {
 		public Set<String> inTemp = new HashSet<>();
 		/** Set of temp variables that are active upon exiting the node */
 		public Set<String> outTemp = new HashSet<>();
+
+		/**
+		 * These two variables store the constant portion of the inTemp and outTemp
+		 * sets.
+		 * Used for specifying fixed constraints on the liveness of some variables.
+		 * They are always parts of the sets
+		 */
+		public Set<String> initInTemp = new HashSet<>();
+		public Set<String> initOutTemp = new HashSet<>();
+
+		public void resetInTemp() {
+			inTemp = new HashSet<>(initInTemp);
+		}
+
+		public void resetOutTemp() {
+			outTemp = new HashSet<>(initOutTemp);
+		}
 
 		public Set<String> useTemp = new HashSet<>();
 		public Set<String> defTemp = new HashSet<>();

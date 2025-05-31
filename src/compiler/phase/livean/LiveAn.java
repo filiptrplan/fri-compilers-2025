@@ -31,7 +31,11 @@ public class LiveAn extends Phase {
 	public static HashMap<ASM.CodeInstrChunk, IntGraph> intGraphs = new HashMap<>();
 
 	public static void calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
-		DataFlowGraph dfg = calculateLiveVariables(instrChunk.instructions);
+		// The SP and FP should be live at the start of the program
+		List<String> initialLiveRegs = List.of(instrChunk.frame.FP.toString(), "SP");
+		// The SP, FP and RV should be live at the end of the program
+		List<String> finalLiveRegs = List.of("SP", instrChunk.frame.FP.toString(), instrChunk.frame.RV.toString());
+		DataFlowGraph dfg = calculateLiveVariables(instrChunk, initialLiveRegs, finalLiveRegs);
 
 		IntGraph ig = new IntGraph(instrChunk.frame, LiveAn.K);
 		for (Node node : dfg.getNodes()) {
@@ -80,7 +84,7 @@ public class LiveAn extends Phase {
 
 		// dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		// ig.printToMermaidFile(instrChunk.frame.label.name + ".ig.md");
-		// dfg.printAsmWithDfg(instrChunk);
+		dfg.printAsmWithDfg(instrChunk);
 
 		intGraphs.put(instrChunk, ig);
 	}
@@ -151,8 +155,21 @@ public class LiveAn extends Phase {
 		return result;
 	}
 
-	private static DataFlowGraph calculateLiveVariables(Vector<ASM.Instr> instructions) {
+	/**
+	 * Calculates which variables are live at each point in the program
+	 *
+	 * @param instructions    The actual instructions of the program
+	 * @param initialLiveRegs The register that should be live even before starting
+	 *                        the code (i.e. in the prologue)
+	 * @param finalLiveRegs   The registers that are live after we finish the
+	 *                        function (i.e. in the epilogue)
+	 */
+	private static DataFlowGraph calculateLiveVariables(ASM.CodeInstrChunk chunk, List<String> initialLiveRegs,
+			List<String> finalLiveRegs) {
+		Vector<ASM.Instr> instructions = chunk.instructions;
 		DataFlowGraph dfg = constructDfg(instructions);
+		dfg.seedFinalRegs(chunk, finalLiveRegs);
+		dfg.seedInitialRegs(chunk, initialLiveRegs);
 		// Get first non-label instruction
 		ASM.Instr first = null;
 		for (ASM.Instr instr : instructions) {
@@ -174,7 +191,7 @@ public class LiveAn extends Phase {
 		while (true) {
 			for (int i = 0; i < sorted.size(); i++) {
 				Node node = sorted.get(i);
-				node.inTemp.clear();
+				node.resetInTemp();
 
 				if (node.useTemp != null) {
 					node.inTemp.addAll(node.useTemp);
@@ -186,7 +203,7 @@ public class LiveAn extends Phase {
 					node.inTemp.addAll(node.outTemp);
 				}
 
-				node.outTemp.clear();
+				node.resetOutTemp();
 				for (Node succ : node.outNodes()) {
 					node.outTemp.addAll(succ.inTemp);
 				}
