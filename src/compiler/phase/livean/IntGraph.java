@@ -44,6 +44,22 @@ public class IntGraph {
 		}
 	}
 
+	/**
+	 * Connects the temp register to all physical registers put the phys one.
+	 * This essentially makes sure that temp maps to phys in the final coloring
+	 */
+	public void addPhysicalConstraint(String temp, String phys) {
+		if (!Helper.isTemp(temp) || !Helper.isPhysicalRegister(phys)) {
+			throw new Report.InternalError();
+		}
+		for (String other : Helper.physicalRegisters) {
+			if (other.equals(phys)) {
+				continue;
+			}
+			addEdge(temp, other, false);
+		}
+	}
+
 	/** Adds a node to the graph. If it already exists, does nothing */
 	public void addNode(String node) {
 		if (!Helper.isRegister(node) || nodeDegrees.containsKey(node)) {
@@ -109,7 +125,7 @@ public class IntGraph {
 		keySet.addAll(moveEdges.keySet());
 		keySet.removeAll(removedNodes);
 		List<String> tempNodes = new ArrayList<>(keySet);
-		tempNodes.removeIf(n -> !Helper.isTemp(n) || n.equals(frame.FP.toString()) || n.equals(frame.RV.toString()));
+		tempNodes.removeIf(n -> !Helper.isTemp(n));
 		return tempNodes;
 	}
 

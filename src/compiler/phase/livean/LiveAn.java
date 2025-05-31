@@ -8,13 +8,24 @@ import java.util.Set;
 import java.util.Vector;
 
 import compiler.common.Helper;
+import compiler.common.report.Report;
 import compiler.phase.Phase;
 import compiler.phase.asmgen.ASM;
 import compiler.phase.livean.DataFlowGraph.Node;
 
 public class LiveAn extends Phase {
-	public LiveAn() {
+	/*
+	 * Total number of registers to use. Including the x2, x3, x10 registers for FP,
+	 * SP, RV
+	 */
+	public static int K;
+
+	public LiveAn(int K) {
 		super("livean");
+		if (K - 3 < 2) {
+			throw new Report.Error("The compiler needs at least 2 registers to function.");
+		}
+		LiveAn.K = K;
 	}
 
 	public static HashMap<ASM.CodeInstrChunk, IntGraph> intGraphs = new HashMap<>();
@@ -22,7 +33,7 @@ public class LiveAn extends Phase {
 	public static void calculateInterferenceGraph(ASM.CodeInstrChunk instrChunk) {
 		DataFlowGraph dfg = calculateLiveVariables(instrChunk.instructions);
 
-		IntGraph ig = new IntGraph(instrChunk.frame);
+		IntGraph ig = new IntGraph(instrChunk.frame, LiveAn.K);
 		for (Node node : dfg.getNodes()) {
 			Set<String> defTemp = node.defTemp;
 			Set<String> liveOutTemp = node.outTemp;
@@ -63,15 +74,9 @@ public class LiveAn extends Phase {
 			}
 		}
 
-		// Remove FP, RV and SP from the graph because we already know which registers
-		// they map to
-		ig.markRemoved(instrChunk.frame.RV.toString());
-		ig.markRemoved("SP");
-		ig.markRemoved(instrChunk.frame.FP.toString());
-		ig.markRemoved("x1");
-		// ig.addEdge("x10", instrChunk.frame.RV.toString(), false);
-		// ig.addEdge("x2", "SP", false);
-		// ig.addEdge("x3", instrChunk.frame.FP.toString(), false);
+		ig.addPhysicalConstraint(instrChunk.frame.RV.toString(), "x10");
+		ig.addPhysicalConstraint(instrChunk.frame.FP.toString(), "x3");
+		ig.addPhysicalConstraint("SP", "x2");
 
 		// dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		// ig.printToMermaidFile(instrChunk.frame.label.name + ".ig.md");
