@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
+import argparse
 
 
 def extract_expected_output(out_file_content):
@@ -177,9 +178,14 @@ def compare_outputs(expected, actual):
         )
 
 
-def run_single_test(out_file):
+def run_single_test(out_file, skip_input=False):
     """Run a single test and return the result"""
     test_name = out_file.stem
+
+    # Check if test requires input and should be skipped
+    input_file = Path(f"prg/{test_name}.in")
+    if skip_input and input_file.exists():
+        return test_name, True, "SKIPPED (requires input)"
 
     # Read expected output
     try:
@@ -216,6 +222,14 @@ def run_single_test(out_file):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Run Ripes tests")
+    parser.add_argument(
+        "--skip-input",
+        action="store_true",
+        help="Skip tests that require .in input files",
+    )
+    args = parser.parse_args()
+
     prg_dir = Path("prg")
 
     if not prg_dir.exists():
@@ -238,23 +252,38 @@ def main():
         print("No .out files found in prg directory")
         sys.exit(1)
 
+    # Count input-requiring tests if skip-input is enabled
+    input_tests = []
+    if args.skip_input:
+        for out_file in out_files:
+            test_name = out_file.stem
+            input_file = Path(f"prg/{test_name}.in")
+            if input_file.exists():
+                input_tests.append(test_name)
+
     print(f"Found {len(out_files)} test files")
+    if args.skip_input:
+        print(
+            f"Skipping {len(input_tests)} tests that require input files: {', '.join(input_tests)}"
+        )
     print("Running tests in parallel...")
     print("-" * 60)
 
     passed = 0
     failed = 0
+    skipped = 0
     results = []
 
     # Use ThreadPoolExecutor to run tests in parallel
     # Limit max workers to avoid overwhelming the system
-    max_workers = len(out_files)
+    # max_workers = len(out_files)
+    max_workers = 8
     print(f"Running with {max_workers} workers.")
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit all tests
         future_to_test = {
-            executor.submit(run_single_test, out_file): out_file
+            executor.submit(run_single_test, out_file, args.skip_input): out_file
             for out_file in sorted(out_files)
         }
 
@@ -264,8 +293,12 @@ def main():
             results.append((test_name, success, details))
 
             if success:
-                passed += 1
-                print(f"{test_name}: ✓ PASS")
+                if details == "SKIPPED (requires input)":
+                    skipped += 1
+                    print(f"{test_name}: ⊘ SKIPPED (requires input)")
+                else:
+                    passed += 1
+                    print(f"{test_name}: ✓ PASS")
             else:
                 failed += 1
                 print(f"{test_name}: ✗ FAIL - {details}")
@@ -283,7 +316,10 @@ def main():
             print()
 
     print("-" * 60)
-    print(f"Results: {passed} passed, {failed} failed")
+    if skipped > 0:
+        print(f"Results: {passed} passed, {failed} failed, {skipped} skipped")
+    else:
+        print(f"Results: {passed} passed, {failed} failed")
 
     if failed > 0:
         sys.exit(1)
