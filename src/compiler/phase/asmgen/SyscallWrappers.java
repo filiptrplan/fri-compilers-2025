@@ -27,7 +27,7 @@ public class SyscallWrappers {
 			this.saveRegisters = new ArrayList<>();
 
 			for (String reg : registers) {
-				if ("x2".equals(reg) || "x1".equals(reg)) {
+				if ("x2".equals(reg)) {
 					throw new Report.InternalError();
 				}
 				this.saveRegisters.add(reg);
@@ -36,6 +36,8 @@ public class SyscallWrappers {
 			if (!this.saveRegisters.contains("a7")) {
 				this.saveRegisters.add("a7");
 			}
+			this.saveRegisters.add("x3");
+			this.saveRegisters.add("x1");
 		}
 
 		@Override
@@ -48,18 +50,25 @@ public class SyscallWrappers {
 				output += "_" + alias + ":\n";
 			}
 
+			long offset = 8;
 			if (saveRegisters != null) {
-				long offset = 8;
+				// First we save all the registers
 				for (String register : saveRegisters) {
 					output += String.format("sd %s, %d(x2)\n", register, -offset);
 					offset += 8;
 				}
+				// Then we move our FP to the old SP
+				output += "mv x3, x2\n";
+				// Then we set our new SP
+				output += "addi x2, x2," + (-offset) + "\n";
 			}
 
 			output += body + "\n";
 
 			if (saveRegisters != null) {
-				long offset = 8;
+				// Then we restore the old SP
+				output += "addi x2, x2," + offset + "\n";
+				offset = 8;
 				for (String register : saveRegisters) {
 					output += String.format("ld %s, %d(x2)\n", register, -offset);
 					offset += 8;
@@ -77,7 +86,7 @@ public class SyscallWrappers {
 
 		// fun puts(str: ^char): void
 		String body = """
-				ld a0, 8(x2) # 0(SP) is the static link
+				ld a0, 8(x3) # 0(FP) is the static link
 				li a7, 4
 				ecall
 				""";
@@ -85,7 +94,7 @@ public class SyscallWrappers {
 
 		// fun putint(x: int): void
 		body = """
-				ld a0, 8(x2)
+				ld a0, 8(x3)
 				li a7, 1
 				ecall
 				""";
@@ -93,7 +102,7 @@ public class SyscallWrappers {
 
 		// fun putchar(c: char): void
 		body = """
-				ld a0, 8(x2)
+				ld a0, 8(x3)
 				# zero out everything but the last byte
 				andi a0, a0, 0x0FF
 				li a7, 11
@@ -104,7 +113,7 @@ public class SyscallWrappers {
 		// fun getchar(): char
 		body = """
 				li a0, 0
-				mv a1, x2
+				mv a1, x3
 				   sd x0, 0(a1) # zero out buf
 				li a2, 1
 				li a7, 63
@@ -114,8 +123,8 @@ public class SyscallWrappers {
 
 		// fun gets(buf: ^char, size: int): int
 		body = """
-				ld a1, 8(x2)        # buffer pointer
-				ld a2, 16(x2)       # size
+				ld a1, 8(x3)        # buffer pointer
+				ld a2, 16(x3)       # size
 				add a2, a2, a2      # size * 2 because reasons?
 				li a0, 0            # stdin file descriptor
 				li a7, 63           # read syscall
@@ -123,7 +132,7 @@ public class SyscallWrappers {
 
 				# Null-terminate the string if we read something
 				 beqz a0, gets_done  # if read returned 0, skip null termination
-				ld t0, 8(x2)        # reload buffer pointer
+				ld t0, 8(x3)        # reload buffer pointer
 				add t1, t0, a0      # calculate position after last read character
 
 				# Check if last character is newline and replace with null
@@ -139,7 +148,7 @@ public class SyscallWrappers {
 				sb zero, 0(t1)      # add null terminator after last character
 
 				gets_done:
-				sd a0, 0(x2)        # store number of characters read (return value)
+				sd a0, 0(x3)        # store number of characters read (return value)
 				""";
 		wrappers.add(new Wrapper("gets", body, "a0", "a1", "a2", "a7", "t0", "t1", "t2", "t3", "t4"));
 
@@ -149,7 +158,7 @@ public class SyscallWrappers {
 				li t0, 0x20000000
 				ld t3, 0(t0)
 				# Increase heap by requested size
-				ld t1, 8(x2)        # load size argument
+				ld t1, 8(x3)        # load size argument
 				add t3, t3, t1      # new break = current + size
 
 				# Align the heap pointer to 8-byte boundary
@@ -158,13 +167,13 @@ public class SyscallWrappers {
 
 				sd t3, 0(t0)        # store new heap pointer
 				# Check if allocation overlaps with the stack
-				addi t2, x2, -8
+				addi t2, x3, -8
 				blt t2, t3, alloc_fail
-				sd t3, 0(x2)        # store old heap pointer as result
+				sd t3, 0(x3)        # store old heap pointer as result
 				j alloc_done
 				alloc_fail:
 				li t0, 0            # return null on failure
-				sd t0, 0(x2)
+				sd t0, 0(x3)
 				alloc_done:
 				nop
 								""";
@@ -180,13 +189,13 @@ public class SyscallWrappers {
 				maybe_read_empty:
 				li a7, 63           # read syscall
 				li a0, 0            # stdin
-				mv a1, x2           # buffer is at stack pointer
+				mv a1, x3           # buffer is at stack pointer
 				sd x0, 0(a1)        # zero out buffer
 				li a2, 1            # read 1 character
 				ecall
 
 				blt a0, x0, EOF     # if read failed, go to EOF
-				lb t0, 0(x2)        # load character
+				lb t0, 0(x3)        # load character
 
 				parse_empty:
 				li t1, 32           # space
@@ -209,12 +218,12 @@ public class SyscallWrappers {
 				read:
 				li a7, 63           # read syscall
 				li a0, 0            # stdin
-				mv a1, x2           # buffer
+				mv a1, x3           # buffer
 				sd x0, 0(a1)        # zero out buffer
 				li a2, 1            # read 1 character
 				ecall
 				blt a0, x0, EOF     # if read failed, go to EOF
-				lb t0, 0(x2)        # load character
+				lb t0, 0(x3)        # load character
 
 				parse_int:
 				slti t1, t0, 48     # if char < '0'
@@ -232,7 +241,7 @@ public class SyscallWrappers {
 				neg t2, t2          # if negative, negate result
 
 				STORE:
-				sd t2, 0(x2)        # store result
+				sd t2, 0(x3)        # store result
 				""";
 		wrappers.add(new Wrapper("getint", body, "a0", "a1", "a2", "a7", "t0", "t1", "t2", "t3"));
 
@@ -247,15 +256,15 @@ public class SyscallWrappers {
 
 		// fun at(ptr: ^any, idx: int, size_of_any: int): ^any
 		body = """
-				ld t0, 8(x2)        # ptr
-				ld t1, 16(x2)       # idx
-				ld t2, 24(x2)       # size
+				ld t0, 8(x3)        # ptr
+				ld t1, 16(x3)       # idx
+				ld t2, 24(x3)       # size
 
 				# Calculate address: ptr + idx * size
 				mul t1, t1, t2      # idx * size
 				add t0, t0, t1      # ptr + (idx * size)
 
-				sd t0, 0(x2)        # store result
+				sd t0, 0(x3)        # store result
 				""";
 		wrappers.add(new Wrapper("at_sys", body, "t0", "t1", "t2"));
 
@@ -264,9 +273,9 @@ public class SyscallWrappers {
 		// formats
 		body = """
 				# Save current stack pointer for argument access
-				mv t6, x2
-				ld t0, 8(x2)        # format string pointer
-				addi t5, x2, 16     # first vararg at offset 16
+				mv t6, x3
+				ld t0, 8(x3)        # format string pointer
+				addi t5, x3, 16     # first vararg at offset 16
 
 				printf_loop:
 				lb t1, 0(t0)        # load current character
@@ -345,15 +354,15 @@ public class SyscallWrappers {
 				sd t0, 0(t4)
 
 				# Load arguments: always expect lower_bound and upper_bound
-				ld t5, 8(x2)        # lower_bound
-				ld t3, 16(x2)       # upper_bound
+				ld t5, 8(x3)        # lower_bound
+				ld t3, 16(x3)       # upper_bound
 
 				# Calculate range and apply bounds
 				sub t3, t3, t5      # t3 = range = upper_bound - lower_bound
 				remu t0, t0, t3     # t0 = random % range
 				add t0, t0, t5      # t0 = (random % range) + lower_bound
 
-				sd t0, 0(x2)        # store result
+				sd t0, 0(x3)        # store result
 				""";
 		wrappers.add(new Wrapper("random", body, "t0", "t1", "t2", "t3", "t4", "t5", "t6"));
 
@@ -361,7 +370,7 @@ public class SyscallWrappers {
 		body = """
 				# Store seed in a known memory location for random() to use
 				# use the address 0x80000000 as the seed
-				ld a0, 8(x2)
+				ld a0, 8(x3)
 				li t0, 0x080000000
 				sd a0, 0(t0)
 				""";
@@ -369,7 +378,7 @@ public class SyscallWrappers {
 
 		// fun putint_hex(x: int): void
 		body = """
-				ld a0, 8(x2)
+				ld a0, 8(x3)
 				li a7, 34
 				ecall
 				""";
@@ -377,7 +386,7 @@ public class SyscallWrappers {
 
 		// fun putuint(x: int): void
 		body = """
-				ld a0, 8(x2)
+				ld a0, 8(x3)
 				li a7, 36
 				ecall
 				""";
@@ -385,7 +394,7 @@ public class SyscallWrappers {
 
 		// fun putint_bin(x: int): void
 		body = """
-				ld a0, 8(x2)
+				ld a0, 8(x3)
 				li a7, 35
 				ecall
 				""";
