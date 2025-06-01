@@ -12,6 +12,7 @@ import compiler.common.report.Report;
 import compiler.phase.Phase;
 import compiler.phase.asmgen.ASM;
 import compiler.phase.livean.DataFlowGraph.Node;
+import compiler.phase.regall.RegisterAllocator;
 
 public class LiveAn extends Phase {
 	/*
@@ -84,7 +85,9 @@ public class LiveAn extends Phase {
 
 		// dfg.printToMermaidFile(instrChunk.frame.label.name + ".md");
 		// ig.printToMermaidFile(instrChunk.frame.label.name + ".ig.md");
+		// if (RegisterAllocator.c == 5) {
 		// dfg.printAsmWithDfg(instrChunk);
+		// }
 
 		intGraphs.put(instrChunk, ig);
 	}

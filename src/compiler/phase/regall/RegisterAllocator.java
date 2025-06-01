@@ -49,6 +49,8 @@ public class RegisterAllocator {
 		tempVariableSize = codeChunk.tempSize;
 	}
 
+	// public static int c = 0;
+
 	/**
 	 * Assigns registers to the code chunk. Saves the result in the code chunk.
 	 **/
@@ -73,9 +75,15 @@ public class RegisterAllocator {
 		if (!actualSpillSet.isEmpty()) {
 			codeChunk.instructions = handleActualSpills();
 			codeChunk.tempSize = tempVariableSize;
+			// if (c > 10) {
+			// throw new Report.InternalError();
+			// }
+			// c += 1;
 
 			LiveAn.calculateInterferenceGraph(codeChunk);
-			RegAll.assignRegisters(codeChunk, actualSpillSet);
+			// Aggregate the previously spilled registers
+			previouslySpilled.addAll(actualSpillSet);
+			RegAll.assignRegisters(codeChunk, previouslySpilled);
 		} else {
 			String[] regs = new String[K];
 			// First we assign the registers to the physical ones
@@ -326,7 +334,6 @@ public class RegisterAllocator {
 		String maxNodePrev = null;
 
 		for (String node : intGraph.getTempNodes()) {
-			// if (intGraph.degree(node) >= K) {
 			if (previouslySpilled.contains(node)) {
 				if (intGraph.degree(node) > maxDegreePrev) {
 					maxDegreePrev = intGraph.degree(node);
@@ -338,7 +345,6 @@ public class RegisterAllocator {
 					maxNode = node;
 				}
 			}
-			// }
 		}
 		if (maxNode != null) {
 			potentialSpillSet.add(maxNode);
