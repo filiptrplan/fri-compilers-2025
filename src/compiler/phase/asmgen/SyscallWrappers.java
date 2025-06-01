@@ -92,6 +92,17 @@ public class SyscallWrappers {
 				""";
 		wrappers.add(new Wrapper("puts", body, "a0", "a7"));
 
+		body = """
+					ld x1, 8(x3)
+					ld x4, 16(x3)
+					li x10, 8
+					mul x10, x4, x10
+					add x10, x1, x10
+					sd x10, 0(x3)
+				""";
+
+		wrappers.add(new Wrapper("at", body, "x1", "x10", "x4"));
+
 		// fun putint(x: int): void
 		body = """
 				ld a0, 8(x3)
@@ -334,8 +345,8 @@ public class SyscallWrappers {
 				""";
 		// NOTE: Temporarily disabled because it's implemented in prev25 as a native
 		// function
-		// wrappers.add(new Wrapper("printf", body, "a0", "a7", "t0", "t1", "t2", "t5",
-		// "t6"));
+		wrappers.add(new Wrapper("printf_sys", body, "a0", "a7", "t0", "t1", "t2", "t5",
+				"t6"));
 
 		// fun random(lower, upper): int
 		body = """
