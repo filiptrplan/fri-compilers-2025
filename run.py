@@ -83,6 +83,11 @@ Examples:
         action="store_true",
         help="Skip compiling the compiler with javac, only run the test case",
     )
+    parser.add_argument(
+        "--num-regs",
+        type=int,
+        help="Number of registers to use for register allocation",
+    )
 
     args = parser.parse_args()
 
@@ -174,6 +179,10 @@ Examples:
                 # Add interpreter mode if enabled
                 if args.interpreter:
                     java_cmd.append("--interpreter")
+
+                # Add num-regs if specified
+                if args.num_regs:
+                    java_cmd.append(f"--num-regs={args.num_regs}")
 
                 # Add the test file
                 java_cmd.append(test_file)
