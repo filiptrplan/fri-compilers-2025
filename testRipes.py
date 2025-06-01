@@ -6,6 +6,8 @@ import sys
 import glob
 from pathlib import Path
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 
 def extract_expected_output(out_file_content):
@@ -175,6 +177,44 @@ def compare_outputs(expected, actual):
         )
 
 
+def run_single_test(out_file):
+    """Run a single test and return the result"""
+    test_name = out_file.stem
+
+    # Read expected output
+    try:
+        with open(out_file, "r") as f:
+            expected_content = f.read()
+    except Exception as e:
+        return test_name, False, f"Error reading {out_file}: {e}"
+
+    expected = extract_expected_output(expected_content)
+    if expected is None:
+        return test_name, False, f"Could not parse expected output from {out_file}"
+
+    # Compile the test
+    if not compile_test(test_name):
+        return test_name, False, "Compilation failed"
+
+    # Run with Ripes
+    stdout, stderr, returncode = run_ripes(test_name)
+
+    if stdout is None:
+        return test_name, False, "Failed to run Ripes"
+
+    actual = extract_ripes_output(stdout, stderr, returncode)
+    if actual is None:
+        return test_name, False, "Could not parse Ripes output"
+
+    # Compare outputs
+    match, details = compare_outputs(expected, actual)
+
+    if match:
+        return test_name, True, "PASS"
+    else:
+        return test_name, False, details
+
+
 def main():
     prg_dir = Path("prg")
 
@@ -199,63 +239,48 @@ def main():
         sys.exit(1)
 
     print(f"Found {len(out_files)} test files")
+    print("Running tests in parallel...")
     print("-" * 60)
 
     passed = 0
     failed = 0
+    results = []
 
-    for out_file in sorted(out_files):
-        test_name = out_file.stem
-        print(f"Testing {test_name}...")
+    # Use ThreadPoolExecutor to run tests in parallel
+    # Limit max workers to avoid overwhelming the system
+    max_workers = len(out_files)
+    print(f"Running with {max_workers} workers.")
 
-        # Read expected output
-        try:
-            with open(out_file, "r") as f:
-                expected_content = f.read()
-        except Exception as e:
-            print(f"  Error reading {out_file}: {e}")
-            failed += 1
-            continue
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all tests
+        future_to_test = {
+            executor.submit(run_single_test, out_file): out_file
+            for out_file in sorted(out_files)
+        }
 
-        expected = extract_expected_output(expected_content)
-        if expected is None:
-            print(f"  Error: Could not parse expected output from {out_file}")
-            failed += 1
-            continue
+        # Collect results as they complete
+        for future in as_completed(future_to_test):
+            test_name, success, details = future.result()
+            results.append((test_name, success, details))
 
-        # Compile the test
-        if not compile_test(test_name):
-            print(f"  ✗ FAIL (compilation failed)")
-            failed += 1
-            continue
+            if success:
+                passed += 1
+                print(f"{test_name}: ✓ PASS")
+            else:
+                failed += 1
+                print(f"{test_name}: ✗ FAIL - {details}")
 
-        # Run with Ripes
-        stdout, stderr, returncode = run_ripes(test_name)
+    # Sort results by test name for consistent output
+    results.sort(key=lambda x: x[0])
 
-        if stdout is None:
-            print(f"  Error: Failed to run Ripes for {test_name}")
-            failed += 1
-            continue
-
-        actual = extract_ripes_output(stdout, stderr, returncode)
-        if actual is None:
-            print(f"  Error: Could not parse Ripes output for {test_name}")
-            failed += 1
-            continue
-
-        # Compare outputs
-        match, details = compare_outputs(expected, actual)
-
-        if match:
-            print(f"  ✓ PASS")
-            passed += 1
-        else:
-            print(f"  ✗ FAIL")
+    print("-" * 60)
+    print("Detailed results:")
+    for test_name, success, details in results:
+        if not success and "FAIL" not in details:
+            print(f"{test_name}: ✗ FAIL")
             for line in details.split("\n"):
                 print(f"    {line}")
-            failed += 1
-
-        print()
+            print()
 
     print("-" * 60)
     print(f"Results: {passed} passed, {failed} failed")
