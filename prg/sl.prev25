@@ -1,0 +1,14 @@
+fun main() : int =
+    let fun f1(a : int) : int =
+        let fun f2(b : int) : int =
+            if (b > 1) then
+                return f2(b-1) + a  #  (* Access 'a' from outer scope *)
+            else
+                return a + b         # (* Access 'a' from outer scope *)
+            end
+        in
+            return f2(a)
+        end
+    in
+        return f1(3)
+    end

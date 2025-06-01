@@ -437,8 +437,29 @@ public class ImcGenerator implements AST.FullVisitor<IMC.Instr, Object> {
 		// I will consider the offset to be from the preallocated SP up
 		long offset = 0;
 		// First we add the static link
-		MEM.Temp containingFP = currentCallFrame.FP;
-		args.add(new IMC.TEMP(containingFP));
+		// We check whether the called function is enclosed in the calling function
+		if (callExpr.funExpr instanceof AST.NameExpr nameExpr) {
+			AST.Node defn = SemAn.defAt.get(nameExpr);
+			if (!(defn instanceof AST.DefFunDefn)) {
+				// For external function we pass 0 too
+				args.add(new IMC.CONST(0));
+			} else {
+				// Now we check whether it is a direct child
+				DirectChildChecker checker = new DirectChildChecker();
+				Boolean isDirectChild = currentFunctionNode.accept(checker, (AST.DefFunDefn) defn);
+				if (isDirectChild) {
+					// If it is a direct child we pass our FP as the SL
+					MEM.Temp containingFP = currentCallFrame.FP;
+					args.add(new IMC.TEMP(containingFP));
+				} else {
+					// Else we pass our current SL
+					args.add(new IMC.MEM8(new IMC.TEMP(currentCallFrame.FP)));
+				}
+			}
+		} else {
+			// We don't know what the called function is
+			args.add(new IMC.CONST(0));
+		}
 		offs.add(offset);
 		offset += 8;
 		for (int i = 0; i < callExpr.argExprs.size(); i++) {
