@@ -1,0 +1,276 @@
+# Copyright (c) 2025 Prev25 Wizards
+# Interactive syscalls test for Prev25 compiler
+# Tests syscalls that require user input
+
+# ======================== SYSCALL DECLARATIONS ========================
+fun getchar(): char
+fun putchar(c: char): void
+fun getint(): int
+fun putint(n: int): void
+fun puts(s: ^char): void
+fun gets(buf: ^char, size: int): int
+
+# ======================== GLOBAL VARIABLES ========================
+var buffer: [256]char
+var nl: char
+
+# ======================== HELPER FUNCTIONS ========================
+fun print_header(title: ^char): void =
+    puts("========== "),
+    puts(title),
+    puts(" ==========\0x0A")
+
+fun print_success(msg: ^char): void =
+    puts("* "),
+    puts(msg),
+    putchar(nl)
+
+fun print_separator(): void =
+    puts("----------------------------------------\0x0A")
+
+# ======================== TEST FUNCTIONS ========================
+
+fun test_getchar(): void =
+    print_header("GETCHAR TEST"),
+    
+    puts("Testing getchar() - reading single characters:\0x0A"),
+    
+    # Test 1: Basic character input
+    puts("Enter a letter: "),
+    let var c1: char in
+        c1 = getchar(),
+        puts("You entered: '"),
+        putchar(c1),
+        puts("'\0x0A"),
+        print_success("getchar basic test")
+    end,
+    
+    # Test 2: Number character
+    puts("Enter a digit: "),
+    let var c2: char in
+        c2 = getchar(),
+        puts("You entered digit: '"),
+        putchar(c2),
+        puts("'\0x0A"),
+        print_success("getchar digit test")
+    end,
+    
+    # Test 3: Special character
+    puts("Enter a special character: "),
+    let var c3: char in
+        c3 = getchar(),
+        puts("You entered special char: '"),
+        putchar(c3),
+        puts("'\0x0A"),
+        print_success("getchar special char test")
+    end,
+    
+    print_separator()
+
+fun test_getint(): void =
+    print_header("GETINT TEST"),
+    
+    puts("Testing getint() - reading integers:\0x0A"),
+    
+    # Test 1: Positive integer
+    puts("Enter a positive integer: "),
+    let var n1: int in
+        n1 = getint(),
+        puts("You entered positive: "),
+        putint(n1),
+        putchar(nl),
+        print_success("getint positive test")
+    end,
+    
+    # Test 2: Negative integer
+    puts("Enter a negative integer: "),
+    let var n2: int in
+        n2 = getint(),
+        puts("You entered negative: "),
+        putint(n2),
+        putchar(nl),
+        print_success("getint negative test")
+    end,
+    
+    # Test 3: Zero
+    puts("Enter zero: "),
+    let var n3: int in
+        n3 = getint(),
+        puts("You entered zero: "),
+        putint(n3),
+        putchar(nl),
+        print_success("getint zero test")
+    end,
+    
+    # Test 4: Large number
+    puts("Enter a large number: "),
+    let var n4: int in
+        n4 = getint(),
+        puts("You entered large: "),
+        putint(n4),
+        putchar(nl),
+        print_success("getint large number test")
+    end,
+    
+    print_separator()
+
+fun test_gets(): void =
+    print_header("GETS TEST"),
+    
+    puts("Testing gets() - reading strings:\0x0A"),
+    
+    # Test 1: Simple string
+    puts("Enter a simple word: "),
+    let var bytes1: int in
+        bytes1 = gets(^buffer[0], 255),
+        puts("You entered: '"),
+        puts(^buffer[0]),
+        puts("'\0x0A"),
+        puts("Bytes read: "),
+        putint(bytes1),
+        putchar(nl),
+        print_success("gets simple string test")
+    end,
+    
+    # Test 2: String with spaces
+    puts("Enter a sentence with spaces: "),
+    let var bytes2: int in
+        bytes2 = gets(^buffer[0], 255),
+        puts("You entered: '"),
+        puts(^buffer[0]),
+        puts("'\0x0A"),
+        puts("Bytes read: "),
+        putint(bytes2),
+        putchar(nl),
+        print_success("gets sentence test")
+    end,
+    
+    # Test 3: String with numbers
+    puts("Enter text with numbers: "),
+    let var bytes3: int in
+        bytes3 = gets(^buffer[0], 255),
+        puts("You entered: '"),
+        puts(^buffer[0]),
+        puts("'\0x0A"),
+        puts("Bytes read: "),
+        putint(bytes3),
+        putchar(nl),
+        print_success("gets alphanumeric test")
+    end,
+    
+    # Test 4: Empty string
+    puts("Press enter for empty string: "),
+    let var bytes4: int in
+        bytes4 = gets(^buffer[0], 255),
+        puts("You entered empty string\0x0A"),
+        puts("Bytes read: "),
+        putint(bytes4),
+        putchar(nl),
+        print_success("gets empty string test")
+    end,
+    
+    print_separator()
+
+fun test_mixed_input(): void =
+    print_header("MIXED INPUT TEST"),
+    
+    puts("Testing mixed input operations:\0x0A"),
+    
+    # Test mixing getchar and getint
+    puts("Enter a character followed by an integer:\0x0A"),
+    
+    puts("Character: "),
+    let var c: char in
+        c = getchar(),
+        puts("You entered char: '"),
+        putchar(c),
+        puts("'\0x0A")
+    end,
+    
+    puts("Integer: "),
+    let var n: int in
+        n = getint(),
+        puts("You entered int: "),
+        putint(n),
+        putchar(nl)
+    end,
+    
+    print_success("mixed input test"),
+    
+    # Test character classification
+    puts("Enter a character for classification: "),
+    let var test_char: char in
+        test_char = getchar(),
+        puts("Character '"),
+        putchar(test_char),
+        puts("' analysis:\0x0A"),
+        
+        # Check if it's a digit
+        if (test_char >= '0') & (test_char <= '9') then
+            puts("  - Is a digit\0x0A")
+        end,
+        
+        # Check if it's uppercase letter
+        if (test_char >= 'A') & (test_char <= 'Z') then
+            puts("  - Is uppercase letter\0x0A")
+        end,
+        
+        # Check if it's lowercase letter
+        if (test_char >= 'a') & (test_char <= 'z') then
+            puts("  - Is lowercase letter\0x0A")
+        end,
+        
+        # Show ASCII value
+        puts("  - ASCII value: "),
+        putint({test_char: int}),
+        putchar(nl)
+    end,
+
+    # consume newline
+    getchar(),
+    
+    print_success("character classification test"),
+    print_separator()
+
+fun test_buffer_limits(): void =
+    print_header("BUFFER LIMITS TEST"),
+    
+    puts("Testing buffer limits and edge cases:\0x0A"),
+    
+    # Test with smaller buffer
+    puts("Enter text (max 10 chars): "),
+    let var small_buffer: [11]char in
+        let var bytes: int in
+            bytes = gets(^small_buffer[0], 10),
+            puts("You entered: '"),
+            puts(^small_buffer[0]),
+            puts("'\0x0A"),
+            puts("Bytes read: "),
+            putint(bytes),
+            putchar(nl),
+            print_success("small buffer test")
+        end
+    end,
+    
+    print_separator()
+
+# ======================== MAIN FUNCTION ========================
+fun main(): int =
+    nl = '\0x0A',
+    
+    puts("PREV25 INTERACTIVE SYSCALLS TEST\0x0A"),
+    puts("================================\0x0A"),
+    puts("This test requires user input for each prompt.\0x0A"),
+    puts("Follow the instructions carefully.\0x0A"),
+    putchar(nl),
+    
+    test_getchar(),
+    test_getint(),
+    test_gets(),
+    test_mixed_input(),
+    test_buffer_limits(),
+    
+    puts("All interactive tests completed!\0x0A"),
+    puts("Interactive syscalls test finished.\0x0A"),
+    
+    return 0

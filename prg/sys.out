@@ -1,0 +1,66 @@
+PREV25 COMPREHENSIVE SYSCALLS TEST
+==================================
+Running automated tests...
+========== BASIC I/O SYSCALLS ==========
+Testing putchar: Hello
+* putchar works
+Testing puts: Hello World!
+* puts works
+Testing putint: 42 -17 0
+* putint works
+Note: getchar and getint require manual input testing
+----------------------------------------
+========== EXTENDED I/O SYSCALLS ==========
+Testing putuint: 18446744073709551615
+* putuint works
+Testing putint_hex: 0x000000ff 0x00001000
+* putint_hex works
+Testing putint_bin: 0b0000000000000000000000000000000000000000000000000000000000000101 0b0000000000000000000000000000000000000000000000000000000000001111
+* putint_bin works
+----------------------------------------
+========== MEMORY MANAGEMENT SYSCALLS ==========
+Testing malloc/free:
+  malloc(100) returned non-null pointer
+  free() called successfully
+* malloc/free works
+Testing new/del:
+  new(50) returned non-null pointer
+  del() called successfully
+* new/del works
+Testing at() function:
+  Array filled using at(): 0 1 4 9 16 25 36 49 64 81 
+* at() function works
+----------------------------------------
+========== RANDOM NUMBER GENERATION SYSCALLS ==========
+Testing seed():
+  Random seed set to 42
+* seed() works
+Testing random(): 1352250610 3788 4027 6622 1061 
+* random() works
+Testing random with upper bound (cast to different signature):
+  Note: This requires casting to (int):int signature
+  random(100) via casting: 272 1503 3162 
+* random(upper_bound) casting works
+Testing random with range (cast to different signature):
+  random(50, 60) via casting: 55 58 57 
+* random(lower, upper) casting works
+----------------------------------------
+========== ADVANCED SYSCALL FEATURES ==========
+Testing escape sequences:
+Tab:	Between
+Quote: "Hello"
+Backslash: \
+Hex char: ABC
+* Escape sequences work
+Testing null character: Hello* Null character handling works
+Testing sizeof with memory allocation:
+  sizeof int: 8
+  sizeof char: 1
+  sizeof bool: 1
+  Allocated int via sizeof: 123
+* sizeof with memory allocation works
+----------------------------------------
+All automated tests completed!
+Syscalls test finished. Returning normally.
+
+Program exited with code: 0

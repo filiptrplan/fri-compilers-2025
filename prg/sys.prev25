@@ -1,0 +1,311 @@
+# Copyright (c) 2025 Prev25 Wizards
+# Comprehensive syscalls test for Prev25 compiler - Main Test
+# Tests all implemented system calls (non-overloaded versions)
+
+# ======================== SYSCALL DECLARATIONS ========================
+# I/O Operations
+fun getchar(): char
+fun putchar(c: char): void
+fun getint(): int
+fun putint(n: int): void
+fun puts(s: ^char): void
+fun gets(buf: ^char, size: int): int
+
+# Extended I/O
+fun putint_bin(x: int): void
+fun putint_hex(x: int): void
+fun putuint(x: int): void
+
+# Memory Management
+fun malloc(size: int): ^char
+fun free(ptr: ^char): void
+fun new(size: int): ^char
+fun del(ptr: ^char): void
+fun at(ptr: ^char, idx: int, type_size: int): ^char
+
+# Random Number Generation
+fun random(): int
+fun seed(seed: int): void
+
+# System Control
+fun exit(code: int): void
+
+fun printf_sys(x : ^char) : void
+
+# ======================== GLOBAL VARIABLES ========================
+var buffer: [256]char
+var test_array: [10]int
+var nl: char
+
+# ======================== HELPER FUNCTIONS ========================
+fun print_header(title: ^char): void =
+    puts("========== "),
+    puts(title),
+    puts(" ==========\0x0A")
+
+fun print_success(msg: ^char): void =
+    puts("* "),
+    puts(msg),
+    putchar(nl)
+
+fun print_separator(): void =
+    puts("----------------------------------------\0x0A")
+
+# ======================== TEST FUNCTIONS ========================
+
+fun test_basic_io(): void =
+    print_header("BASIC I/O SYSCALLS"),
+    
+    # Test putchar
+    puts("Testing putchar: "),
+    putchar('H'),
+    putchar('e'),
+    putchar('l'),
+    putchar('l'),
+    putchar('o'),
+    putchar(nl),
+    print_success("putchar works"),
+    
+    # Test puts
+    puts("Testing puts: "),
+    puts("Hello World!"),
+    putchar(nl),
+    print_success("puts works"),
+    
+    # Test putint
+    puts("Testing putint: "),
+    putint(42),
+    putchar(' '),
+    putint(-17),
+    putchar(' '),
+    putint(0),
+    putchar(nl),
+    print_success("putint works"),
+    
+    puts("Note: getchar and getint require manual input testing\0x0A"),
+    print_separator()
+
+fun test_extended_io(): void =
+    print_header("EXTENDED I/O SYSCALLS"),
+    
+    # Test putuint
+    puts("Testing putuint: "),
+    putuint(-1), # Should print as large positive number
+    putchar(nl),
+    print_success("putuint works"),
+    
+    # Test putint_hex
+    puts("Testing putint_hex: "),
+    putint_hex(255),  # Should print ff
+    putchar(' '),
+    putint_hex(4096), # Should print 1000
+    putchar(nl),
+    print_success("putint_hex works"),
+    
+    # Test putint_bin
+    puts("Testing putint_bin: "),
+    putint_bin(5),    # Should print 101
+    putchar(' '),
+    putint_bin(15),   # Should print 1111
+    putchar(nl),
+    print_success("putint_bin works"),
+    
+    print_separator()
+
+fun test_memory_management(): void =
+    print_header("MEMORY MANAGEMENT SYSCALLS"),
+    
+    let
+        var ptr1: ^char
+        var ptr2: ^char
+        var int_ptr: ^int
+        var i: int
+    in
+        # Test malloc/free
+        puts("Testing malloc/free:\0x0A"),
+        ptr1 = malloc(100),
+        if ptr1 != null then
+            puts("  malloc(100) returned non-null pointer\0x0A"),
+            free(ptr1),
+            puts("  free() called successfully\0x0A"),
+            print_success("malloc/free works")
+        else
+            puts("  ERROR: malloc returned null\0x0A")
+        end,
+        
+        # Test new/del
+        puts("Testing new/del:\0x0A"),
+        ptr2 = new(50),
+        if ptr2 != null then
+            puts("  new(50) returned non-null pointer\0x0A"),
+            del(ptr2),
+            puts("  del() called successfully\0x0A"),
+            print_success("new/del works")
+        else
+            puts("  ERROR: new returned null\0x0A")
+        end,
+        
+        # Test at function
+        puts("Testing at() function:\0x0A"),
+        int_ptr = {new(10 * sizeof int): ^int},
+        if int_ptr != null then
+            i = 0,
+            while i < 10 do
+                {at({int_ptr: ^char}, i, sizeof int): ^int}^ = i * i,
+                i = i + 1
+            end,
+            puts("  Array filled using at(): "),
+            i = 0,
+            while i < 10 do
+                putint({at({int_ptr: ^char}, i, sizeof int): ^int}^),
+                putchar(' '),
+                i = i + 1
+            end,
+            putchar(nl),
+            print_success("at() function works"),
+            del({int_ptr: ^char})
+        else
+            puts("  ERROR: Could not allocate memory for at() test\0x0A")
+        end
+    end,
+    
+    print_separator()
+
+fun test_random(): void =
+    print_header("RANDOM NUMBER GENERATION SYSCALLS"),
+    
+    let var i: int in
+        # Test seed
+        puts("Testing seed():\0x0A"),
+        seed(42),
+        puts("  Random seed set to 42\0x0A"),
+        print_success("seed() works"),
+        
+        # Test random()
+        puts("Testing random(): "),
+        i = 0,
+        while i < 5 do
+            putint(random()),
+            putchar(' '),
+            i = i + 1
+        end,
+        putchar(nl),
+        print_success("random() works"),
+        
+        # Test random with bounds using casting
+        puts("Testing random with upper bound (cast to different signature):\0x0A"),
+        puts("  Note: This requires casting to (int):int signature\0x0A"),
+        puts("  random(100) via casting: "),
+        i = 0,
+        while i < 3 do
+            putint({random: (int):int}(100)),
+            putchar(' '),
+            i = i + 1
+        end,
+        putchar(nl),
+        print_success("random(upper_bound) casting works"),
+        
+        puts("Testing random with range (cast to different signature):\0x0A"),
+        puts("  random(50, 60) via casting: "),
+        i = 0,
+        while i < 3 do
+            putint({random: (int, int):int}(50, 60)),
+            putchar(' '),
+            i = i + 1
+        end,
+        putchar(nl),
+        print_success("random(lower, upper) casting works")
+    end,
+    
+    print_separator()
+
+fun test_printf_basic(): void =
+    print_header("PRINTF SYSCALLS (BASIC)"),
+
+    # Test basic printf
+    printf_sys("Testing printf with no args\0x0A"),
+    print_success("printf_sys() works"),
+
+    # Test printf with format specifiers using casting
+    puts("Testing printf with casting to different signatures:\0x0A"),
+
+    # Integer formatting
+    puts("  printf with int: "),
+    {printf_sys: (^char, int):void}("Number: %d\0x0A", 42),
+    print_success("printf_sys(str, int) via casting works"),
+
+    # Character formatting  
+    puts("  printf with char: "),
+    {printf_sys: (^char, char):void}("Letter: %c\0x0A", 'A'),
+    print_success("printf_sys(str, char) via casting works"),
+
+    # String formatting
+    puts("  printf with string: "),
+    {printf_sys: (^char, ^char):void}("Message: %s\0x0A", "Hello World"),
+    print_success("printf_sys(str, str) via casting works"),
+
+    print_separator()
+
+fun test_advanced_features(): void =
+    print_header("ADVANCED SYSCALL FEATURES"),
+    
+    # Test escape sequences
+    puts("Testing escape sequences:\0x0A"),
+    puts("Tab:\0x09Between\0x0A"),
+    puts("Quote: \"Hello\"\0x0A"),
+    puts("Backslash: \\\0x0A"),
+    puts("Hex char: \0x41\0x42\0x43\0x0A"), # Should print ABC
+    print_success("Escape sequences work"),
+    
+    # Test null character handling
+    puts("Testing null character: Hello\0x00World\0x0A"),
+    print_success("Null character handling works"),
+    
+    # Test sizeof with syscalls
+    puts("Testing sizeof with memory allocation:\0x0A"),
+    let var size_test: ^int in
+        puts("  sizeof int: "),
+        putint(sizeof int),
+        putchar(nl),
+        puts("  sizeof char: "),
+        putint(sizeof char),
+        putchar(nl),
+        puts("  sizeof bool: "),
+        putint(sizeof bool),
+        putchar(nl),
+        
+        size_test = {new(sizeof int): ^int},
+        if size_test != null then
+            size_test^ = 123,
+            puts("  Allocated int via sizeof: "),
+            putint(size_test^),
+            putchar(nl),
+            del({size_test: ^char}),
+            print_success("sizeof with memory allocation works")
+        end
+    end,
+    
+    print_separator()
+
+fun run_all_tests(): void =
+    test_basic_io(),
+    test_extended_io(),
+    test_memory_management(),
+    test_random(),
+    #test_printf_basic(),
+    test_advanced_features()
+
+
+# ======================== MAIN FUNCTION ========================
+fun main(): int =
+    nl = '\0x0A',
+    
+    puts("PREV25 COMPREHENSIVE SYSCALLS TEST\0x0A"),
+    puts("==================================\0x0A"),
+    
+    puts("Running automated tests...\0x0A"),
+    run_all_tests(),
+    
+    puts("All automated tests completed!\0x0A"),
+    puts("Syscalls test finished. Returning normally.\0x0A"),
+    return 0

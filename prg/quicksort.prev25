@@ -77,8 +77,7 @@ fun set_array(arr: ^int, len: int): void =
         end
     end
 
-fun at(arr: ^int, idx: int): ^int =
-    return {{arr: int} + (idx * (sizeof int)): ^int}
+fun at(arr: ^int, idx: int): ^int
 
 fun quicksort(arr: ^int, low: int, high: int): void =
     if low < high then

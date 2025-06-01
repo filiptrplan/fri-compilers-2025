@@ -202,6 +202,7 @@ Examples:
                 # If --run flag is set and compilation was successful, run in Ripes
                 if args.run:
                     print("\nRunning in Ripes simulator...")
+                    output_file = f"prg/{args.testname}.temp.out"
                     ripes_cmd = [
                         "./Ripes.AppImage",
                         "--mode",
@@ -217,7 +218,40 @@ Examples:
                         "--reginit",
                         "gpr:2=0x7ffffff0",
                     ]
-                    subprocess.run(ripes_cmd)
+
+                    # Run Ripes and capture output
+                    result = subprocess.run(ripes_cmd, capture_output=True, text=True)
+
+                    # Write output to file (strip null bytes and qt lines)
+                    with open(output_file, "w") as f:
+                        if result.stdout:
+                            cleaned_stdout = "\n".join(
+                                line
+                                for line in result.stdout.replace("\x00", "").split(
+                                    "\n"
+                                )
+                                if not line.strip().startswith("qt")
+                            )
+                            f.write(cleaned_stdout)
+                        if result.stderr:
+                            cleaned_stderr = "\n".join(
+                                line
+                                for line in result.stderr.replace("\x00", "").split(
+                                    "\n"
+                                )
+                                if not line.strip().startswith("qt")
+                            )
+                            f.write(cleaned_stderr)
+
+                    print(f"Ripes output written to: {output_file}")
+
+                    # Also print to console for immediate feedback
+                    if result.stdout:
+                        print("Ripes stdout:")
+                        print(result.stdout)
+                    if result.stderr:
+                        print("Ripes stderr:")
+                        print(result.stderr)
 
                 # If --copy flag is set and compilation was successful, copy assembly to clipboard
                 if args.copy:

@@ -191,8 +191,8 @@ def main():
         )
         sys.exit(1)
 
-    # Find all .out files
-    out_files = list(prg_dir.glob("*.out"))
+    # Find all .out files (excluding .temp.out files)
+    out_files = [f for f in prg_dir.glob("*.out") if not f.name.endswith(".temp.out")]
 
     if not out_files:
         print("No .out files found in prg directory")

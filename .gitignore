@@ -2,6 +2,7 @@ bin/
 *.preall
 prg/*.md
 *.asm
+*.temp.out
 *.html
 *.xml
 *.zip

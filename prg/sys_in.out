@@ -1,0 +1,61 @@
+PREV25 INTERACTIVE SYSCALLS TEST
+================================
+This test requires user input for each prompt.
+Follow the instructions carefully.
+
+========== GETCHAR TEST ==========
+Testing getchar() - reading single characters:
+Enter a letter: You entered: 'A'
+* getchar basic test
+Enter a digit: You entered digit: '7'
+* getchar digit test
+Enter a special character: You entered special char: '@'
+* getchar special char test
+----------------------------------------
+========== GETINT TEST ==========
+Testing getint() - reading integers:
+Enter a positive integer: You entered positive: 123
+* getint positive test
+Enter a negative integer: You entered negative: -456
+* getint negative test
+Enter zero: You entered zero: 0
+* getint zero test
+Enter a large number: You entered large: 999999
+* getint large number test
+----------------------------------------
+========== GETS TEST ==========
+Testing gets() - reading strings:
+Enter a simple word: You entered: 'hello'
+Bytes read: 5
+* gets simple string test
+Enter a sentence with spaces: You entered: 'This is a test sentence with spaces'
+Bytes read: 35
+* gets sentence test
+Enter text with numbers: You entered: 'abc123def456'
+Bytes read: 12
+* gets alphanumeric test
+Press enter for empty string: You entered empty string
+Bytes read: 0
+* gets empty string test
+----------------------------------------
+========== MIXED INPUT TEST ==========
+Testing mixed input operations:
+Enter a character followed by an integer:
+Character: You entered char: 'X'
+Integer: You entered int: 42
+* mixed input test
+Enter a character for classification: Character 'Z' analysis:
+  - Is uppercase letter
+  - ASCII value: 90
+* character classification test
+----------------------------------------
+========== BUFFER LIMITS TEST ==========
+Testing buffer limits and edge cases:
+Enter text (max 10 chars): You entered: 'Short text'
+Bytes read: 10
+* small buffer test
+----------------------------------------
+All interactive tests completed!
+Interactive syscalls test finished.
+
+Program exited with code: 0
