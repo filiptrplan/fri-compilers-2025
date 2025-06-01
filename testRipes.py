@@ -31,10 +31,14 @@ def extract_expected_output(out_file_content):
     }
 
 
-def compile_test(test_name):
+def compile_test(test_name, num_regs=None):
     try:
+        cmd = ["./run.py", test_name, "--no-compile"]
+        if num_regs is not None:
+            cmd.append(f"--num-regs={num_regs}")
+
         result = subprocess.run(
-            ["./run.py", test_name, "--no-compile"],
+            cmd,
             capture_output=True,
             text=True,
             timeout=60,
@@ -178,7 +182,7 @@ def compare_outputs(expected, actual):
         )
 
 
-def run_single_test(out_file, skip_input=False):
+def run_single_test(out_file, skip_input=False, num_regs=None):
     """Run a single test and return the result"""
     test_name = out_file.stem
 
@@ -199,7 +203,7 @@ def run_single_test(out_file, skip_input=False):
         return test_name, False, f"Could not parse expected output from {out_file}"
 
     # Compile the test
-    if not compile_test(test_name):
+    if not compile_test(test_name, num_regs):
         return test_name, False, "Compilation failed"
 
     # Run with Ripes
@@ -227,6 +231,11 @@ def main():
         "--skip-input",
         action="store_true",
         help="Skip tests that require .in input files",
+    )
+    parser.add_argument(
+        "--num-regs",
+        type=int,
+        help="Number of registers to use for register allocation",
     )
     args = parser.parse_args()
 
@@ -283,7 +292,9 @@ def main():
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit all tests
         future_to_test = {
-            executor.submit(run_single_test, out_file, args.skip_input): out_file
+            executor.submit(
+                run_single_test, out_file, args.skip_input, args.num_regs
+            ): out_file
             for out_file in sorted(out_files)
         }
 
