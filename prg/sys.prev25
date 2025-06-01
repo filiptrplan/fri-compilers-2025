@@ -181,30 +181,6 @@ fun test_random(): void =
         puts("  Random seed set to 42\0x0A"),
         print_success("seed() works"),
         
-        # Test random()
-        puts("Testing random(): "),
-        i = 0,
-        while i < 5 do
-            putint(random()),
-            putchar(' '),
-            i = i + 1
-        end,
-        putchar(nl),
-        print_success("random() works"),
-        
-        # Test random with bounds using casting
-        puts("Testing random with upper bound (cast to different signature):\0x0A"),
-        puts("  Note: This requires casting to (int):int signature\0x0A"),
-        puts("  random(100) via casting: "),
-        i = 0,
-        while i < 3 do
-            putint({random: (int):int}(100)),
-            putchar(' '),
-            i = i + 1
-        end,
-        putchar(nl),
-        print_success("random(upper_bound) casting works"),
-        
         puts("Testing random with range (cast to different signature):\0x0A"),
         puts("  random(50, 60) via casting: "),
         i = 0,

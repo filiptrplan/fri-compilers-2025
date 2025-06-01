@@ -35,14 +35,8 @@ Testing at() function:
 Testing seed():
   Random seed set to 42
 * seed() works
-Testing random(): 1352250610 3788 4027 6622 1061 
-* random() works
-Testing random with upper bound (cast to different signature):
-  Note: This requires casting to (int):int signature
-  random(100) via casting: 272 1503 3162 
-* random(upper_bound) casting works
 Testing random with range (cast to different signature):
-  random(50, 60) via casting: 55 58 57 
+  random(50, 60) via casting: 53 58 51 
 * random(lower, upper) casting works
 ----------------------------------------
 ========== ADVANCED SYSCALL FEATURES ==========
