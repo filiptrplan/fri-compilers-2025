@@ -1,3 +1,39 @@
+## Standard library for PREV'25
+
+### I/O
+
+- `puts(str: ^char): void` - Print string
+- `putint(x: int): void` - Print signed integer
+- `putchar(c: char): void` - Print character
+- `getchar(): char` - Read character
+- `gets(buf: ^char, size: int): int` - Read line into buffer
+- `getint(): int` - Read integer (skips whitespace)
+
+### Number Formats
+
+- `putint_hex(x: int): void` - Print as hex
+- `putuint(x: int): void` - Print as unsigned
+- `putint_bin(x: int): void` - Print as binary
+
+### Memory
+
+- `new(size: int): ^any` / `malloc(size: int): ^any` - Allocate memory
+- `del(ptr: ^any): void` / `free(ptr: ^any): void` - Free memory (no-op)
+
+### Arrays
+
+- `at(ptr: ^any, idx: int): ^any` - Array access (8-byte elements)
+- `at_sys(ptr: ^any, idx: int, size_of_any: int): ^any` - Array access (custom size)
+
+### Random
+
+- `random(lower: int, upper: int): int` - Random int in range
+- `seed(value: int): void` - Set RNG seed
+
+### Formatted
+
+- `printf_sys(format: ^char, ...): void` - Formatted print (basic: %d, %c, %s, %%)
+
 ## Syscall Codes and Arguments for Ripes / RV64M
 
 ### Register Mapping (RISC-V calling convention)
