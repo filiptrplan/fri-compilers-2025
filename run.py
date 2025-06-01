@@ -69,6 +69,11 @@ Examples:
         help="Run the compiled assembly in Ripes simulator",
     )
     parser.add_argument(
+        "--interpreter",
+        action="store_true",
+        help="Run the compiler with interpreter mode enabled",
+    )
+    parser.add_argument(
         "--copy",
         action="store_true",
         help="Copy the generated assembly to clipboard",
@@ -165,6 +170,10 @@ Examples:
                 # Add dev mode if enabled
                 if args.dev:
                     java_cmd.append("--dev-mode=on")
+
+                # Add interpreter mode if enabled
+                if args.interpreter:
+                    java_cmd.append("--interpreter")
 
                 # Add the test file
                 java_cmd.append(test_file)
